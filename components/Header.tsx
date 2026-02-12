@@ -59,6 +59,12 @@ export default function Header() {
                                     Dashboard
                                 </Link>
                                 <Link
+                                    href="/rubric"
+                                    className={`transition-colors ${pathname === '/rubric' ? 'text-blue-400' : 'text-gray-300 hover:text-white'}`}
+                                >
+                                    Rubric
+                                </Link>
+                                <Link
                                     href="/submit-essay"
                                     className={`transition-colors ${pathname === '/submit-essay' ? 'text-blue-400' : 'text-gray-300 hover:text-white'}`}
                                 >
