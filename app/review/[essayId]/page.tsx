@@ -151,7 +151,7 @@ export default function ReviewEssay() {
             <main className="container mx-auto px-4 py-8 max-w-5xl">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-white mb-2">Review Essay</h1>
-                    <p className="text-gray-400">Provide constructive feedback using IELTS criteria</p>
+                    <p className="text-gray-400">Provide constructive feedback using the assessment criteria</p>
                 </div>
 
                 {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
@@ -184,7 +184,7 @@ export default function ReviewEssay() {
                     {/* Review Form */}
                     <form onSubmit={handleSubmit} className="space-y-6 flex flex-col h-full">
                         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                            <h3 className="text-xl font-semibold text-white mb-4">IELTS Criteria Scores (0-9)</h3>
+                            <h3 className="text-xl font-semibold text-white mb-4">Assessment Criteria Scores (0-9)</h3>
 
                             {Object.entries(scores).map(([key, value]) => (
                                 <div key={key} className="mb-4">

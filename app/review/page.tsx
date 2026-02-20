@@ -273,7 +273,7 @@ export default function Review() {
                     <h3 className="text-blue-400 font-semibold mb-3">💡 Review Tips</h3>
                     <ul className="text-gray-300 space-y-2">
                         <li>• Be constructive and specific in your feedback</li>
-                        <li>• Use the IELTS rubric as a guide for scoring</li>
+                        <li>• Use the assessment rubric as a guide for scoring</li>
                         <li>• Highlight both strengths and areas for improvement</li>
                         <li>• Consider the essay structure and arguments clearly</li>
                     </ul>

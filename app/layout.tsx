@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-    title: 'IELTS Peer Assessment System',
+    title: 'Peer feedback app',
     description: 'Collaborative essay assessment platform with AI-powered feedback',
 }
 

@@ -76,7 +76,7 @@ export default function Dashboard() {
             <main className="container mx-auto px-4 py-8">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-white mb-2">Welcome Back!</h1>
-                    <p className="text-gray-400">Here&apos;s your IELTS writing progress</p>
+                    <p className="text-gray-400">Here&apos;s your writing progress</p>
                 </div>
 
                 {/* Stats Cards */}
@@ -111,7 +111,7 @@ export default function Dashboard() {
                         >
                             <div className="text-3xl mb-2">✍️</div>
                             <h3 className="text-xl font-semibold mb-1">Submit New Essay</h3>
-                            <p className="text-blue-100 text-sm">Upload your IELTS essay and get AI feedback</p>
+                            <p className="text-blue-100 text-sm">Upload your essay and get AI feedback</p>
                         </button>
 
                         <button

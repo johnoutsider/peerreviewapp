@@ -391,9 +391,9 @@ export default function Feedback() {
                                             <div className="flex items-center justify-between mb-4">
                                                 <div>
                                                     <h3 className="text-2xl font-bold text-cyan-400 flex items-center gap-3">
-                                                        🤖 AI IELTS Examiner
+                                                        🤖 AI Assessment
                                                     </h3>
-                                                    <p className="text-gray-400 text-sm mt-1">Official IELTS band descriptor rubric</p>
+                                                    <p className="text-gray-400 text-sm mt-1">Official assessment descriptor rubric</p>
                                                 </div>
                                                 <div className="text-center">
                                                     <div className="text-sm text-gray-400 mb-1">Overall Band</div>

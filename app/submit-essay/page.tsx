@@ -230,7 +230,7 @@ export default function SubmitEssay() {
                             <textarea
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
-                                placeholder="Paste or type your IELTS essay here (minimum 250 words recommended)..."
+                                placeholder="Paste or type your essay here (minimum 250 words recommended)..."
                                 rows={15}
                                 className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                                 required

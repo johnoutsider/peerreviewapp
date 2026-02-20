@@ -79,7 +79,7 @@ export default function Header() {
                         href={isTeacher ? '/teacher' : '/dashboard'}
                         className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 shrink-0"
                     >
-                        IELTS Peer Review
+                        Peer feedback app
                     </Link>
 
                     {/* Desktop nav */}

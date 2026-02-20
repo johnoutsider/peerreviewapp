@@ -76,7 +76,7 @@ export default function Home() {
                     {/* Hero Section */}
                     <div className="text-center mb-12">
                         <h1 className="text-6xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
-                            IELTS Peer Assessment
+                            <span className="block mt-2">Peer Feedback App</span>
                         </h1>
                         <p className="text-xl text-gray-300 mb-8">
                             Collaborative essay grading powered by AI and peer review
@@ -85,15 +85,15 @@ export default function Home() {
 
                     {/* Features */}
                     <div className="grid md:grid-cols-3 gap-6 mb-12">
-                        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                        <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-xl border border-white/10 relative z-10">
                             <div className="text-4xl mb-4">✍️</div>
                             <h3 className="text-xl font-semibold text-white mb-2">Submit Essays</h3>
-                            <p className="text-gray-300">Upload your IELTS essays and receive comprehensive feedback</p>
+                            <p className="text-gray-300">Upload your essays and receive comprehensive feedback</p>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                        <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-xl border border-white/10 relative z-10">
                             <div className="text-4xl mb-4">🤝</div>
                             <h3 className="text-xl font-semibold text-white mb-2">Peer Review</h3>
-                            <p className="text-gray-300">Review 3 classmates&apos; essays using IELTS criteria</p>
+                            <p className="text-gray-300">Review classmates&apos; essays using standardized criteria</p>
                         </div>
                         <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                             <div className="text-4xl mb-4">🤖</div>
