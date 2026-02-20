@@ -2,8 +2,8 @@ import { db } from './firebase'
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore'
 
 /**
- * Assigns 3 random peer reviewers to an essay
- * Ensures no self-review and fair distribution
+ * Assigns 3 random peer reviewers to an essay on submission
+ * (initial assignment only — students can claim extra reviews freely)
  */
 export async function assignPeerReviewers(
     essayId: string,
@@ -49,8 +49,9 @@ export async function assignPeerReviewers(
 /**
  * Finds an available essay for the user to review
  * (Pull mechanism to fix 'early submission' issue)
+ * Optionally filter by topicId so students can search within a topic.
  */
-export async function claimEssayForReview(reviewerId: string, classId: string): Promise<boolean> {
+export async function claimEssayForReview(reviewerId: string, classId: string, topicId?: string): Promise<string | null> {
     try {
         // Get all essays under review
         const essaysRef = collection(db, 'essays')
@@ -71,11 +72,13 @@ export async function claimEssayForReview(reviewerId: string, classId: string): 
 
             // Criteria:
             // 1. Not my own essay
-            // 2. I haven't been assigned it yet
-            // 3. Needs more reviews (less than 3)
+            // 2. I haven't already reviewed it
+            // 3. Matches topicId if provided (no reviewer cap — unlimited reviews allowed)
+            const topicMatch = topicId ? data.topicId === topicId : true
+
             return data.studentId !== reviewerId &&
                 !existingReviewers.includes(reviewerId) &&
-                existingReviewers.length < 3
+                topicMatch
         })
 
         if (candidates.length > 0) {
@@ -91,13 +94,13 @@ export async function claimEssayForReview(reviewerId: string, classId: string): 
             await updateDoc(doc(db, 'essays', selected.id), {
                 peerReviewIds: [...existingReviewers, reviewerId]
             })
-            return true // Found and assigned
+            return selected.id // Found and assigned — return essay ID
         }
 
-        return false // No essays available
+        return null // No essays available
     } catch (error) {
         console.error('Claim essay error:', error)
-        return false
+        return null
     }
 }
 

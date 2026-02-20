@@ -125,7 +125,7 @@ export default function ReviewEssay() {
 
     if (alreadyReviewed) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
                 <Header />
                 <main className="container mx-auto px-4 py-8 max-w-4xl">
                     <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-12 text-center">
@@ -145,7 +145,7 @@ export default function ReviewEssay() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             <Header />
 
             <main className="container mx-auto px-4 py-8 max-w-5xl">
@@ -160,11 +160,22 @@ export default function ReviewEssay() {
                 <div className="grid lg:grid-cols-2 gap-6">
                     {/* Essay Content */}
                     <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 h-fit sticky top-4">
-                        <h2 className="text-2xl font-semibold text-white mb-2">{essay.title}</h2>
-                        <p className="text-sm text-gray-400 mb-4">By {essay.studentName}</p>
+                        <div className="flex items-start justify-between mb-4 gap-2">
+                            <h2 className="text-2xl font-semibold text-white">{essay.title}</h2>
+                            {essay.topicName && (
+                                <span className="shrink-0 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+                                    🏷️ {essay.topicName}
+                                </span>
+                            )}
+                        </div>
 
                         <div className="bg-slate-900/50 rounded-lg p-4 max-h-[600px] overflow-y-auto">
                             <p className="text-gray-300 whitespace-pre-wrap">{essay.content}</p>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                            <span className="text-sm font-medium text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
+                                📝 {essay.content?.trim().split(/\s+/).filter((w: string) => w).length ?? 0} words
+                            </span>
                         </div>
                     </div>
 

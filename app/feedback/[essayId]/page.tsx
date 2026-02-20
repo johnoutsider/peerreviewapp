@@ -32,6 +32,8 @@ export default function Feedback() {
     })
     const [submittingTeacherReview, setSubmittingTeacherReview] = useState(false)
 
+    // AI assessment is performed at submission time. No on-demand AI button is needed.
+
     useEffect(() => {
         const fetchFeedback = async () => {
             if (!auth.currentUser) {
@@ -126,6 +128,8 @@ export default function Feedback() {
         }
     }
 
+    // No on-demand AI handler here—AI assessments are created when essays are submitted.
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -172,18 +176,42 @@ export default function Feedback() {
 
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             <Header />
 
             <main className="container mx-auto px-4 py-8 max-w-6xl">
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">{essay.title}</h1>
-                    <p className="text-gray-400">Comprehensive Feedback & Assessment</p>
+                <div className="mb-8 flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-4xl font-bold text-white mb-2">{essay.title}</h1>
+                        <p className="text-gray-400">Comprehensive Feedback &amp; Assessment</p>
+                    </div>
+                    {!isTeacher && essay.studentId === auth.currentUser?.uid && reviews.length === 0 && (
+                        <button
+                            onClick={() => router.push(`/edit-essay/${essayId}`)}
+                            className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-colors font-medium text-sm"
+                        >
+                            ✏️ Edit Essay
+                        </button>
+                    )}
                 </div>
+
+                {/* AI assessments are created during submission; on-demand AI buttons removed. */}
 
                 {/* Essay Content - Always visible */}
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 mb-8">
-                    <h2 className="text-2xl font-semibold text-white mb-4">Your Essay</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-semibold text-white">Your Essay</h2>
+                        <div className="flex items-center gap-2">
+                            {essay.topicName && (
+                                <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-medium">
+                                    🏷️ {essay.topicName}
+                                </span>
+                            )}
+                            <span className="bg-slate-700/50 text-gray-300 border border-white/10 px-3 py-1 rounded-full text-sm font-medium">
+                                📝 {essay.content?.trim().split(/\s+/).filter((w: string) => w).length ?? 0} words
+                            </span>
+                        </div>
+                    </div>
                     <div className="bg-slate-900/50 rounded-lg p-4">
                         <p className="text-gray-300 whitespace-pre-wrap">{essay.content}</p>
                     </div>
@@ -194,7 +222,7 @@ export default function Feedback() {
                     <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 mb-8 text-center">
                         <div className="text-gray-300 text-lg mb-2">Overall Band Score</div>
                         <div className="text-7xl font-bold text-white mb-2">{finalScores.overallBand}</div>
-                        <div className={`text-2xl font-semibold ${getScoreColor(finalScores.overallBand)}`}>
+                        <div className="text-2xl font-semibold text-white">
                             {getScoreLabel(finalScores.overallBand)}
                         </div>
                         <div className="mt-4 text-sm text-gray-400">
@@ -222,7 +250,12 @@ export default function Feedback() {
 
                                     {reviews.map((review, idx) => (
                                         <th key={idx} className="py-3 px-4 text-center text-gray-300">
-                                            {review.reviewerRole === 'teacher' ? 'Teacher' : `Peer ${idx + 1}`}
+                                            {review.reviewerRole === 'ai'
+                                                ? '🤖 AI'
+                                                : review.reviewerRole === 'teacher'
+                                                    ? 'Teacher'
+                                                    : `Peer ${idx + 1}`
+                                            }
                                         </th>
                                     ))}
                                     {finalScores && <th className="py-3 px-4 text-center text-gray-300 font-bold">Final</th>}
@@ -234,12 +267,12 @@ export default function Feedback() {
                                         <td className="py-3 px-4 text-white">{label}</td>
 
                                         {reviews.map((review, idx) => (
-                                            <td key={idx} className={`py-3 px-4 text-center ${review.reviewerRole === 'teacher' ? 'text-purple-400 font-bold' : 'text-gray-300'}`}>
+                                            <td key={idx} className="py-3 px-4 text-center text-white font-bold">
                                                 {review.scores?.[key] || 'N/A'}
                                             </td>
                                         ))}
                                         {finalScores && (
-                                            <td className={`py-3 px-4 text-center font-bold ${getScoreColor(finalScores.finalScores[key])}`}>
+                                            <td className="py-3 px-4 text-center font-bold text-white">
                                                 {finalScores.finalScores[key]}
                                             </td>
                                         )}
@@ -256,29 +289,144 @@ export default function Feedback() {
                 {reviews.length > 0 && (
                     <div className="space-y-6">
                         <h2 className="text-2xl font-semibold text-white">Peer Reviews</h2>
-                        {reviews.map((review, idx) => (
-                            <div key={review.id} className={`bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border ${review.reviewerRole === 'teacher' ? 'border-purple-500/50 bg-purple-900/10' : 'border-white/10'}`}>
-                                <h3 className={`text-xl font-semibold mb-4 ${review.reviewerRole === 'teacher' ? 'text-purple-400' : 'text-white'}`}>
-                                    {review.reviewerRole === 'teacher' ? '🎓 Teacher Feedback' : `Peer Review ${idx + 1}`}
-                                </h3>
+                        {reviews.map((review, idx) => {
+                            const isAI = review.reviewerRole === 'ai'
+                            const isTeacherReview = review.reviewerRole === 'teacher'
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                    {criteria.map(({ key, label }) => (
-                                        <div key={key} className="bg-slate-900/50 rounded-lg p-3 text-center">
-                                            <div className="text-sm text-gray-400 mb-1">{label}</div>
-                                            <div className={`text-2xl font-bold ${getScoreColor(review.scores[key])}`}>
-                                                {review.scores[key]}
+                            // Rich AI feedback display with dimensions
+                            if (isAI && review.dimensions) {
+                                const dimensionConfig = [
+                                    { key: 'task_response', label: 'Task Achievement', icon: '📋', color: 'blue' },
+                                    { key: 'coherence_cohesion', label: 'Coherence & Cohesion', icon: '🔗', color: 'purple' },
+                                    { key: 'lexical_resource', label: 'Lexical Resource', icon: '📚', color: 'teal' },
+                                    { key: 'grammatical_range_accuracy', label: 'Grammar & Accuracy', icon: '✏️', color: 'pink' },
+                                ]
+
+                                const colorMap: Record<string, { border: string; bg: string; text: string; badge: string }> = {
+                                    blue: { border: 'border-blue-500/40', bg: 'bg-blue-900/20', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-300' },
+                                    purple: { border: 'border-purple-500/40', bg: 'bg-purple-900/20', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-300' },
+                                    teal: { border: 'border-teal-500/40', bg: 'bg-teal-900/20', text: 'text-teal-400', badge: 'bg-teal-500/20 text-teal-300' },
+                                    pink: { border: 'border-pink-500/40', bg: 'bg-pink-900/20', text: 'text-pink-400', badge: 'bg-pink-500/20 text-pink-300' },
+                                }
+
+                                return (
+                                    <div key={review.id} className="space-y-4">
+                                        {/* AI Header + Overall Band */}
+                                        <div className="bg-gradient-to-br from-cyan-900/30 to-teal-900/30 backdrop-blur-sm rounded-2xl p-6 border border-cyan-500/40">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-2xl font-bold text-cyan-400 flex items-center gap-3">
+                                                        🤖 AI IELTS Examiner
+                                                    </h3>
+                                                    <p className="text-gray-400 text-sm mt-1">Official IELTS band descriptor rubric</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-sm text-gray-400 mb-1">Overall Band</div>
+                                                    <div className="text-5xl font-bold text-white">
+                                                        {review.overallBand}
+                                                    </div>
+                                                </div>
                                             </div>
+                                            {review.feedback && (
+                                                <div className="bg-slate-900/40 rounded-lg p-4 border border-white/5">
+                                                    <p className="text-gray-300 italic">{review.feedback}</p>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
 
-                                <div className="bg-slate-900/50 rounded-lg p-4">
-                                    <div className="text-sm text-gray-400 mb-2">Feedback:</div>
-                                    <p className="text-gray-300 whitespace-pre-wrap">{review.feedback}</p>
+                                        {/* 4 Dimension Cards */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {dimensionConfig.map(({ key, label, icon, color }) => {
+                                                const dim = review.dimensions?.[key]
+                                                if (!dim) return null
+                                                const colors = colorMap[color]
+                                                return (
+                                                    <div key={key} className={`rounded-xl p-5 border ${colors.border} ${colors.bg} backdrop-blur-sm`}>
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <h4 className={`font-bold text-lg ${colors.text} flex items-center gap-2`}>
+                                                                {icon} {label}
+                                                            </h4>
+                                                            <div className="text-3xl font-bold text-white">{dim.band}</div>
+                                                        </div>
+                                                        <div className="mb-2">
+                                                            <span className="text-green-400 text-sm font-semibold">✅ Good: </span>
+                                                            <span className="text-gray-300 text-sm">{dim.good}</span>
+                                                        </div>
+                                                        <div className="mb-3">
+                                                            <span className="text-amber-400 text-sm font-semibold">🎯 Focus: </span>
+                                                            <span className="text-gray-300 text-sm">{dim.focus}</span>
+                                                        </div>
+                                                        {dim.descriptors && dim.descriptors.length > 0 && (
+                                                            <div className="space-y-2 mt-3 pt-3 border-t border-white/10">
+                                                                <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Band Descriptors</div>
+                                                                {dim.descriptors.map((desc: any, di: number) => (
+                                                                    <div key={di} className="flex gap-2 items-start">
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${colors.badge}`}>
+                                                                            Band {desc.band}
+                                                                        </span>
+                                                                        <span className="text-gray-400 text-xs leading-relaxed">{desc.text}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+
+                                        {/* Top Priority Actions */}
+                                        {review.topActions && review.topActions.length > 0 && (
+                                            <div className="bg-gradient-to-br from-amber-900/20 to-orange-900/20 backdrop-blur-sm rounded-xl p-6 border border-amber-500/30">
+                                                <h4 className="text-lg font-bold text-amber-400 mb-4 flex items-center gap-2">
+                                                    🎯 Top Priority Improvements
+                                                </h4>
+                                                <div className="space-y-3">
+                                                    {review.topActions.map((action: string, ai: number) => (
+                                                        <div key={ai} className="flex items-start gap-3">
+                                                            <span className="bg-amber-500/20 text-amber-300 text-sm font-bold rounded-full w-7 h-7 flex items-center justify-center shrink-0">
+                                                                {ai + 1}
+                                                            </span>
+                                                            <span className="text-gray-300">{action}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            }
+
+                            // Standard peer/teacher review display
+                            return (
+                                <div
+                                    key={review.id}
+                                    className={`backdrop-blur-sm rounded-xl p-6 border ${isTeacherReview
+                                        ? 'border-purple-500/50 bg-purple-900/10'
+                                        : 'border-white/10 bg-slate-800/50'
+                                        }`}
+                                >
+                                    <h3 className={`text-xl font-semibold mb-4 ${isTeacherReview ? 'text-purple-400' : 'text-white'}`}>
+                                        {isTeacherReview ? '🎓 Teacher Feedback' : `Peer Review ${idx + 1}`}
+                                    </h3>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                        {criteria.map(({ key, label }) => (
+                                            <div key={key} className="bg-slate-900/50 rounded-lg p-3 text-center">
+                                                <div className="text-sm text-gray-400 mb-1">{label}</div>
+                                                <div className="text-2xl font-bold text-white">
+                                                    {review.scores[key]}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="bg-slate-900/50 rounded-lg p-4">
+                                        <div className="text-sm text-gray-400 mb-2">Feedback:</div>
+                                        <p className="text-gray-300 whitespace-pre-wrap">{review.feedback}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 )}
 

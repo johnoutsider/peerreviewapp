@@ -19,9 +19,35 @@ service cloud.firestore {
     // Reviews collection
     match /reviews/{reviewId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.reviewerId == request.auth.uid;
+      // Allow AI reviews (reviewerRole == 'ai') or user reviews (reviewerId matches auth.uid)
+      allow create: if request.auth != null && 
+        (request.resource.data.reviewerRole == 'ai' || 
+         request.resource.data.reviewerId == request.auth.uid ||
+         request.resource.data.reviewerRole == 'teacher');
       allow update: if request.auth != null && resource.data.reviewerId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.reviewerId == request.auth.uid;
+    }
+
+    // Topics collection — teachers write, all authenticated users read
+    match /topics/{topicId} {
+      allow read: if request.auth != null;
+      allow create, delete: if request.auth != null;
+      allow update: if request.auth != null;
+    }
+
+    // Messages collection — teachers create, all authenticated users read/update (mark as read)
+    match /messages/{messageId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+
+      // Student & teacher replies subcollection
+      match /replies/{replyId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && resource.data.studentId == request.auth.uid;
+      }
     }
   }
 }
