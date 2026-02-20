@@ -18,6 +18,8 @@ export default function Feedback() {
     const [loading, setLoading] = useState(true)
     const [finalScores, setFinalScores] = useState<any>(null)
     const [reviewsGiven, setReviewsGiven] = useState(0)
+    const [sameTopicReviewsDone, setSameTopicReviewsDone] = useState(0)
+    const [assignedSameTopicCount, setAssignedSameTopicCount] = useState(0)
     const [notFound, setNotFound] = useState(false)
     const [accessDenied, setAccessDenied] = useState(false)
     const [isTeacher, setIsTeacher] = useState(false)
@@ -73,14 +75,39 @@ export default function Feedback() {
                 const reviewsSnapshot = await getDocs(reviewsQuery)
                 const reviewsData = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-                // check how many reviews this student has GIVEN to others (only if student)
+                // Check how many reviews this student has GIVEN + same-topic gating
                 if (!isTeacherRole) {
-                    const myReviewsQuery = query(
-                        collection(db, 'reviews'),
-                        where('reviewerId', '==', auth.currentUser.uid)
+                    const uid = auth.currentUser.uid
+
+                    // All reviews given by this student
+                    const myReviewsSnap = await getDocs(
+                        query(collection(db, 'reviews'), where('reviewerId', '==', uid))
                     )
-                    const myReviewsSnapshot = await getDocs(myReviewsQuery)
-                    setReviewsGiven(myReviewsSnapshot.size)
+                    setReviewsGiven(myReviewsSnap.size)
+
+                    // How many of those reviews are for same-topic essays?
+                    const myReviewedEssayIds = myReviewsSnap.docs.map(d => d.data().essayId as string)
+                    if (myReviewedEssayIds.length > 0 && essayData.topicId) {
+                        // Check which reviewed essays share the same topic
+                        const reviewedEssaysSnap = await getDocs(
+                            query(collection(db, 'essays'), where('topicId', '==', essayData.topicId))
+                        )
+                        const sameTopicEssayIds = new Set(reviewedEssaysSnap.docs.map(d => d.id))
+                        const sameTopicDone = myReviewedEssayIds.filter(eid => sameTopicEssayIds.has(eid)).length
+                        setSameTopicReviewsDone(sameTopicDone)
+                    }
+
+                    // How many same-topic essays are assigned to this student?
+                    const assignedSnap = await getDocs(
+                        query(
+                            collection(db, 'essays'),
+                            where('peerReviewIds', 'array-contains', uid),
+                            where('topicId', '==', essayData.topicId)
+                        )
+                    )
+                    // Exclude own essay from count
+                    const assignedOtherTopicEssays = assignedSnap.docs.filter(d => d.data().studentId !== uid)
+                    setAssignedSameTopicCount(assignedOtherTopicEssays.length)
                 }
 
                 // Calculate final scores
@@ -162,6 +189,54 @@ export default function Feedback() {
                         &larr; Back to My Essays
                     </button>
                 </div>
+            </div>
+        )
+    }
+
+    // Gate: students must review at least 2 same-topic essays before seeing results
+    if (!isTeacher && sameTopicReviewsDone < 2) {
+        // Required reviews to unlock feedback
+        const TARGET = 2
+        // Show progress percentage
+        const progressPct = Math.min(100, Math.round((sameTopicReviewsDone / TARGET) * 100))
+
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+                <Header />
+                <main className="container mx-auto px-4 py-16 max-w-xl text-center">
+                    <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-white/10 p-10">
+                        <div className="text-7xl mb-6">🔒</div>
+                        <h1 className="text-3xl font-bold text-white mb-3">Results Locked</h1>
+                        <p className="text-gray-300 mb-2 text-lg">
+                            To see your essay feedback you need to{' '}
+                            <span className="text-yellow-400 font-semibold">review 2 of your classmates&apos; essays first</span>.
+                        </p>
+                        {essay?.topicName && (
+                            <p className="text-gray-400 mb-6 text-sm">
+                                You must review essays from the <span className="text-blue-300 font-medium">{essay.topicName}</span> topic.
+                            </p>
+                        )}
+                        {/* Progress bar */}
+                        <div className="w-full bg-slate-700/60 rounded-full h-3 mb-2">
+                            <div className="bg-yellow-400 h-3 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                        </div>
+                        <p className="text-sm text-gray-400 mb-8">
+                            {sameTopicReviewsDone} / {TARGET} same-topic reviews completed
+                        </p>
+                        <button
+                            onClick={() => router.push('/review')}
+                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all text-lg"
+                        >
+                            👥 Go Review Now
+                        </button>
+                        <button
+                            onClick={() => router.push('/my-essays')}
+                            className="mt-4 text-gray-400 hover:text-white text-sm transition-colors"
+                        >
+                            ← Back to My Essays
+                        </button>
+                    </div>
+                </main>
             </div>
         )
     }
@@ -335,7 +410,7 @@ export default function Feedback() {
                                         </div>
 
                                         {/* 4 Dimension Cards */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {dimensionConfig.map(({ key, label, icon, color }) => {
                                                 const dim = review.dimensions?.[key]
                                                 if (!dim) return null
@@ -409,7 +484,7 @@ export default function Feedback() {
                                         {isTeacherReview ? '🎓 Teacher Feedback' : `Peer Review ${idx + 1}`}
                                     </h3>
 
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                                         {criteria.map(({ key, label }) => (
                                             <div key={key} className="bg-slate-900/50 rounded-lg p-3 text-center">
                                                 <div className="text-sm text-gray-400 mb-1">{label}</div>

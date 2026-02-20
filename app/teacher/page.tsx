@@ -112,6 +112,12 @@ export default function TeacherDashboard() {
                             </select>
                         )}
                         <button
+                            onClick={() => router.push('/teacher/reviews')}
+                            className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                        >
+                            👥 Review Activity
+                        </button>
+                        <button
                             onClick={() => router.push('/teacher/messages')}
                             className="flex items-center gap-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                         >
@@ -181,8 +187,8 @@ export default function TeacherDashboard() {
                                         </td>
                                         <td className="py-4 px-6 text-center">
                                             <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= 3 ? 'bg-green-500/20 text-green-400' :
-                                                    student.reviewsGiven > 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        'bg-gray-700 text-gray-400'
+                                                student.reviewsGiven > 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                    'bg-gray-700 text-gray-400'
                                                 }`}>
                                                 {student.reviewsGiven} / 3
                                             </span>
@@ -190,8 +196,8 @@ export default function TeacherDashboard() {
                                         <td className="py-4 px-6 text-center">
                                             {student.avgBand != null ? (
                                                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${student.avgBand >= 7 ? 'bg-green-500/20 text-green-400' :
-                                                        student.avgBand >= 5.5 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            'bg-red-500/20 text-red-400'
+                                                    student.avgBand >= 5.5 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                        'bg-red-500/20 text-red-400'
                                                     }`}>
                                                     {student.avgBand}
                                                 </span>

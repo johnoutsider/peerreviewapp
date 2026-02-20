@@ -157,22 +157,24 @@ export default function ReviewEssay() {
                 {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
                 {success && <Alert type="success" message={success} />}
 
-                <div className="grid lg:grid-cols-2 gap-6">
+                <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
                     {/* Essay Content */}
-                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 h-fit sticky top-4">
-                        <div className="flex items-start justify-between mb-4 gap-2">
-                            <h2 className="text-2xl font-semibold text-white">{essay.title}</h2>
+                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-white/10 h-max">
+                        <div className="flex items-start justify-between mb-6 gap-4">
+                            <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">{essay.title}</h2>
                             {essay.topicName && (
-                                <span className="shrink-0 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+                                <span className="shrink-0 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap">
                                     🏷️ {essay.topicName}
                                 </span>
                             )}
                         </div>
 
-                        <div className="bg-slate-900/50 rounded-lg p-4 max-h-[600px] overflow-y-auto">
-                            <p className="text-gray-300 whitespace-pre-wrap">{essay.content}</p>
+                        <div className="bg-slate-900/50 rounded-lg p-5 md:p-6 mb-4">
+                            <p className="text-gray-200 text-lg leading-relaxed whitespace-pre-wrap font-serif">
+                                {essay.content}
+                            </p>
                         </div>
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
                                 📝 {essay.content?.trim().split(/\s+/).filter((w: string) => w).length ?? 0} words
                             </span>
@@ -180,7 +182,7 @@ export default function ReviewEssay() {
                     </div>
 
                     {/* Review Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6 flex flex-col h-full">
                         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10">
                             <h3 className="text-xl font-semibold text-white mb-4">IELTS Criteria Scores (0-9)</h3>
 
@@ -217,20 +219,22 @@ export default function ReviewEssay() {
                             />
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white font-semibold py-4 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {submitting ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                    Submitting...
-                                </>
-                            ) : (
-                                'Submit Review'
-                            )}
-                        </button>
+                        <div className="pt-4 mt-auto">
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold text-xl py-5 rounded-xl hover:from-green-600 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-green-500/20"
+                            >
+                                {submitting ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                        Submitting Review...
+                                    </>
+                                ) : (
+                                    'Submit Review'
+                                )}
+                            </button>
+                        </div>
                     </form>
                 </div>
             </main>

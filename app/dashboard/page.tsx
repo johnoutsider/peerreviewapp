@@ -80,7 +80,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
                     <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30">
                         <div className="text-5xl mb-3">📝</div>
                         <div className="text-3xl font-bold text-white mb-1">{stats.submittedEssays}</div>
@@ -104,7 +104,7 @@ export default function Dashboard() {
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10">
                     <h2 className="text-2xl font-semibold text-white mb-4">Quick Actions</h2>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <button
                             onClick={() => router.push('/submit-essay')}
                             className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all text-left group"

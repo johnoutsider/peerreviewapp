@@ -12,6 +12,8 @@ import {
     serverTimestamp,
     query,
     orderBy,
+    updateDoc,
+    Timestamp,
 } from 'firebase/firestore'
 import Header from '@/components/Header'
 import Alert from '@/components/Alert'
@@ -20,6 +22,15 @@ interface Topic {
     id: string
     name: string
     createdAt: any
+    essayDeadline?: Timestamp | null
+    reviewDeadline?: Timestamp | null
+}
+
+// Format a Firestore Timestamp (or null) to "YYYY-MM-DD" for <input type="date">
+function tsToDateStr(ts?: Timestamp | null): string {
+    if (!ts) return ''
+    const d = ts.toDate()
+    return d.toISOString().slice(0, 10)
 }
 
 export default function ManageTopics() {
@@ -31,17 +42,30 @@ export default function ManageTopics() {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
-    useEffect(() => {
-        if (!auth.currentUser) {
-            router.push('/')
-            return
-        }
+    // Per-topic editing state: { [topicId]: { essayDeadline: string, reviewDeadline: string, saving: bool } }
+    const [editing, setEditing] = useState<Record<string, { essayDeadline: string; reviewDeadline: string; saving: boolean }>>({})
 
-        // Real-time listener so new topics appear instantly
+    useEffect(() => {
+        if (!auth.currentUser) { router.push('/'); return }
+
         const q = query(collection(db, 'topics'), orderBy('createdAt', 'desc'))
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Topic[]
             setTopics(data)
+            // Seed local editing state for any new topics
+            setEditing(prev => {
+                const next = { ...prev }
+                data.forEach(t => {
+                    if (!next[t.id]) {
+                        next[t.id] = {
+                            essayDeadline: tsToDateStr(t.essayDeadline),
+                            reviewDeadline: tsToDateStr(t.reviewDeadline),
+                            saving: false,
+                        }
+                    }
+                })
+                return next
+            })
             setLoading(false)
         }, (err) => {
             console.error('Error loading topics:', err)
@@ -59,7 +83,6 @@ export default function ManageTopics() {
             setError('A topic with this name already exists.')
             return
         }
-
         setAdding(true)
         setError(null)
         try {
@@ -67,6 +90,8 @@ export default function ManageTopics() {
                 name,
                 createdBy: auth.currentUser!.uid,
                 createdAt: serverTimestamp(),
+                essayDeadline: null,
+                reviewDeadline: null,
             })
             setNewTopic('')
             setSuccess(`Topic "${name}" added successfully!`)
@@ -80,13 +105,39 @@ export default function ManageTopics() {
     }
 
     const handleDelete = async (topicId: string, topicName: string) => {
-        if (!confirm(`Delete topic "${topicName}"? Essays already submitted under this topic will keep their category, but new essays cannot be submitted under it.`)) return
+        if (!confirm(`Delete topic "${topicName}"? Essays already submitted under this topic will keep their category.`)) return
         try {
             await deleteDoc(doc(db, 'topics', topicId))
         } catch (err) {
             console.error('Error deleting topic:', err)
             setError('Failed to delete topic.')
         }
+    }
+
+    const handleSaveDeadlines = async (topicId: string) => {
+        const state = editing[topicId]
+        if (!state) return
+        setEditing(prev => ({ ...prev, [topicId]: { ...prev[topicId], saving: true } }))
+        try {
+            const toTimestamp = (dateStr: string) =>
+                dateStr ? Timestamp.fromDate(new Date(dateStr + 'T23:59:59')) : null
+
+            await updateDoc(doc(db, 'topics', topicId), {
+                essayDeadline: toTimestamp(state.essayDeadline),
+                reviewDeadline: toTimestamp(state.reviewDeadline),
+            })
+            setSuccess('Deadlines saved!')
+            setTimeout(() => setSuccess(null), 2500)
+        } catch (err) {
+            console.error('Error saving deadlines:', err)
+            setError('Failed to save deadlines.')
+        } finally {
+            setEditing(prev => ({ ...prev, [topicId]: { ...prev[topicId], saving: false } }))
+        }
+    }
+
+    const setField = (topicId: string, field: 'essayDeadline' | 'reviewDeadline', value: string) => {
+        setEditing(prev => ({ ...prev, [topicId]: { ...prev[topicId], [field]: value } }))
     }
 
     return (
@@ -104,7 +155,7 @@ export default function ManageTopics() {
                             ← Teacher Dashboard
                         </button>
                         <h1 className="text-4xl font-bold text-white">Manage Topics</h1>
-                        <p className="text-gray-400 mt-1">Create essay topics that students choose when submitting</p>
+                        <p className="text-gray-400 mt-1">Create topics and set essay + review deadlines</p>
                     </div>
                     <div className="text-5xl">🏷️</div>
                 </div>
@@ -134,7 +185,7 @@ export default function ManageTopics() {
                     </form>
                 </div>
 
-                {/* Topics List */}
+                {/* Topics List with inline deadline editors */}
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
                     <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-white">All Topics</h2>
@@ -152,29 +203,85 @@ export default function ManageTopics() {
                         </div>
                     ) : (
                         <ul className="divide-y divide-white/10">
-                            {topics.map(topic => (
-                                <li
-                                    key={topic.id}
-                                    className="flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors group"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-                                        <span className="text-white font-medium">{topic.name}</span>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(topic.id, topic.name)}
-                                        className="text-red-400 hover:text-red-300 text-sm opacity-0 group-hover:opacity-100 transition-all px-3 py-1 rounded hover:bg-red-500/10"
-                                    >
-                                        Delete
-                                    </button>
-                                </li>
-                            ))}
+                            {topics.map(topic => {
+                                const ed = editing[topic.id] || { essayDeadline: '', reviewDeadline: '', saving: false }
+                                const essayD = ed.essayDeadline ? new Date(ed.essayDeadline + 'T23:59:59') : null
+                                const reviewD = ed.reviewDeadline ? new Date(ed.reviewDeadline + 'T23:59:59') : null
+                                const now = Date.now()
+
+                                const deadlinePill = (d: Date | null, label: string, color: string) => {
+                                    if (!d) return <span className={`text-xs text-gray-500`}>No {label} deadline</span>
+                                    const days = Math.ceil((d.getTime() - now) / 86400000)
+                                    const pastColor = 'text-red-400'
+                                    const cl = days <= 0 ? pastColor : days <= 3 ? 'text-orange-400' : days <= 7 ? 'text-yellow-400' : `text-${color}-400`
+                                    return <span className={`text-xs font-medium ${cl}`}>{days <= 0 ? '🔒 Expired' : `⏳ ${days}d left`} · {d.toLocaleDateString()}</span>
+                                }
+
+                                return (
+                                    <li key={topic.id} className="px-6 py-5 hover:bg-white/5 transition-colors">
+                                        {/* Row 1: name + delete */}
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                                                <span className="text-white font-semibold text-lg">{topic.name}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDelete(topic.id, topic.name)}
+                                                className="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded hover:bg-red-500/10 transition-all"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+
+                                        {/* Row 2: deadline pickers */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div className="bg-slate-700/40 rounded-lg p-3 border border-white/10">
+                                                <label className="block text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
+                                                    📝 Essay Submission Deadline
+                                                </label>
+                                                {deadlinePill(essayD, 'essay', 'blue')}
+                                                <input
+                                                    type="date"
+                                                    value={ed.essayDeadline}
+                                                    onChange={e => setField(topic.id, 'essayDeadline', e.target.value)}
+                                                    className="mt-2 w-full bg-slate-600/50 text-white border border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                                />
+                                            </div>
+                                            <div className="bg-slate-700/40 rounded-lg p-3 border border-white/10">
+                                                <label className="block text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
+                                                    👥 Peer Review Deadline
+                                                </label>
+                                                {deadlinePill(reviewD, 'review', 'purple')}
+                                                <input
+                                                    type="date"
+                                                    value={ed.reviewDeadline}
+                                                    onChange={e => setField(topic.id, 'reviewDeadline', e.target.value)}
+                                                    className="mt-2 w-full bg-slate-600/50 text-white border border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Row 3: save button */}
+                                        <div className="mt-3 flex justify-end">
+                                            <button
+                                                onClick={() => handleSaveDeadlines(topic.id)}
+                                                disabled={ed.saving}
+                                                className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                                            >
+                                                {ed.saving
+                                                    ? <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300" />Saving…</>
+                                                    : '💾 Save Deadlines'}
+                                            </button>
+                                        </div>
+                                    </li>
+                                )
+                            })}
                         </ul>
                     )}
                 </div>
 
                 <p className="text-gray-500 text-sm mt-4 text-center">
-                    💡 Deleting a topic won't affect essays already submitted under it.
+                    💡 Deleting a topic won't affect essays already submitted under it. Deadlines are shown to students on all relevant pages.
                 </p>
             </main>
         </div>

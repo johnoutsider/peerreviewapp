@@ -3,15 +3,18 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp } from 'firebase/firestore'
 import { assignPeerReviewers } from '@/lib/peer-assignment'
 import Header from '@/components/Header'
 import Alert from '@/components/Alert'
+import DeadlineBanner from '@/components/DeadlineBanner'
 import { getUserProfile } from '@/lib/auth'
 
 interface Topic {
     id: string
     name: string
+    essayDeadline?: Timestamp | null
+    reviewDeadline?: Timestamp | null
 }
 
 export default function SubmitEssay() {
@@ -31,7 +34,12 @@ export default function SubmitEssay() {
             try {
                 const q = query(collection(db, 'topics'), orderBy('createdAt', 'desc'))
                 const snapshot = await getDocs(q)
-                const data = snapshot.docs.map(d => ({ id: d.id, name: (d.data() as any).name })) as Topic[]
+                const data = snapshot.docs.map(d => ({
+                    id: d.id,
+                    name: (d.data() as any).name,
+                    essayDeadline: (d.data() as any).essayDeadline ?? null,
+                    reviewDeadline: (d.data() as any).reviewDeadline ?? null,
+                })) as Topic[]
                 setTopics(data)
             } catch (err) {
                 console.error('Error fetching topics:', err)
@@ -172,17 +180,36 @@ export default function SubmitEssay() {
                                     ⚠️ No topics available yet. Ask your teacher to add topics first.
                                 </div>
                             ) : (
-                                <select
-                                    value={topicId}
-                                    onChange={handleTopicChange}
-                                    className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
-                                    required
-                                >
-                                    <option value="" disabled>Select a topic…</option>
-                                    {topics.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
-                                </select>
+                                <>
+                                    <select
+                                        value={topicId}
+                                        onChange={handleTopicChange}
+                                        className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors mb-3"
+                                        required
+                                    >
+                                        <option value="" disabled>Select a topic…</option>
+                                        {topics.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                    {/* Deadline banners shown after topic selection */}
+                                    {topicId && (() => {
+                                        const t = topics.find(x => x.id === topicId)
+                                        const essayD = t?.essayDeadline ? t.essayDeadline.toDate() : null
+                                        const reviewD = t?.reviewDeadline ? t.reviewDeadline.toDate() : null
+                                        return (
+                                            <div className="space-y-2">
+                                                <DeadlineBanner label="Essay Submission" deadline={essayD} emoji="📝" />
+                                                <DeadlineBanner label="Peer Review" deadline={reviewD} emoji="👥" />
+                                                {essayD && essayD.getTime() < Date.now() && (
+                                                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 text-red-400 text-sm font-medium">
+                                                        ⚠️ The essay submission deadline for this topic has passed. You may still submit, but contact your teacher.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })()}
+                                </>
                             )}
                         </div>
 
@@ -229,20 +256,22 @@ export default function SubmitEssay() {
                             </ul>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading || !topicId}
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                    Submitting &amp; Analyzing...
-                                </>
-                            ) : (
-                                'Submit Essay'
-                            )}
-                        </button>
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={loading || !topicId}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-xl py-5 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-blue-500/20"
+                            >
+                                {loading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                        Submitting &Analyzing...
+                                    </>
+                                ) : (
+                                    'Submit Essay'
+                                )}
+                            </button>
+                        </div>
                     </form>
                 </div>
             </main>

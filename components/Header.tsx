@@ -139,7 +139,7 @@ export default function Header() {
 
                 {/* Mobile dropdown menu */}
                 {menuOpen && (
-                    <nav className="md:hidden mt-3 border-t border-white/10 pt-3 pb-2 flex flex-col gap-1">
+                    <nav className="md:hidden absolute top-full left-0 w-full bg-slate-900/95 backdrop-blur-xl border-b border-white/10 p-4 flex flex-col gap-2 z-50 shadow-2xl">
                         {links.map(({ href, label, badge }) => (
                             <Link
                                 key={href}

@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore'
+import { collection, query, where, getDocs, deleteDoc, doc, Timestamp } from 'firebase/firestore'
 import Header from '@/components/Header'
 import EssayCard from '@/components/EssayCard'
+import DeadlineBanner from '@/components/DeadlineBanner'
 
 interface Essay {
     id: string
@@ -16,6 +17,11 @@ interface Essay {
     status: 'submitted' | 'under_review' | 'completed'
     overallScore?: number
     reviewCount: number
+    topicId?: string
+}
+
+interface TopicDeadlines {
+    [topicId: string]: { essayDeadline: Date | null; reviewDeadline: Date | null }
 }
 
 export default function MyEssays() {
@@ -24,6 +30,7 @@ export default function MyEssays() {
     const [loading, setLoading] = useState(true)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+    const [topicDeadlines, setTopicDeadlines] = useState<TopicDeadlines>({})
 
     const fetchEssays = async () => {
         if (!auth.currentUser) {
@@ -69,6 +76,18 @@ export default function MyEssays() {
             }))
 
             setEssays(essaysWithData)
+
+            // Fetch topic deadlines to show countdowns
+            const topicsSnap = await getDocs(collection(db, 'topics'))
+            const dl: TopicDeadlines = {}
+            topicsSnap.docs.forEach(d => {
+                const data = d.data() as any
+                dl[d.id] = {
+                    essayDeadline: data.essayDeadline ? (data.essayDeadline as Timestamp).toDate() : null,
+                    reviewDeadline: data.reviewDeadline ? (data.reviewDeadline as Timestamp).toDate() : null,
+                }
+            })
+            setTopicDeadlines(dl)
         } catch (error) {
             console.error('Error fetching essays:', error)
         } finally {
@@ -168,23 +187,29 @@ export default function MyEssays() {
                     </div>
                 ) : (
                     <div className="grid gap-6">
-                        {essays.map(essay => (
-                            <EssayCard
-                                key={essay.id}
-                                {...essay}
-                                overallScore={essay.overallScore}
-                                reviewCount={essay.reviewCount}
-                                onClick={() => router.push(`/feedback/${essay.id}`)}
-                                onEdit={essay.reviewCount === 0 ? (e) => {
-                                    e.stopPropagation()
-                                    router.push(`/edit-essay/${essay.id}`)
-                                } : undefined}
-                                onDelete={essay.reviewCount === 0 ? (e) => {
-                                    e.stopPropagation()
-                                    setConfirmDeleteId(essay.id)
-                                } : undefined}
-                            />
-                        ))}
+                        {essays.map(essay => {
+                            const dl = essay.topicId ? topicDeadlines[essay.topicId] : null
+                            return (
+                                <div key={essay.id} className="space-y-2">
+                                    {dl?.essayDeadline && <DeadlineBanner label="Essay Submission" deadline={dl.essayDeadline} emoji="📝" />}
+                                    {dl?.reviewDeadline && <DeadlineBanner label="Peer Review" deadline={dl.reviewDeadline} emoji="👥" />}
+                                    <EssayCard
+                                        {...essay}
+                                        overallScore={essay.overallScore}
+                                        reviewCount={essay.reviewCount}
+                                        onClick={() => router.push(`/feedback/${essay.id}`)}
+                                        onEdit={(e) => {
+                                            e.stopPropagation()
+                                            router.push(`/edit-essay/${essay.id}`)
+                                        }}
+                                        onDelete={essay.reviewCount === 0 ? (e) => {
+                                            e.stopPropagation()
+                                            setConfirmDeleteId(essay.id)
+                                        } : undefined}
+                                    />
+                                </div>
+                            )
+                        })}
                     </div>
                 )}
             </main>

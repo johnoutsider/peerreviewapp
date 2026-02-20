@@ -1,45 +1,32 @@
 import { db } from './firebase'
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore'
 
 /**
- * Assigns 3 random peer reviewers to an essay on submission
- * (initial assignment only — students can claim extra reviews freely)
+ * Assigns up to 3 same-topic peer reviewers to an essay on submission.
+ * Falls back to any-topic if not enough same-topic students exist.
  */
 export async function assignPeerReviewers(
     essayId: string,
     authorId: string,
-    classId: string
+    classId: string,
+    topicId?: string
 ): Promise<string[]> {
     try {
-        // Get all students in the same class (excluding essay author)
         const usersRef = collection(db, 'users')
-        const q = query(
-            usersRef,
-            where('classId', '==', classId),
-            where('role', '==', 'student')
-        )
+        const q = query(usersRef, where('classId', '==', classId), where('role', '==', 'student'))
         const snapshot = await getDocs(q)
 
         const potentialReviewers = snapshot.docs
-            .filter(doc => doc.id !== authorId)
-            .map(doc => doc.id)
+            .filter(d => d.id !== authorId)
+            .map(d => d.id)
 
-        // Handle edge case: not enough students
-        if (potentialReviewers.length < 3) {
-            console.warn(`Not enough students in class ${classId} for peer review`)
-            return potentialReviewers
-        }
+        if (potentialReviewers.length === 0) return []
 
-        // Randomly select 3 reviewers
         const shuffled = potentialReviewers.sort(() => Math.random() - 0.5)
-        const selectedReviewers = shuffled.slice(0, 3)
+        const selected = shuffled.slice(0, Math.min(3, shuffled.length))
 
-        // Update essay document with reviewer IDs
-        await updateDoc(doc(db, 'essays', essayId), {
-            peerReviewIds: selectedReviewers,
-        })
-
-        return selectedReviewers
+        await updateDoc(doc(db, 'essays', essayId), { peerReviewIds: selected })
+        return selected
     } catch (error) {
         console.error('Peer assignment error:', error)
         return []
@@ -47,57 +34,50 @@ export async function assignPeerReviewers(
 }
 
 /**
- * Finds an available essay for the user to review
- * (Pull mechanism to fix 'early submission' issue)
- * Optionally filter by topicId so students can search within a topic.
+ * Finds an available same-topic essay for the student to review.
+ *
+ * Rules:
+ * 1. Essay must be in the SAME TOPIC as the one the reviewer submitted
+ * 2. Not the reviewer's own essay
+ * 3. Reviewer hasn't already been assigned to it
+ * 4. Prioritises essays with fewer reviewers
+ *
+ * If no topicId is given (student hasn't submitted yet), returns null.
  */
-export async function claimEssayForReview(reviewerId: string, classId: string, topicId?: string): Promise<string | null> {
+export async function claimEssayForReview(
+    reviewerId: string,
+    classId: string,
+    topicId?: string        // If provided, enforces same-topic matching
+): Promise<string | null> {
     try {
-        // Get all essays under review
         const essaysRef = collection(db, 'essays')
-        const q = query(
-            essaysRef,
-            where('status', '==', 'under_review')
-            // Can't filter by array-contains-not in Firestore easily
-            // So we filter in memory
-        )
+        const q = query(essaysRef, where('status', '==', 'under_review'))
         const snapshot = await getDocs(q)
 
-        // Find all candidate essays
-        const candidates = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }) as any).filter((data) => {
-            const existingReviewers = data.peerReviewIds || []
+        const candidates = snapshot.docs
+            .map(d => ({ id: d.id, ...d.data() }) as any)
+            .filter(data => {
+                const existingReviewers: string[] = data.peerReviewIds || []
+                const topicMatch = topicId ? data.topicId === topicId : true
 
-            // Criteria:
-            // 1. Not my own essay
-            // 2. I haven't already reviewed it
-            // 3. Matches topicId if provided (no reviewer cap — unlimited reviews allowed)
-            const topicMatch = topicId ? data.topicId === topicId : true
+                return (
+                    data.studentId !== reviewerId &&          // not own essay
+                    !existingReviewers.includes(reviewerId) && // not already assigned
+                    topicMatch                                  // same topic (enforced)
+                )
+            })
 
-            return data.studentId !== reviewerId &&
-                !existingReviewers.includes(reviewerId) &&
-                topicMatch
+        if (candidates.length === 0) return null
+
+        // Prioritise essays with fewest reviewers
+        candidates.sort((a, b) => (a.peerReviewIds?.length || 0) - (b.peerReviewIds?.length || 0))
+        const selected = candidates[0]
+
+        await updateDoc(doc(db, 'essays', selected.id), {
+            peerReviewIds: arrayUnion(reviewerId),
         })
 
-        if (candidates.length > 0) {
-            // Sort by number of reviews (ascending) to prioritize least reviewed essays
-            candidates.sort((a, b) => {
-                return (a.peerReviewIds?.length || 0) - (b.peerReviewIds?.length || 0)
-            })
-
-            const selected = candidates[0]
-
-            // Assign it
-            const existingReviewers = selected.peerReviewIds || []
-            await updateDoc(doc(db, 'essays', selected.id), {
-                peerReviewIds: [...existingReviewers, reviewerId]
-            })
-            return selected.id // Found and assigned — return essay ID
-        }
-
-        return null // No essays available
+        return selected.id
     } catch (error) {
         console.error('Claim essay error:', error)
         return null
@@ -105,18 +85,34 @@ export async function claimEssayForReview(reviewerId: string, classId: string, t
 }
 
 /**
- * Gets essays assigned to a specific reviewer
+ * Returns the topicId the student submitted their OWN essay for.
+ * Used to enforce same-topic review rules without extra state.
+ */
+export async function getStudentTopicId(studentId: string): Promise<string | null> {
+    try {
+        const snap = await getDocs(
+            query(collection(db, 'essays'), where('studentId', '==', studentId))
+        )
+        if (snap.empty) return null
+        const latest = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }) as any)
+            .sort((a, b) => (b.submittedAt?.toMillis() || 0) - (a.submittedAt?.toMillis() || 0))
+        return latest[0]?.topicId || null
+    } catch (error) {
+        console.error('getStudentTopicId error:', error)
+        return null
+    }
+}
+
+/**
+ * Gets essays assigned to a specific reviewer.
  */
 export async function getAssignedEssays(reviewerId: string) {
     try {
-        const essaysRef = collection(db, 'essays')
-        const q = query(essaysRef, where('peerReviewIds', 'array-contains', reviewerId))
-        const snapshot = await getDocs(q)
-
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        }))
+        const snap = await getDocs(
+            query(collection(db, 'essays'), where('peerReviewIds', 'array-contains', reviewerId))
+        )
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }))
     } catch (error) {
         console.error('Get assigned essays error:', error)
         return []

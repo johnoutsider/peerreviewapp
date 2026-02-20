@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import Header from '@/components/Header'
 
 export default function StudentDetails() {
@@ -14,46 +14,67 @@ export default function StudentDetails() {
     const [student, setStudent] = useState<any>(null)
     const [essays, setEssays] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!auth.currentUser) { router.push('/'); return }
+    const fetchData = async () => {
+        if (!auth.currentUser) { router.push('/'); return }
 
-            try {
-                const { getUserProfile } = await import('@/lib/auth')
-                const myProfile = await getUserProfile(auth.currentUser.uid)
-                if (myProfile?.role !== 'teacher') { router.push('/dashboard'); return }
+        try {
+            const { getUserProfile } = await import('@/lib/auth')
+            const myProfile = await getUserProfile(auth.currentUser.uid)
+            if (myProfile?.role !== 'teacher') { router.push('/dashboard'); return }
 
-                const studentDoc = await getDoc(doc(db, 'users', studentId))
-                if (studentDoc.exists()) setStudent({ uid: studentDoc.id, ...studentDoc.data() })
+            const studentDoc = await getDoc(doc(db, 'users', studentId))
+            if (studentDoc.exists()) setStudent({ uid: studentDoc.id, ...studentDoc.data() })
 
-                const essaysSnap = await getDocs(query(collection(db, 'essays'), where('studentId', '==', studentId)))
-                const essayList = essaysSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]
-                essayList.sort((a, b) => (b.submittedAt?.toMillis() || 0) - (a.submittedAt?.toMillis() || 0))
+            const essaysSnap = await getDocs(query(collection(db, 'essays'), where('studentId', '==', studentId)))
+            const essayList = essaysSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]
+            essayList.sort((a, b) => (b.submittedAt?.toMillis() || 0) - (a.submittedAt?.toMillis() || 0))
 
-                // Attach review count + avg band to each essay
-                const reviewsSnap = await getDocs(collection(db, 'reviews'))
-                const enriched = essayList.map(essay => {
-                    const received = reviewsSnap.docs
-                        .filter(r => r.data().essayId === essay.id)
-                        .map(r => r.data())
-                    const bands = received.map(r => r.overallBand).filter(Boolean)
-                    const avgBand = bands.length > 0
-                        ? Math.round(bands.reduce((a: number, b: number) => a + b, 0) / bands.length * 10) / 10
-                        : null
-                    const wordCount = essay.content?.trim().split(/\s+/).filter(Boolean).length || 0
-                    return { ...essay, reviewCount: received.length, avgBand, wordCount }
-                })
+            // Attach review count + avg band
+            const reviewsSnap = await getDocs(collection(db, 'reviews'))
+            const enriched = essayList.map(essay => {
+                const received = reviewsSnap.docs
+                    .filter(r => r.data().essayId === essay.id)
+                    .map(r => r.data())
+                const bands = received.map(r => r.overallBand).filter(Boolean)
+                const avgBand = bands.length > 0
+                    ? Math.round(bands.reduce((a: number, b: number) => a + b, 0) / bands.length * 10) / 10
+                    : null
+                const wordCount = essay.content?.trim().split(/\s+/).filter(Boolean).length || 0
+                return { ...essay, reviewCount: received.length, avgBand, wordCount }
+            })
 
-                setEssays(enriched)
-            } catch (error) {
-                console.error('Error fetching student details:', error)
-            } finally {
-                setLoading(false)
-            }
+            setEssays(enriched)
+        } catch (error) {
+            console.error('Error fetching student details:', error)
+        } finally {
+            setLoading(false)
         }
-        fetchData()
-    }, [studentId, router])
+    }
+
+    useEffect(() => { fetchData() }, [studentId, router])
+
+    const handleDeleteEssay = async (essayId: string) => {
+        setDeletingId(essayId)
+        try {
+            // 1. Delete all reviews for this essay
+            const reviewsSnap = await getDocs(query(collection(db, 'reviews'), where('essayId', '==', essayId)))
+            const batch = writeBatch(db)
+            reviewsSnap.docs.forEach(r => batch.delete(r.ref))
+            await batch.commit()
+
+            // 2. Delete essay itself
+            await deleteDoc(doc(db, 'essays', essayId))
+            setEssays(prev => prev.filter(e => e.id !== essayId))
+        } catch (err) {
+            console.error('Delete error:', err)
+        } finally {
+            setDeletingId(null)
+            setConfirmDeleteId(null)
+        }
+    }
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -79,6 +100,40 @@ export default function StudentDetails() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             <Header />
+
+            {/* Delete Confirm Modal */}
+            {confirmDeleteId && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+                    <div className="bg-slate-800 border border-red-500/30 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+                        <div className="text-5xl mb-4">🗑️</div>
+                        <h2 className="text-2xl font-bold text-white mb-2">Delete This Essay?</h2>
+                        <p className="text-gray-400 mb-2">
+                            {essays.find(e => e.id === confirmDeleteId)?.reviewCount > 0
+                                ? '⚠️ This essay has existing reviews. Deleting it will remove the essay but NOT the associated reviews.'
+                                : 'This action cannot be undone.'}
+                        </p>
+                        <p className="text-red-400 text-sm mb-6">The essay will be permanently removed.</p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="flex-1 bg-slate-700 text-gray-300 font-semibold py-3 rounded-lg hover:bg-slate-600 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDeleteEssay(confirmDeleteId)}
+                                disabled={deletingId === confirmDeleteId}
+                                className="flex-1 bg-red-500/80 text-white font-semibold py-3 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {deletingId === confirmDeleteId
+                                    ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Deleting...</>
+                                    : 'Yes, Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <main className="container mx-auto px-4 py-8 max-w-5xl">
                 <button onClick={() => router.push('/teacher')} className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors text-sm">
                     ← Back to Dashboard
@@ -111,7 +166,7 @@ export default function StudentDetails() {
                                 { label: 'Essays', value: essays.length, color: 'blue' },
                                 { label: 'Reviews Received', value: totalReviews, color: 'green' },
                                 { label: 'Avg Band', value: overallAvg ?? '—', color: overallAvg != null && overallAvg >= 7 ? 'green' : 'yellow' },
-                            ].map(({ label, value, color }) => (
+                            ].map(({ label, value }) => (
                                 <div key={label} className="bg-slate-900/50 px-5 py-3 rounded-lg text-center">
                                     <span className="text-gray-400 text-xs block">{label}</span>
                                     <span className="text-white text-xl font-bold">{value}</span>
@@ -132,18 +187,25 @@ export default function StudentDetails() {
                         {essays.map(essay => (
                             <div
                                 key={essay.id}
-                                onClick={() => router.push(`/feedback/${essay.id}`)}
-                                className="bg-slate-800/50 hover:bg-slate-700/50 rounded-xl p-6 border border-white/10 cursor-pointer transition-all group"
+                                className="bg-slate-800/50 rounded-xl p-6 border border-white/10 transition-all group"
                             >
                                 <div className="flex justify-between items-start gap-4 flex-wrap">
-                                    <div className="flex-1 min-w-0">
+                                    <div
+                                        className="flex-1 min-w-0 cursor-pointer"
+                                        onClick={() => router.push(`/feedback/${essay.id}`)}
+                                    >
                                         <div className="flex items-center gap-3 flex-wrap mb-2">
-                                            <h3 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors">
+                                            <h3 className="text-xl font-semibold text-white hover:text-blue-400 transition-colors">
                                                 {essay.title}
                                             </h3>
                                             {essay.topicName && (
                                                 <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full text-xs font-medium">
                                                     🏷️ {essay.topicName}
+                                                </span>
+                                            )}
+                                            {essay.reviewCount > 0 && (
+                                                <span className="bg-yellow-500/10 text-yellow-300 border border-yellow-500/20 px-2 py-0.5 rounded-full text-xs">
+                                                    🔒 Reviewed
                                                 </span>
                                             )}
                                         </div>
@@ -159,8 +221,20 @@ export default function StudentDetails() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full text-sm font-medium border border-purple-500/20 shrink-0">
-                                        View &amp; Grade →
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <button
+                                            onClick={() => router.push(`/feedback/${essay.id}`)}
+                                            className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full text-sm font-medium border border-purple-500/20 hover:bg-purple-500/20 transition-colors"
+                                        >
+                                            View & Grade →
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmDeleteId(essay.id)}
+                                            className="bg-red-500/10 text-red-400 px-3 py-1 rounded-full text-sm font-medium border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                                            title="Delete this essay"
+                                        >
+                                            🗑️ Delete
+                                        </button>
                                     </div>
                                 </div>
                             </div>
