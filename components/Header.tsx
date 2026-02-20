@@ -50,7 +50,9 @@ export default function Header() {
 
     const isTeacher = userProfile?.role === 'teacher'
 
-    const studentLinks = [
+    interface NavLink { href: string; label: string; badge?: number }
+
+    const studentLinks: NavLink[] = [
         { href: '/dashboard', label: 'Dashboard' },
         { href: '/submit-essay', label: '✍️ Submit Essay' },
         { href: '/review', label: '🤝 Peer Review' },
@@ -60,13 +62,13 @@ export default function Header() {
         { href: '/profile', label: '👤 Profile' },
     ]
 
-    const teacherLinks = [
+    const teacherLinks: NavLink[] = [
         { href: '/teacher', label: '📊 Dashboard' },
         { href: '/teacher/topics', label: '🏷️ Topics' },
         { href: '/teacher/messages', label: '✉️ Messages' },
     ]
 
-    const links = isTeacher ? teacherLinks : studentLinks
+    const links: NavLink[] = isTeacher ? teacherLinks : studentLinks
 
     return (
         <header className="bg-slate-900/80 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
@@ -143,8 +145,8 @@ export default function Header() {
                                 key={href}
                                 href={href}
                                 className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${pathname === href
-                                        ? 'bg-blue-500/20 text-blue-400'
-                                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                                    ? 'bg-blue-500/20 text-blue-400'
+                                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
                                     }`}
                             >
                                 <span>{label}</span>
