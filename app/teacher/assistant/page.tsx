@@ -80,15 +80,21 @@ export default function TeacherAssistant() {
         try {
             const q = query(
                 collection(db, 'assistantChats'),
-                where('userId', '==', uid),
-                orderBy('updatedAt', 'desc')
+                where('userId', '==', uid)
             )
             const snap = await getDocs(q)
             const sessions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatSession))
+
+            // Sort manually to avoid requiring a composite index in Firestore
+            sessions.sort((a, b) => {
+                const timeA = (a.updatedAt as any)?.toMillis?.() || (a.updatedAt as any)?.getTime?.() || 0
+                const timeB = (b.updatedAt as any)?.toMillis?.() || (b.updatedAt as any)?.getTime?.() || 0
+                return timeB - timeA
+            })
+
             setChatSessions(sessions)
         } catch (error) {
             console.error('Error fetching chat sessions:', error)
-            // Note: If index is missing, this might fail initially
         }
     }
 
