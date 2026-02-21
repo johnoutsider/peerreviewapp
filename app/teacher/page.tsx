@@ -15,6 +15,7 @@ interface StudentData {
     role: string
     submittedCount: number
     reviewsGiven: number
+    requiredReviews: number
     avgBand: number | null
 }
 
@@ -62,6 +63,7 @@ export default function TeacherDashboard() {
                         role: s.role,
                         submittedCount: myEssays.length,
                         reviewsGiven: myReviews.length,
+                        requiredReviews: myEssays.length * 3 || 3, // Each essay requires 3 reviews
                         avgBand,
                     } as StudentData
                 }))
@@ -192,11 +194,11 @@ export default function TeacherDashboard() {
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-center">
-                                            <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= 3 ? 'bg-green-500/20 text-green-400' :
+                                            <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= student.requiredReviews ? 'bg-green-500/20 text-green-400' :
                                                 student.reviewsGiven > 0 ? 'bg-yellow-500/20 text-yellow-400' :
                                                     'bg-gray-700 text-gray-400'
                                                 }`}>
-                                                {student.reviewsGiven} / 3
+                                                {student.reviewsGiven} / {student.requiredReviews}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-center">
