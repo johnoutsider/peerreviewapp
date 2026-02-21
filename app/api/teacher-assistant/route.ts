@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
     try {
         const apiKey = process.env.OPENAI_API_KEY
@@ -54,7 +56,7 @@ ${JSON.stringify(classData, null, 2)}`
     } catch (error: any) {
         console.error('Teacher Assistant API Error:', error)
         return NextResponse.json(
-            { error: 'Failed to process assistant query.' },
+            { error: error.message || 'Failed to process assistant query.' },
             { status: 500 }
         )
     }

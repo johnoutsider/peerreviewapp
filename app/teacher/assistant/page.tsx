@@ -219,7 +219,7 @@ export default function TeacherAssistant() {
 
         } catch (error: any) {
             console.error('Agent error:', error)
-            setMessages(prev => [...prev, { role: 'assistant', content: "⚠️ Error: Unable to fetch response from the AI assistant." }])
+            setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ Error: ${error.message || 'Unable to fetch response from the AI assistant.'}` }])
         } finally {
             setSending(false)
         }
@@ -236,93 +236,98 @@ export default function TeacherAssistant() {
     if (!isTeacher) return null
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex flex-col">
+        <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
             <Header />
 
-            <main className="container mx-auto px-4 py-8 max-w-[1400px] flex-1 flex flex-col h-[calc(100vh-80px)]">
-                <div className="mb-6 flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className="md:hidden text-gray-400 hover:text-white"
-                            >
-                                ☰
-                            </button>
-                            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                                🤖 AI Assistant
-                            </h1>
-                        </div>
-                        <p className="text-gray-400 text-sm hidden md:block">Ask questions about student participation and review quality.</p>
+            <main className="flex-1 flex overflow-hidden bg-slate-800">
+                {/* Sidebar Area */}
+                <div className={`
+                    absolute md:static top-0 left-0 h-full w-72 shrink-0
+                    bg-slate-900 z-30 transition-transform duration-300
+                    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'}
+                    flex flex-col border-r border-slate-700 shadow-2xl md:shadow-none
+                `}>
+                    <div className="p-4 border-b border-slate-700">
+                        <button
+                            onClick={startNewChat}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-3 flex items-center justify-center gap-2 transition-colors font-semibold"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            New Chat
+                        </button>
                     </div>
-                    {loadingData ? (
-                        <div className="text-xs text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium">
-                            <div className="w-3 h-3 rounded-full border-2 border-yellow-500 border-t-transparent animate-spin"></div>
-                            Syncing data...
-                        </div>
-                    ) : (
-                        <div className="text-xs text-green-400 bg-green-400/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium">
-                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                            Data Synced
-                        </div>
-                    )}
-                </div>
 
-                <div className="flex-1 flex gap-6 overflow-hidden relative">
-                    {/* Sidebar Area */}
-                    <div className={`
-                        absolute md:static top-0 left-0 h-full w-72 
-                        bg-slate-900/95 md:bg-slate-900/50 backdrop-blur-md rounded-2xl z-20 transition-transform duration-300
-                        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                        flex flex-col border border-white/5 shadow-xl md:shadow-none
-                    `}>
-                        <div className="p-4 border-b border-white/5">
-                            <button
-                                onClick={startNewChat}
-                                className="w-full bg-white text-slate-900 hover:bg-gray-200 rounded-xl p-3 flex items-center justify-center gap-2 transition-colors font-semibold shadow-sm"
-                            >
-                                <span>+</span> New Chat
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-1 p-3">
-                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 px-2">Recent Chats</div>
-                            {chatSessions.length === 0 ? (
-                                <div className="text-sm text-gray-500 pl-2 italic">No previous chats</div>
-                            ) : (
-                                chatSessions.map(session => (
+                    <div className="flex-1 overflow-y-auto p-3">
+                        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Chat History</div>
+                        {chatSessions.length === 0 ? (
+                            <div className="text-sm text-slate-500 pl-2 italic">No past sessions found.</div>
+                        ) : (
+                            <div className="space-y-1">
+                                {chatSessions.map(session => (
                                     <button
                                         key={session.id}
                                         onClick={() => loadChat(session)}
-                                        className={`w-full text-left p-3 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${activeChatId === session.id
-                                            ? 'bg-slate-800 text-white font-medium'
-                                            : 'text-gray-400 hover:bg-slate-800/50 hover:text-gray-200'
+                                        className={`w-full text-left p-3 rounded-lg text-sm transition-all truncate flex items-center gap-3 ${activeChatId === session.id
+                                            ? 'bg-slate-700 text-white font-medium shadow-sm'
+                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                                             }`}
                                     >
-                                        <svg className="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg className="w-4 h-4 shrink-0 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                         </svg>
                                         {session.title}
                                     </button>
-                                ))
-                            )}
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Chat Layout Container */}
+                <div className="flex-1 flex flex-col min-w-0 bg-slate-800 relative">
+
+                    {/* Header bar */}
+                    <div className="h-16 border-b border-slate-700 flex items-center justify-between px-4 lg:px-6 shrink-0 bg-slate-900/40">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                className="text-slate-400 hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                            <h1 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
+                                AI Assistant
+                            </h1>
                         </div>
+                        {loadingData ? (
+                            <div className="text-xs text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium border border-amber-500/20">
+                                <div className="w-3 h-3 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
+                                Syncing database...
+                            </div>
+                        ) : (
+                            <div className="text-xs text-emerald-400 bg-emerald-400/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium border border-emerald-500/20">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                                Data Connected
+                            </div>
+                        )}
                     </div>
 
-                    {/* Chat Box */}
-                    <div className="flex-1 bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
-
-                        {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
+                    {/* Scrolling Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
+                        <div className="max-w-4xl mx-auto space-y-6 pb-4">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[90%] md:max-w-[75%] rounded-3xl p-5 ${msg.role === 'user'
-                                        ? 'bg-white text-slate-900 rounded-br-sm shadow-sm'
-                                        : 'bg-slate-800 text-gray-100 rounded-bl-sm border border-white/5 shadow-sm'
+                                    <div className={`max-w-[90%] md:max-w-[75%] rounded-2xl p-5 shadow-sm ${msg.role === 'user'
+                                        ? 'bg-blue-600 text-white rounded-br-sm'
+                                        : 'bg-slate-700 text-slate-100 rounded-bl-sm border border-slate-600'
                                         }`}>
                                         <div className="prose prose-invert max-w-none text-[15px] leading-relaxed">
                                             {msg.content.split('\n').map((line, i) => (
-                                                <p key={i} className="mb-2 last:mb-0">{line}</p>
+                                                <p key={i} className="mb-2 last:mb-0 min-h-[1em]">{line}</p>
                                             ))}
                                         </div>
                                     </div>
@@ -330,46 +335,47 @@ export default function TeacherAssistant() {
                             ))}
                             {sending && (
                                 <div className="flex justify-start">
-                                    <div className="bg-slate-700/60 text-gray-200 border border-white/5 rounded-2xl rounded-bl-none p-4 flex gap-2 items-center">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                    <div className="bg-slate-700 text-slate-200 border border-slate-600 rounded-2xl rounded-bl-sm p-5 flex gap-2 items-center shadow-sm">
+                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                                     </div>
                                 </div>
                             )}
                             <div ref={messagesEndRef} />
                         </div>
-
-                        {/* Input Area */}
-                        <div className="p-4 md:p-6 bg-slate-900/80 backdrop-blur-xl border-t border-white/5">
-                            <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative flex items-center">
-                                <input
-                                    type="text"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    placeholder={loadingData ? "Syncing data, please wait..." : "Message AI Assistant..."}
-                                    disabled={sending || loadingData}
-                                    className="w-full bg-slate-800 border border-white/10 rounded-full pl-6 pr-16 py-4 text-white focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 disabled:opacity-50 transition-all shadow-inner text-[15px]"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!input.trim() || sending || loadingData}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-slate-900 hover:bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:hover:bg-white"
-                                >
-                                    {sending ? (
-                                        <div className="w-4 h-4 rounded-full border-2 border-slate-900 border-t-transparent animate-spin"></div>
-                                    ) : (
-                                        <svg className="w-5 h-5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                        </svg>
-                                    )}
-                                </button>
-                            </form>
-                            <p className="text-center text-xs text-gray-500 mt-3 hidden md:block">
-                                AI Teaching Assistant can read essays and reviews but may occasionally output inaccurate answers.
-                            </p>
-                        </div>
                     </div>
+
+                    {/* Static Input Area Fixed at Bottom */}
+                    <div className="p-4 bg-slate-900 shrink-0 border-t border-slate-700">
+                        <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative flex items-center">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder={loadingData ? "Syncing data, please wait..." : "Ask your assistant..."}
+                                disabled={sending || loadingData}
+                                className="w-full bg-slate-800 border border-slate-600 hover:border-slate-500 rounded-2xl pl-6 pr-16 py-4 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-all text-[15px] shadow-inner font-medium"
+                            />
+                            <button
+                                type="submit"
+                                disabled={!input.trim() || sending || loadingData}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-500 w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-40 disabled:hover:bg-blue-600"
+                            >
+                                {sending ? (
+                                    <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                                ) : (
+                                    <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                )}
+                            </button>
+                        </form>
+                        <p className="text-center text-xs text-slate-500 mt-3 font-medium">
+                            AI may make mistakes. Verify important information securely from the dashboard.
+                        </p>
+                    </div>
+
                 </div>
 
             </main>
