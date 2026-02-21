@@ -85,22 +85,26 @@ export async function claimEssayForReview(
 }
 
 /**
- * Returns the topicId the student submitted their OWN essay for.
- * Used to enforce same-topic review rules without extra state.
+ * Returns an array of unique topic IDs the student has submitted essays for.
+ * Used to enforce that students can only review topics they have participated in.
  */
-export async function getStudentTopicId(studentId: string): Promise<string | null> {
+export async function getStudentSubmittedTopicIds(studentId: string): Promise<string[]> {
     try {
         const snap = await getDocs(
             query(collection(db, 'essays'), where('studentId', '==', studentId))
         )
-        if (snap.empty) return null
-        const latest = snap.docs
-            .map(d => ({ id: d.id, ...d.data() }) as any)
-            .sort((a, b) => (b.submittedAt?.toMillis() || 0) - (a.submittedAt?.toMillis() || 0))
-        return latest[0]?.topicId || null
+        if (snap.empty) return []
+
+        const topics = new Set<string>()
+        snap.docs.forEach(d => {
+            const data = d.data() as any
+            if (data.topicId) topics.add(data.topicId)
+        })
+
+        return Array.from(topics)
     } catch (error) {
-        console.error('getStudentTopicId error:', error)
-        return null
+        console.error('getStudentSubmittedTopicIds error:', error)
+        return []
     }
 }
 

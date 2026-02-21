@@ -33,7 +33,8 @@ export default function Review() {
     const [loading, setLoading] = useState(true)
     const [topics, setTopics] = useState<Topic[]>([])
     const [selectedTopicId, setSelectedTopicId] = useState('')
-    const [studentTopicId, setStudentTopicId] = useState<string | null>(null)  // student's OWN essay topic
+    const [studentSubmittedTopicIds, setStudentSubmittedTopicIds] = useState<string[]>([]) // Topics student has submitted essays for
+    const [isTeacher, setIsTeacher] = useState(false)
     const [requesting, setRequesting] = useState(false)
     const [actionError, setActionError] = useState<string | null>(null)
     const [actionSuccess, setActionSuccess] = useState<string | null>(null)
@@ -57,16 +58,22 @@ export default function Review() {
                         : null,
                 })) as Topic[])
 
-                // Get user profile for classId
+                // Get user profile for classId and role
                 const { getUserProfile } = await import('@/lib/auth')
                 const profile = await getUserProfile(auth.currentUser.uid)
                 if (!profile) return
 
-                // Determine student's own essay topic (used to enforce same-topic reviews)
-                const { getStudentTopicId } = await import('@/lib/peer-assignment')
-                const myTopicId = await getStudentTopicId(auth.currentUser.uid)
-                setStudentTopicId(myTopicId)
-                if (myTopicId) setSelectedTopicId(myTopicId) // pre-filter the search dropdown
+                setIsTeacher(profile.role === 'teacher')
+
+                // Determine all topics the student has submitted essays for
+                const { getStudentSubmittedTopicIds } = await import('@/lib/peer-assignment')
+                const myTopicIds = await getStudentSubmittedTopicIds(auth.currentUser.uid)
+                setStudentSubmittedTopicIds(myTopicIds)
+
+                // Pre-select the first available topic if present
+                if (myTopicIds.length > 0) {
+                    setSelectedTopicId(myTopicIds[0])
+                }
 
                 // Get essays assigned to this reviewer
                 let essaysQuery = query(
@@ -75,10 +82,11 @@ export default function Review() {
                 )
                 let essaysSnapshot = await getDocs(essaysQuery)
 
-                // If no essays assigned, try to claim one (same topic enforced)
-                if (essaysSnapshot.empty && myTopicId) {
+                // If no essays assigned and we have selected a valid topic, try to claim one (same topic enforced)
+                if (essaysSnapshot.empty && myTopicIds.length > 0) {
                     const { claimEssayForReview } = await import('@/lib/peer-assignment')
-                    const claimedId = await claimEssayForReview(auth.currentUser.uid, profile.classId, myTopicId)
+                    // Default fallback attempt will just search their first available topic
+                    const claimedId = await claimEssayForReview(auth.currentUser.uid, profile.classId, myTopicIds[0])
 
                     if (claimedId) {
                         router.push(`/review/${claimedId}`)
@@ -127,8 +135,18 @@ export default function Review() {
             }
 
             const { claimEssayForReview } = await import('@/lib/peer-assignment')
-            // If student has a topic, force same-topic matching. Otherwise use selected dropdown
-            const searchTopicId = studentTopicId || selectedTopicId || undefined
+
+            // Student can only search using the topic they specifically select from their allowed subjects
+            // Teachers can search anything (selectedTopicId)
+            const searchTopicId = isTeacher ? (selectedTopicId || undefined) : selectedTopicId
+
+            // If student tries to search without a topic but has topics, default to first or error out
+            if (!isTeacher && !searchTopicId) {
+                setActionError('You must select a specific topic you have submitted an essay for.')
+                setRequesting(false)
+                return
+            }
+
             const claimedId = await claimEssayForReview(
                 auth.currentUser.uid,
                 profile.classId,
@@ -160,6 +178,42 @@ export default function Review() {
         )
     }
 
+    // Gate: Students MUST submit an essay before they can review
+    if (!isTeacher && studentSubmittedTopicIds.length === 0) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+                <Header />
+                <main className="container mx-auto px-4 py-16 max-w-xl text-center">
+                    <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-white/10 p-10 shadow-2xl">
+                        <div className="text-7xl mb-6">🔒</div>
+                        <h1 className="text-3xl font-bold text-white mb-3">Reviews Locked</h1>
+                        <p className="text-gray-300 mb-6 text-lg">
+                            To participate in peer reviews, you need to{' '}
+                            <span className="text-purple-400 font-semibold">submit your own essay first</span>.
+                        </p>
+
+                        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-6 mb-8 text-left">
+                            <h3 className="text-purple-400 font-semibold mb-2">How it works:</h3>
+                            <ul className="text-gray-300 text-sm space-y-2">
+                                <li>1️⃣ Write and submit your essay for a specific topic</li>
+                                <li>2️⃣ Unlock the peer review system for that topic</li>
+                                <li>3️⃣ Review classmates' essays on the same topic</li>
+                                <li>4️⃣ Unlock your own essay scores and feedback</li>
+                            </ul>
+                        </div>
+
+                        <button
+                            onClick={() => router.push('/submit-essay')}
+                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/25 flex items-center justify-center gap-2 w-full"
+                        >
+                            ✍️ Open Essay Submission Form
+                        </button>
+                    </div>
+                </main>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             <Header />
@@ -185,22 +239,23 @@ export default function Review() {
                         <div className="flex flex-col sm:flex-row gap-4 items-end">
                             <div className="flex-1">
                                 <label className="block text-gray-300 text-sm mb-2">
-                                    {studentTopicId ? 'Topic (Locked to your essay topic)' : 'Filter by Topic (optional)'}
+                                    {isTeacher ? 'Filter by Topic (optional)' : 'Select Unlocked Topic to Review'}
                                 </label>
                                 <select
-                                    value={studentTopicId || selectedTopicId}
-                                    onChange={e => !studentTopicId && setSelectedTopicId(e.target.value)}
-                                    disabled={!!studentTopicId}
-                                    className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 transition-colors disabled:opacity-75 disabled:cursor-not-allowed"
+                                    value={selectedTopicId}
+                                    onChange={e => setSelectedTopicId(e.target.value)}
+                                    className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 transition-colors"
                                 >
-                                    <option value="">Any Topic</option>
-                                    {topics.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
+                                    {isTeacher && <option value="">Any Topic</option>}
+                                    {topics
+                                        .filter(t => isTeacher || studentSubmittedTopicIds.includes(t.id))
+                                        .map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
                                 </select>
-                                {studentTopicId && (
+                                {!isTeacher && (
                                     <p className="text-purple-400 text-xs mt-2">
-                                        💡 You must review an essay from the same topic you submitted before seeing your results.
+                                        💡 You can only review essays for topics you have submitted your own essay for.
                                     </p>
                                 )}
                             </div>
