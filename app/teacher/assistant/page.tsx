@@ -83,6 +83,7 @@ export default function TeacherAssistant() {
                     studentId: e.studentId,
                     status: e.status,
                     submittedAt: e.submittedAt?.toDate?.()?.toISOString() || e.submittedAt || null,
+                    essayText: e.content,
                     wordCount: e.content?.split(' ').length || 0,
                     topicName: e.topicName || 'Unknown'
                 })),
