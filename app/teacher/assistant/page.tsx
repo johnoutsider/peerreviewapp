@@ -189,7 +189,7 @@ export default function TeacherAssistant() {
             if (!res.ok) throw new Error(data.error || 'Failed to get response')
 
             const aiReply: ChatMessage = { role: 'assistant', content: data.reply }
-            const newMessages = [...messages, aiReply]
+            const newMessages: ChatMessage[] = [...messages, { role: 'user', content: userMsg }, aiReply]
             setMessages(newMessages)
 
             // Save to Firestore

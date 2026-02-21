@@ -28,6 +28,12 @@ service cloud.firestore {
       allow delete: if request.auth != null; // reviewer OR teacher cascade
     }
 
+    // Assistant Chats collection — teachers can read and write their own chat histories
+    match /assistantChats/{chatId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
     // Topics collection — teachers write, all authenticated users read
     match /topics/{topicId} {
       allow read: if request.auth != null;
