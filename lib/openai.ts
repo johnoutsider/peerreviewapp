@@ -1,4 +1,26 @@
 import OpenAI from 'openai'
+import fs from 'fs'
+import path from 'path'
+
+// Use require to avoid TS "no default export" error for pdf-parse
+const pdfParse = require('pdf-parse')
+
+let cachedRubricText: string | null = null
+
+async function getRubricText(): Promise<string> {
+  if (cachedRubricText) return cachedRubricText
+
+  try {
+    const rubricPath = path.join(process.cwd(), 'public', 'rubric.pdf')
+    const dataBuffer = fs.readFileSync(rubricPath)
+    const data = await pdfParse(dataBuffer)
+    cachedRubricText = data.text
+    return cachedRubricText || ''
+  } catch (error) {
+    console.error('Failed to read and parse rubric.pdf:', error)
+    return ''
+  }
+}
 
 export interface DimensionDescriptor {
   band: number
@@ -39,87 +61,18 @@ export async function assessEssay(essayTitle: string, essayContent: string): Pro
     }
 
     const openai = new OpenAI({ apiKey })
+    const rubricText = await getRubricText()
 
-    const prompt = `You are an IELTS Academic Writing examiner simulator trained to assess IELTS Academic Writing Task 2 using the official IELTS Academic Writing Band Descriptors as a strict rubric.
-
-You MUST evaluate writing across FOUR OFFICIAL DIMENSIONS:
-
-1. Task Response
-2. Coherence and Cohesion
-3. Lexical Resource
-4. Grammatical Range and Accuracy
+    const prompt = `You are an expert Writing examiner simulator trained to assess essays.
+You MUST strictly evaluate writing across the FOUR OFFICIAL DIMENSIONS defined in the provided official rubric text.
 
 ------------------------------------------------------------
-TASK RESPONSE RUBRIC
+OFFICIAL RUBRIC TEXT (from rubric.pdf)
 ------------------------------------------------------------
-
-Evaluate:
-- CRITERION A: Answer Completeness — answers all parts of the question
-- CRITERION B: Position Clarity — presents a clear position throughout
-- CRITERION C: Idea Development — develops ideas sufficiently and clearly
-- CRITERION D: Support and Examples — provides relevant examples and supports arguments
-- CRITERION E: Relevance and Focus — avoids irrelevant ideas
-
-Band Logic:
-Band 9: Fully developed response; clear position; fully supported ideas
-Band 8: Well developed response; minor weaknesses
-Band 7: Clear position; ideas developed but uneven
-Band 6: Position present but development limited
-Band 5: Position unclear or insufficiently developed
-Band 4 or below: Fails to respond to question properly
+${rubricText ? rubricText : 'Use standard IELTS Academic Writing Task 2 criteria if no rubric text is available.'}
 
 ------------------------------------------------------------
-COHERENCE AND COHESION RUBRIC
-------------------------------------------------------------
-
-Evaluate:
-- CRITERION A: Logical Organization — clear structure, logical progression
-- CRITERION B: Paragraph Structure — proper separation and grouping
-- CRITERION C: Cohesive Devices — appropriate linking words, no overuse
-- CRITERION D: Referencing — clear referencing, no unclear pronouns
-
-Band Logic:
-Band 9: Fully logical, seamless cohesion
-Band 7: Clear progression with minor issues
-Band 5: Some organization but weak cohesion
-Band 4 or below: Disorganized
-
-------------------------------------------------------------
-LEXICAL RESOURCE RUBRIC
-------------------------------------------------------------
-
-Evaluate:
-- CRITERION A: Vocabulary Range
-- CRITERION B: Vocabulary Precision
-- CRITERION C: Paraphrasing ability
-- CRITERION D: Collocation accuracy
-- CRITERION E: Spelling accuracy
-
-Band Logic:
-Band 9: Wide range, precise use
-Band 7: Good range, minor errors
-Band 5: Limited range, noticeable repetition
-Band 4 or below: Very limited vocabulary
-
-------------------------------------------------------------
-GRAMMATICAL RANGE AND ACCURACY RUBRIC
-------------------------------------------------------------
-
-Evaluate:
-- CRITERION A: Sentence variety
-- CRITERION B: Complex sentence use
-- CRITERION C: Grammar accuracy
-- CRITERION D: Error frequency
-- CRITERION E: Error severity
-
-Band Logic:
-Band 9: Wide range, rare errors
-Band 7: Good range, some errors
-Band 5: Limited range, frequent errors
-Band 4 or below: Very frequent errors
-
-------------------------------------------------------------
-NOW ASSESS THIS ESSAY:
+NOW ASSESS THIS ESSAY USING THE OFFICIAL RUBRIC ABOVE:
 ------------------------------------------------------------
 
 Essay Title: ${essayTitle}
@@ -143,7 +96,7 @@ Return a JSON object with this EXACT shape:
       "good": "<one sentence praising the main strength, max 20 words>",
       "focus": "<one sentence with the single most important improvement, max 20 words>",
       "descriptors": [
-        {"band": <number>, "text": "<official descriptor text that matches the awarded band>"},
+        {"band": <number>, "text": "<official descriptor text that exactly matches the awarded band>"},
         {"band": <number>, "text": "<descriptor from one band higher showing what is needed to improve>"}
       ]
     },
@@ -184,18 +137,18 @@ Return a JSON object with this EXACT shape:
 }`
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5-nano',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: 'You are an expert IELTS Academic Writing examiner. Use rubric-based scoring ONLY. Base scores strictly on descriptor criteria. Provide evidence from student text. Never skip any dimension. Never guess band scores. Always respond with valid JSON only, no markdown code blocks.'
+          content: 'You are an expert essay examiner. Use rubric-based scoring ONLY. Base scores strictly on descriptor criteria found in the attached rubric text. Provide evidence from student text. Never skip any dimension. Never guess band scores. Always respond with valid JSON only, no markdown code blocks.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.5,
+      temperature: 0.2, // lower temperature for more consistent constraint adherence
       response_format: { type: 'json_object' },
     })
 

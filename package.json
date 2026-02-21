@@ -13,6 +13,7 @@
     "firebase": "^10.7.1",
     "next": "^14",
     "openai": "^6.21.0",
+    "pdf-parse": "^2.4.5",
     "react": "^18",
     "react-dom": "^18",
     "react-firebase-hooks": "^5.1.1",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
