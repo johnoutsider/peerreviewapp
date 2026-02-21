@@ -82,6 +82,7 @@ export default function TeacherAssistant() {
                     essayId: e.id,
                     studentId: e.studentId,
                     status: e.status,
+                    submittedAt: e.submittedAt?.toDate?.()?.toISOString() || e.submittedAt || null,
                     wordCount: e.content?.split(' ').length || 0,
                     topicName: e.topicName || 'Unknown'
                 })),
@@ -94,6 +95,7 @@ export default function TeacherAssistant() {
                         essayId: r.essayId,
                         feedbackWordCount: wordCount,
                         feedbackLength: wordCount < 15 ? 'Very Short' : wordCount < 40 ? 'Short' : 'Good',
+                        completedAt: r.completedAt?.toDate?.()?.toISOString() || r.completedAt || null,
                         avgScoreGiven: avgScore,
                         isTeacherReview: r.reviewerRole === 'teacher'
                     }
@@ -123,7 +125,8 @@ export default function TeacherAssistant() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     query: userMsg,
-                    classData
+                    classData,
+                    currentDate: new Date().toISOString()
                 })
             })
 

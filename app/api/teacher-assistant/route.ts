@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { query, classData } = body
+        const { query, classData, currentDate } = body
 
         if (!query || !classData) {
             return NextResponse.json({ error: 'Missing query or class data' }, { status: 400 })
@@ -25,6 +25,8 @@ You will be provided with a JSON string containing the current snapshot of the c
 - Students (users)
 - Essays submitted
 - Peer Reviews given by students (including the written feedback and scores)
+
+TODAY'S DATE: ${currentDate || new Date().toISOString()}
 
 When the teacher asks a question, carefully analyze the JSON data provided below. 
 - Identify students who are falling behind (no essays, no reviews).
