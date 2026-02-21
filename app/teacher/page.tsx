@@ -129,6 +129,12 @@ export default function TeacherDashboard() {
                         >
                             🏷️ Topics
                         </button>
+                        <button
+                            onClick={() => router.push('/teacher/assistant')}
+                            className="flex items-center gap-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                        >
+                            🤖 AI Assistant
+                        </button>
                     </div>
                 </div>
 
