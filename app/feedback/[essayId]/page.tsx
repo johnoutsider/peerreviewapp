@@ -480,9 +480,16 @@ export default function Feedback() {
                                         : 'border-white/10 bg-slate-800/50'
                                         }`}
                                 >
-                                    <h3 className={`text-xl font-semibold mb-4 ${isTeacherReview ? 'text-purple-400' : 'text-white'}`}>
-                                        {isTeacherReview ? '🎓 Teacher Feedback' : `Peer Review ${idx + 1}`}
-                                    </h3>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className={`text-xl font-semibold ${isTeacherReview ? 'text-purple-400' : 'text-white'}`}>
+                                            {isTeacherReview ? '🎓 Teacher Feedback' : `Peer Review ${idx + 1}`}
+                                        </h3>
+                                        {isTeacher && !isTeacherReview && review.reviewerName && (
+                                            <span className="text-gray-400 text-sm italic bg-slate-900/50 px-3 py-1 rounded-full border border-white/5">
+                                                Reviewer: {review.reviewerName}
+                                            </span>
+                                        )}
+                                    </div>
 
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                                         {criteria.map(({ key, label }) => (
