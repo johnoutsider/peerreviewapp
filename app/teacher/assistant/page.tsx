@@ -92,6 +92,7 @@ export default function TeacherAssistant() {
                     return {
                         reviewId: r.id,
                         reviewerId: r.reviewerId,
+                        reviewerName: r.reviewerName || 'Unknown Student',
                         essayId: r.essayId,
                         feedbackWordCount: wordCount,
                         feedbackLength: wordCount < 15 ? 'Very Short' : wordCount < 40 ? 'Short' : 'Good',
