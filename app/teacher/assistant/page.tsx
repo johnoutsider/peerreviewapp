@@ -134,7 +134,7 @@ export default function TeacherAssistant() {
                     studentId: e.studentId,
                     status: e.status,
                     submittedAt: e.submittedAt?.toDate?.()?.toISOString() || e.submittedAt || null,
-                    essayText: e.content,
+                    essayText: e.content ? e.content.substring(0, 500) + (e.content.length > 500 ? '...' : '') : '',
                     wordCount: e.content?.split(' ').length || 0,
                     topicName: e.topicName || 'Unknown'
                 })),
@@ -239,9 +239,9 @@ export default function TeacherAssistant() {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex flex-col">
             <Header />
 
-            <main className="container mx-auto px-4 py-8 max-w-4xl flex-1 flex flex-col h-[calc(100vh-80px)]">
-                <div className="mb-6 flex justify-between items-end">
-                    <div>
+            <main className="container mx-auto px-4 py-8 max-w-[1400px] flex-1 flex flex-col h-[calc(100vh-80px)]">
+                <div className="mb-6 flex justify-between items-center">
+                    <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -253,16 +253,16 @@ export default function TeacherAssistant() {
                                 🤖 AI Assistant
                             </h1>
                         </div>
-                        <p className="text-gray-400 text-sm md:text-base hidden md:block mt-1">Ask questions about student participation and review quality.</p>
+                        <p className="text-gray-400 text-sm hidden md:block">Ask questions about student participation and review quality.</p>
                     </div>
                     {loadingData ? (
-                        <div className="text-xs md:text-sm text-yellow-400 animate-pulse flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full border-2 border-yellow-400 border-t-transparent animate-spin"></div>
+                        <div className="text-xs text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium">
+                            <div className="w-3 h-3 rounded-full border-2 border-yellow-500 border-t-transparent animate-spin"></div>
                             Syncing data...
                         </div>
                     ) : (
-                        <div className="text-xs md:text-sm text-green-400 flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                        <div className="text-xs text-green-400 bg-green-400/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium">
+                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
                             Data Synced
                         </div>
                     )}
@@ -271,20 +271,22 @@ export default function TeacherAssistant() {
                 <div className="flex-1 flex gap-6 overflow-hidden relative">
                     {/* Sidebar Area */}
                     <div className={`
-                        absolute md:static top-0 left-0 h-full w-64 md:w-1/4 
-                        bg-slate-900 md:bg-transparent z-10 transition-transform duration-300
+                        absolute md:static top-0 left-0 h-full w-72 
+                        bg-slate-900/95 md:bg-slate-900/50 backdrop-blur-md rounded-2xl z-20 transition-transform duration-300
                         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                        flex flex-col gap-4 border-r md:border-none border-white/10 pr-0 md:pr-4
+                        flex flex-col border border-white/5 shadow-xl md:shadow-none
                     `}>
-                        <button
-                            onClick={startNewChat}
-                            className="w-full bg-slate-800 hover:bg-slate-700 text-white border border-white/20 rounded-xl p-3 flex items-center justify-center gap-2 transition-colors font-medium shadow-lg"
-                        >
-                            <span>+</span> New Chat
-                        </button>
+                        <div className="p-4 border-b border-white/5">
+                            <button
+                                onClick={startNewChat}
+                                className="w-full bg-white text-slate-900 hover:bg-gray-200 rounded-xl p-3 flex items-center justify-center gap-2 transition-colors font-semibold shadow-sm"
+                            >
+                                <span>+</span> New Chat
+                            </button>
+                        </div>
 
-                        <div className="flex-1 overflow-y-auto space-y-2 pb-4">
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 pl-2">Recent Chats</div>
+                        <div className="flex-1 overflow-y-auto space-y-1 p-3">
+                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 px-2">Recent Chats</div>
                             {chatSessions.length === 0 ? (
                                 <div className="text-sm text-gray-500 pl-2 italic">No previous chats</div>
                             ) : (
@@ -292,12 +294,15 @@ export default function TeacherAssistant() {
                                     <button
                                         key={session.id}
                                         onClick={() => loadChat(session)}
-                                        className={`w-full text-left p-3 rounded-xl text-sm transition-colors truncate ${activeChatId === session.id
-                                            ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30'
-                                            : 'text-gray-400 hover:bg-slate-800/80 hover:text-gray-200 border border-transparent'
+                                        className={`w-full text-left p-3 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${activeChatId === session.id
+                                            ? 'bg-slate-800 text-white font-medium'
+                                            : 'text-gray-400 hover:bg-slate-800/50 hover:text-gray-200'
                                             }`}
                                     >
-                                        💬 {session.title}
+                                        <svg className="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                        </svg>
+                                        {session.title}
                                     </button>
                                 ))
                             )}
@@ -305,17 +310,21 @@ export default function TeacherAssistant() {
                     </div>
 
                     {/* Chat Box */}
-                    <div className="flex-1 bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+                    <div className="flex-1 bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
 
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] rounded-2xl p-4 ${msg.role === 'user'
-                                        ? 'bg-purple-600 text-white rounded-br-none'
-                                        : 'bg-slate-700/60 text-gray-200 border border-white/5 rounded-bl-none'
+                                    <div className={`max-w-[90%] md:max-w-[75%] rounded-3xl p-5 ${msg.role === 'user'
+                                        ? 'bg-white text-slate-900 rounded-br-sm shadow-sm'
+                                        : 'bg-slate-800 text-gray-100 rounded-bl-sm border border-white/5 shadow-sm'
                                         }`}>
-                                        <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base">{msg.content}</p>
+                                        <div className="prose prose-invert max-w-none text-[15px] leading-relaxed">
+                                            {msg.content.split('\n').map((line, i) => (
+                                                <p key={i} className="mb-2 last:mb-0">{line}</p>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -332,24 +341,33 @@ export default function TeacherAssistant() {
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-4 bg-slate-900/50 border-t border-white/10">
-                            <form onSubmit={handleSendMessage} className="flex gap-4">
+                        <div className="p-4 md:p-6 bg-slate-900/80 backdrop-blur-xl border-t border-white/5">
+                            <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative flex items-center">
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder={loadingData ? "Syncing data, please wait..." : "Ask the assistant e.g. 'Who hasn't submitted an essay?'"}
+                                    placeholder={loadingData ? "Syncing data, please wait..." : "Message AI Assistant..."}
                                     disabled={sending || loadingData}
-                                    className="flex-1 bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 disabled:opacity-50"
+                                    className="w-full bg-slate-800 border border-white/10 rounded-full pl-6 pr-16 py-4 text-white focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 disabled:opacity-50 transition-all shadow-inner text-[15px]"
                                 />
                                 <button
                                     type="submit"
                                     disabled={!input.trim() || sending || loadingData}
-                                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-slate-900 hover:bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-30 disabled:hover:bg-white"
                                 >
-                                    {sending ? '...' : 'Send'}
+                                    {sending ? (
+                                        <div className="w-4 h-4 rounded-full border-2 border-slate-900 border-t-transparent animate-spin"></div>
+                                    ) : (
+                                        <svg className="w-5 h-5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    )}
                                 </button>
                             </form>
+                            <p className="text-center text-xs text-gray-500 mt-3 hidden md:block">
+                                AI Teaching Assistant can read essays and reviews but may occasionally output inaccurate answers.
+                            </p>
                         </div>
                     </div>
                 </div>
