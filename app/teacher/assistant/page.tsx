@@ -87,13 +87,14 @@ export default function TeacherAssistant() {
                     topicName: e.topicName || 'Unknown'
                 })),
                 reviews: reviews.map((r: any) => {
-                    const wordCount = r.feedback?.split(' ').length || 0
+                    const wordCount = r.feedback?.trim() ? r.feedback.trim().split(/\s+/).length : 0
                     const avgScore = r.scores ? (Object.values(r.scores) as number[]).reduce((a: number, b: number) => a + b, 0) / 4 : 0
                     return {
                         reviewId: r.id,
                         reviewerId: r.reviewerId,
                         reviewerName: r.reviewerName || 'Unknown Student',
                         essayId: r.essayId,
+                        feedbackText: r.feedback,
                         feedbackWordCount: wordCount,
                         feedbackLength: wordCount < 15 ? 'Very Short' : wordCount < 40 ? 'Short' : 'Good',
                         completedAt: r.completedAt?.toDate?.()?.toISOString() || r.completedAt || null,
