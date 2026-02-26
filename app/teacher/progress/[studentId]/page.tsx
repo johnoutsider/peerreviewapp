@@ -210,27 +210,27 @@ export default function StudentProgressForTeacher() {
 
                         {/* Top Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-blue-900/40 backdrop-blur-sm border border-blue-500/30 rounded-xl p-5">
-                                <div className="text-blue-300 text-sm mb-1">Average Band Score</div>
+                            <div className="bg-blue-50 border-blue-200 dark:bg-blue-900/40 backdrop-blur-sm border dark:border-blue-500/30 rounded-xl p-5">
+                                <div className="text-blue-700 dark:text-blue-300 text-sm mb-1 font-medium">Average Band Score</div>
                                 <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.averageBand}</div>
                             </div>
-                            <div className="bg-purple-900/40 backdrop-blur-sm border border-purple-500/30 rounded-xl p-5">
-                                <div className="text-purple-300 text-sm mb-1">Assessed Essays</div>
+                            <div className="bg-purple-50 border-purple-200 dark:bg-purple-900/40 backdrop-blur-sm border dark:border-purple-500/30 rounded-xl p-5">
+                                <div className="text-purple-700 dark:text-purple-300 text-sm mb-1 font-medium">Assessed Essays</div>
                                 <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalReviewed}</div>
                             </div>
-                            <div className="bg-green-900/40 backdrop-blur-sm border border-green-500/30 rounded-xl p-5">
-                                <div className="text-green-300 text-sm mb-1">Strongest Skill</div>
+                            <div className="bg-green-50 border-green-200 dark:bg-green-900/40 backdrop-blur-sm border dark:border-green-500/30 rounded-xl p-5">
+                                <div className="text-green-700 dark:text-green-300 text-sm mb-1 font-medium">Strongest Skill</div>
                                 <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.strongestSkill.name}>
                                     {stats.strongestSkill.name}
                                 </div>
-                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
+                                <div className="text-sm text-green-600 dark:text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
                             </div>
-                            <div className="bg-orange-900/40 backdrop-blur-sm border border-orange-500/30 rounded-xl p-5">
-                                <div className="text-orange-300 text-sm mb-1">Needs Focus</div>
+                            <div className="bg-orange-50 border-orange-200 dark:bg-orange-900/40 backdrop-blur-sm border dark:border-orange-500/30 rounded-xl p-5">
+                                <div className="text-orange-700 dark:text-orange-300 text-sm mb-1 font-medium">Needs Focus</div>
                                 <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.weakestSkill.name}>
                                     {stats.weakestSkill.name}
                                 </div>
-                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
+                                <div className="text-sm text-orange-600 dark:text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
                             </div>
                         </div>
 

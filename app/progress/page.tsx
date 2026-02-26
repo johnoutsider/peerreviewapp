@@ -205,27 +205,27 @@ export default function Progress() {
 
                         {/* Top Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-blue-900/40 backdrop-blur-sm border border-blue-500/30 rounded-xl p-5">
-                                <div className="text-blue-300 text-sm mb-1">Average Band Score</div>
+                            <div className="bg-blue-50 border-blue-200 dark:bg-blue-900/40 backdrop-blur-sm border dark:border-blue-500/30 rounded-xl p-5">
+                                <div className="text-blue-700 dark:text-blue-300 text-sm mb-1 font-medium">Average Band Score</div>
                                 <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.averageBand}</div>
                             </div>
-                            <div className="bg-purple-900/40 backdrop-blur-sm border border-purple-500/30 rounded-xl p-5">
-                                <div className="text-purple-300 text-sm mb-1">Reviewed Essays</div>
+                            <div className="bg-purple-50 border-purple-200 dark:bg-purple-900/40 backdrop-blur-sm border dark:border-purple-500/30 rounded-xl p-5">
+                                <div className="text-purple-700 dark:text-purple-300 text-sm mb-1 font-medium">Reviewed Essays</div>
                                 <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalReviewed}</div>
                             </div>
-                            <div className="bg-green-900/40 backdrop-blur-sm border border-green-500/30 rounded-xl p-5">
-                                <div className="text-green-300 text-sm mb-1">Strongest Skill</div>
+                            <div className="bg-green-50 border-green-200 dark:bg-green-900/40 backdrop-blur-sm border dark:border-green-500/30 rounded-xl p-5">
+                                <div className="text-green-700 dark:text-green-300 text-sm mb-1 font-medium">Strongest Skill</div>
                                 <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.strongestSkill.name}>
                                     {stats.strongestSkill.name}
                                 </div>
-                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
+                                <div className="text-sm text-green-600 dark:text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
                             </div>
-                            <div className="bg-orange-900/40 backdrop-blur-sm border border-orange-500/30 rounded-xl p-5">
-                                <div className="text-orange-300 text-sm mb-1">Needs Focus</div>
+                            <div className="bg-orange-50 border-orange-200 dark:bg-orange-900/40 backdrop-blur-sm border dark:border-orange-500/30 rounded-xl p-5">
+                                <div className="text-orange-700 dark:text-orange-300 text-sm mb-1 font-medium">Needs Focus</div>
                                 <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.weakestSkill.name}>
                                     {stats.weakestSkill.name}
                                 </div>
-                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
+                                <div className="text-sm text-orange-600 dark:text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
                             </div>
                         </div>
 
@@ -317,7 +317,7 @@ export default function Progress() {
                                         <div className="flex-1">
                                             <h4 className="text-slate-900 dark:text-white font-medium mb-1 line-clamp-1">{essay.title}</h4>
                                             <div className="flex items-center gap-2 text-xs">
-                                                <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">
+                                                <span className="bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-500/30">
                                                     {essay.topicName}
                                                 </span>
                                                 <span className="text-gray-500">
@@ -347,7 +347,7 @@ export default function Progress() {
                                             </div>
                                             <div className="text-right pl-4 sm:border-l border-slate-200 dark:border-white/10 shadow-sm text-center sm:text-right w-[60px]">
                                                 <div className="text-xs text-gray-500 uppercase font-semibold mb-0.5">Band</div>
-                                                <div className="text-xl font-bold text-white bg-blue-500/20 px-2 rounded">{essay.overallBand}</div>
+                                                <div className="text-xl font-bold text-blue-700 dark:text-white bg-blue-100 dark:bg-blue-500/20 px-2 rounded">{essay.overallBand}</div>
                                             </div>
                                         </div>
                                     </div>

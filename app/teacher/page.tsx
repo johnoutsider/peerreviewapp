@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import Header from '@/components/Header'
+import { calculateFinalScores } from '@/lib/score-calculator'
 
 interface StudentData {
     uid: string
@@ -46,11 +47,25 @@ export default function TeacherDashboard() {
                     // Average band from reviews received on their essays
                     let avgBand: number | null = null
                     const essayIds = myEssays.map(e => e.id)
-                    const receivedReviews = reviewsSnap.docs.filter(r => essayIds.includes(r.data().essayId))
-                    if (receivedReviews.length > 0) {
-                        const bands = receivedReviews.map(r => r.data().overallBand).filter(Boolean)
-                        if (bands.length > 0) {
-                            avgBand = Math.round((bands.reduce((a: number, b: number) => a + b, 0) / bands.length) * 10) / 10
+                    const receivedReviewsRaw = reviewsSnap.docs.filter(r => essayIds.includes(r.data().essayId))
+
+                    if (receivedReviewsRaw.length > 0) {
+                        const receivedReviews = receivedReviewsRaw.map(r => ({ id: r.id, ...r.data() } as any))
+                        let totalBand = 0
+                        let essaysWithReviews = 0
+
+                        // Calculate each essay's final overall band based on its peer reviews
+                        for (const essayId of essayIds) {
+                            const reviewsForEssay = receivedReviews.filter(r => r.essayId === essayId)
+                            if (reviewsForEssay.length > 0) {
+                                const { overallBand } = calculateFinalScores(reviewsForEssay)
+                                totalBand += overallBand
+                                essaysWithReviews++
+                            }
+                        }
+
+                        if (essaysWithReviews > 0) {
+                            avgBand = +(totalBand / essaysWithReviews).toFixed(1)
                         }
                     }
 
