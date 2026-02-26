@@ -216,16 +216,16 @@ export default function TeacherMessages() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
             <main className="container mx-auto px-4 py-8 max-w-4xl">
                 <div className="mb-8 flex items-center justify-between">
                     <div>
-                        <button onClick={() => router.push('/teacher')} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 mb-2 transition-colors">
+                        <button onClick={() => router.push('/teacher')} className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-sm flex items-center gap-1 mb-2 transition-colors">
                             ← Teacher Dashboard
                         </button>
-                        <h1 className="text-4xl font-bold text-white">Messages</h1>
-                        <p className="text-gray-400 mt-1">Send announcements &amp; view student replies</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white">Messages</h1>
+                        <p className="text-slate-500 dark:text-gray-400 mt-1">Send announcements &amp; view student replies</p>
                     </div>
                     <div className="text-5xl">✉️</div>
                 </div>
@@ -234,69 +234,69 @@ export default function TeacherMessages() {
                 {success && <div className="mb-4"><Alert type="success" message={success} /></div>}
 
                 {/* ── Compose ── */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 mb-8">
-                    <h2 className="text-xl font-semibold text-white mb-5">📢 New Message</h2>
+                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-5">📢 New Message</h2>
                     <form onSubmit={handleSend} className="space-y-4">
                         <div>
-                            <label className="block text-gray-300 text-sm mb-1">Title</label>
+                            <label className="block text-slate-600 dark:text-gray-300 text-sm mb-1">Title</label>
                             <input
                                 type="text"
                                 value={title}
                                 onChange={e => setTitle(e.target.value)}
                                 placeholder="e.g. Week 3 Essay Deadline"
-                                className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                                 maxLength={120}
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-gray-300 text-sm mb-1">Message</label>
+                            <label className="block text-slate-600 dark:text-gray-300 text-sm mb-1">Message</label>
                             <textarea
                                 value={body}
                                 onChange={e => setBody(e.target.value)}
                                 placeholder="Write your message here…"
                                 rows={4}
-                                className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                                 required
                             />
                         </div>
 
                         {/* Recipients */}
                         <div>
-                            <label className="block text-gray-300 text-sm mb-2">Send to</label>
+                            <label className="block text-slate-600 dark:text-gray-300 text-sm mb-2">Send to</label>
                             <div className="flex gap-3 mb-3">
                                 <button
                                     type="button"
                                     onClick={() => setTargetMode('all')}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${targetMode === 'all' ? 'bg-blue-500/30 border-blue-500 text-blue-300' : 'bg-slate-700/50 border-white/10 text-gray-400 hover:text-white'}`}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${targetMode === 'all' ? 'bg-blue-500/30 border-blue-500 text-blue-300' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 border-slate-200 dark:border-white/10 shadow-sm text-slate-500 dark:text-gray-400 hover:text-white'}`}
                                 >
                                     📣 All Students ({students.length})
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setTargetMode('selected')}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${targetMode === 'selected' ? 'bg-purple-500/30 border-purple-500 text-purple-300' : 'bg-slate-700/50 border-white/10 text-gray-400 hover:text-white'}`}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${targetMode === 'selected' ? 'bg-purple-500/30 border-purple-500 text-purple-300' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 border-slate-200 dark:border-white/10 shadow-sm text-slate-500 dark:text-gray-400 hover:text-white'}`}
                                 >
                                     👤 Select Students {selectedUids.size > 0 && `(${selectedUids.size} selected)`}
                                 </button>
                             </div>
 
                             {targetMode === 'selected' && (
-                                <div className="bg-slate-900/50 rounded-xl border border-white/10 overflow-hidden">
-                                    <div className="p-3 border-b border-white/10">
+                                <div className="bg-slate-100 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+                                    <div className="p-3 border-b border-slate-200 dark:border-white/10 shadow-sm">
                                         <input
                                             type="text"
                                             value={studentSearch}
                                             onChange={e => setStudentSearch(e.target.value)}
                                             placeholder="Search by name, group or email…"
-                                            className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                                         />
                                     </div>
                                     <div className="max-h-64 overflow-y-auto divide-y divide-white/5">
                                         {filteredStudents.length === 0 ? (
                                             <p className="text-gray-500 text-sm p-4 text-center">No students found</p>
                                         ) : filteredStudents.map(s => (
-                                            <label key={s.uid} className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors ${selectedUids.has(s.uid) ? 'bg-purple-500/10' : ''}`}>
+                                            <label key={s.uid} className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white dark:bg-slate-800/5 transition-colors ${selectedUids.has(s.uid) ? 'bg-purple-500/10' : ''}`}>
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedUids.has(s.uid)}
@@ -304,7 +304,7 @@ export default function TeacherMessages() {
                                                     className="w-4 h-4 accent-purple-500"
                                                 />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-white text-sm font-medium truncate">{s.displayName}</p>
+                                                    <p className="text-slate-900 dark:text-white text-sm font-medium truncate">{s.displayName}</p>
                                                     <p className="text-gray-500 text-xs truncate">{s.groupName || s.email}</p>
                                                 </div>
                                                 {s.groupName && (
@@ -316,9 +316,9 @@ export default function TeacherMessages() {
                                         ))}
                                     </div>
                                     {selectedUids.size > 0 && (
-                                        <div className="p-3 border-t border-white/10 flex justify-between items-center">
+                                        <div className="p-3 border-t border-slate-200 dark:border-white/10 shadow-sm flex justify-between items-center">
                                             <span className="text-purple-300 text-sm">{selectedUids.size} selected</span>
-                                            <button type="button" onClick={() => setSelectedUids(new Set())} className="text-gray-400 hover:text-white text-xs transition-colors">
+                                            <button type="button" onClick={() => setSelectedUids(new Set())} className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-xs transition-colors">
                                                 Clear all
                                             </button>
                                         </div>
@@ -338,10 +338,10 @@ export default function TeacherMessages() {
                 </div>
 
                 {/* ── Sent Messages ── */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                        <h2 className="text-xl font-semibold text-white">Sent Messages</h2>
-                        <span className="text-gray-400 text-sm">{messages.length} sent</span>
+                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Sent Messages</h2>
+                        <span className="text-slate-500 dark:text-gray-400 text-sm">{messages.length} sent</span>
                     </div>
 
                     {loading ? (
@@ -362,12 +362,12 @@ export default function TeacherMessages() {
                                     <li key={msg.id}>
                                         <button
                                             onClick={() => handleExpand(msg.id)}
-                                            className="w-full text-left px-6 py-5 hover:bg-white/5 transition-colors"
+                                            className="w-full text-left px-6 py-5 hover:bg-white dark:bg-slate-800/5 transition-colors"
                                         >
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-white font-semibold">{msg.title}</p>
-                                                    <p className="text-gray-400 text-sm mt-0.5 line-clamp-1">{msg.body}</p>
+                                                    <p className="text-slate-900 dark:text-white font-semibold">{msg.title}</p>
+                                                    <p className="text-slate-500 dark:text-gray-400 text-sm mt-0.5 line-clamp-1">{msg.body}</p>
                                                     <div className="flex flex-wrap gap-3 mt-2 text-xs">
                                                         <span className="text-gray-500">{msg.createdAt?.toDate?.().toLocaleString() || 'Just sent…'}</span>
                                                         <span className="text-blue-400/80">{recipientLabel(msg)}</span>
@@ -382,20 +382,20 @@ export default function TeacherMessages() {
                                                             💬 {msgReplies.length}
                                                         </span>
                                                     ) : null}
-                                                    <span className={`text-gray-400 text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                                                    <span className={`text-slate-500 dark:text-gray-400 text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                                                 </div>
                                             </div>
                                         </button>
 
                                         {isOpen && (
-                                            <div className="px-6 pb-5 border-t border-white/5 bg-slate-900/20">
+                                            <div className="px-6 pb-5 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/20">
                                                 {/* Full body */}
-                                                <div className="mt-4 mb-5 bg-slate-800/60 rounded-lg p-4">
-                                                    <p className="text-gray-200 whitespace-pre-wrap text-sm leading-relaxed">{msg.body}</p>
+                                                <div className="mt-4 mb-5 bg-white dark:bg-slate-800 rounded-lg p-4">
+                                                    <p className="text-slate-700 dark:text-gray-200 whitespace-pre-wrap text-sm leading-relaxed">{msg.body}</p>
                                                 </div>
 
                                                 {/* Replies */}
-                                                <p className="text-sm font-semibold text-gray-300 mb-3">
+                                                <p className="text-sm font-semibold text-slate-600 dark:text-gray-300 mb-3">
                                                     💬 Student Replies {msgReplies.length > 0 && `(${msgReplies.length})`}
                                                 </p>
                                                 {loadingReplies === msg.id ? (
@@ -410,7 +410,7 @@ export default function TeacherMessages() {
                                                                 <div key={r.id} className={`flex gap-3 ${isTeacher ? 'flex-row-reverse' : ''}`}>
                                                                     <div className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${isTeacher
                                                                             ? 'bg-green-600/30 text-green-100 rounded-tr-none border border-green-500/20'
-                                                                            : 'bg-slate-700/60 text-gray-200 rounded-tl-none'
+                                                                            : 'bg-slate-100 dark:bg-slate-900/50/60 text-slate-700 dark:text-gray-200 rounded-tl-none'
                                                                         }`}>
                                                                         <p className="text-xs opacity-60 mb-1 font-medium">{r.studentName}</p>
                                                                         <p className="whitespace-pre-wrap">{r.body}</p>
@@ -423,7 +423,7 @@ export default function TeacherMessages() {
                                                 )}
 
                                                 {/* Teacher reply box */}
-                                                <div className="flex items-end gap-2 mt-4 pt-4 border-t border-white/10">
+                                                <div className="flex items-end gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-white/10 shadow-sm">
                                                     <textarea
                                                         value={teacherReplyText[msg.id] || ''}
                                                         onChange={e => setTeacherReplyText(prev => ({ ...prev, [msg.id]: e.target.value }))}
@@ -432,7 +432,7 @@ export default function TeacherMessages() {
                                                         }}
                                                         placeholder="Reply to students… (Enter to send)"
                                                         rows={2}
-                                                        className="flex-1 bg-slate-700/50 text-white border border-white/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors resize-none"
+                                                        className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors resize-none"
                                                     />
                                                     <button
                                                         onClick={() => sendTeacherReply(msg.id)}

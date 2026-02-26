@@ -104,19 +104,19 @@ export default function StudentMessages() {
     const unread = messages.filter(m => !m.readBy?.includes(currentUser?.uid || '')).length
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
             <main className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="mb-8 flex items-center justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold text-white">Messages</h1>
-                        <p className="text-gray-400 mt-1">Announcements from your teacher</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white">Messages</h1>
+                        <p className="text-slate-500 dark:text-gray-400 mt-1">Announcements from your teacher</p>
                     </div>
                     {unread > 0 && (
                         <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
@@ -126,10 +126,10 @@ export default function StudentMessages() {
                 </div>
 
                 {messages.length === 0 ? (
-                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-16 border border-white/10 text-center">
+                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-16 border border-slate-200 dark:border-white/10 shadow-sm text-center">
                         <div className="text-6xl mb-4">📭</div>
-                        <h3 className="text-2xl font-semibold text-white mb-2">No Messages Yet</h3>
-                        <p className="text-gray-400">Your teacher hasn&apos;t sent any messages yet.</p>
+                        <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">No Messages Yet</h3>
+                        <p className="text-slate-500 dark:text-gray-400">Your teacher hasn&apos;t sent any messages yet.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -143,14 +143,14 @@ export default function StudentMessages() {
                                 <div
                                     key={msg.id}
                                     className={`rounded-xl border transition-all ${isRead
-                                        ? 'bg-slate-800/40 border-white/10'
+                                        ? 'bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10/40 border-slate-200 dark:border-white/10 shadow-sm'
                                         : 'bg-blue-900/30 border-blue-500/40'
                                         }`}
                                 >
                                     {/* Header row — click to expand */}
                                     <button
                                         onClick={() => handleExpand(msg)}
-                                        className="w-full text-left px-5 py-4 flex items-center gap-4 hover:bg-white/5 transition-colors rounded-xl"
+                                        className="w-full text-left px-5 py-4 flex items-center gap-4 hover:bg-white dark:bg-slate-800/5 transition-colors rounded-xl"
                                     >
                                         <div className="shrink-0">
                                             {isRead
@@ -159,7 +159,7 @@ export default function StudentMessages() {
                                             }
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className={`font-semibold truncate ${isRead ? 'text-gray-300' : 'text-white'}`}>
+                                            <p className={`font-semibold truncate ${isRead ? 'text-slate-600 dark:text-gray-300' : 'text-slate-900 dark:text-white'}`}>
                                                 {msg.title}
                                             </p>
                                             {!isOpen && <p className="text-gray-500 text-sm truncate">{msg.body}</p>}
@@ -174,21 +174,21 @@ export default function StudentMessages() {
                                                 </span>
                                             )}
                                             <span className="text-gray-500 text-xs">{msg.createdAt?.toDate?.().toLocaleDateString()}</span>
-                                            <span className={`text-gray-400 text-sm transition-transform inline-block ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                                            <span className={`text-slate-500 dark:text-gray-400 text-sm transition-transform inline-block ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                                         </div>
                                     </button>
 
                                     {/* Expanded body + replies */}
                                     {isOpen && (
-                                        <div className="px-5 pb-5 border-t border-white/10 pt-4">
+                                        <div className="px-5 pb-5 border-t border-slate-200 dark:border-white/10 shadow-sm pt-4">
                                             <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-gray-300 text-sm font-medium">🎓 Teacher</span>
+                                                <span className="text-slate-600 dark:text-gray-300 text-sm font-medium">🎓 Teacher</span>
                                                 <span className="text-gray-500 text-xs ml-auto">{msg.createdAt?.toDate?.().toLocaleString()}</span>
                                             </div>
 
                                             {/* Message body */}
-                                            <div className="bg-slate-900/50 rounded-lg p-4 mb-5">
-                                                <p className="text-gray-200 whitespace-pre-wrap leading-relaxed">{msg.body}</p>
+                                            <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-4 mb-5">
+                                                <p className="text-slate-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{msg.body}</p>
                                             </div>
 
                                             {/* Previous replies */}
@@ -204,10 +204,10 @@ export default function StudentMessages() {
                                                                         ? 'bg-green-700/40 text-green-100 rounded-tl-none border border-green-500/20'
                                                                         : isMe
                                                                             ? 'bg-blue-600/40 text-blue-100 rounded-tr-none'
-                                                                            : 'bg-slate-700/60 text-gray-200 rounded-tl-none'
+                                                                            : 'bg-slate-100 dark:bg-slate-900/50/60 text-slate-700 dark:text-gray-200 rounded-tl-none'
                                                                     }`}>
                                                                     {(isTeacher || !isMe) && (
-                                                                        <p className={`text-xs mb-1 font-medium ${isTeacher ? 'text-green-300' : 'text-gray-400'}`}>
+                                                                        <p className={`text-xs mb-1 font-medium ${isTeacher ? 'text-green-300' : 'text-slate-500 dark:text-gray-400'}`}>
                                                                             {r.studentName}
                                                                         </p>
                                                                     )}
@@ -233,7 +233,7 @@ export default function StudentMessages() {
                                                     }}
                                                     placeholder="Reply to teacher… (Enter to send)"
                                                     rows={2}
-                                                    className="flex-1 bg-slate-700/50 text-white border border-white/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                                                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-none"
                                                 />
                                                 <button
                                                     onClick={() => handleReply(msg.id)}

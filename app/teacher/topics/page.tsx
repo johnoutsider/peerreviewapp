@@ -141,7 +141,7 @@ export default function ManageTopics() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
 
             <main className="container mx-auto px-4 py-8 max-w-3xl">
@@ -150,12 +150,12 @@ export default function ManageTopics() {
                     <div>
                         <button
                             onClick={() => router.push('/teacher')}
-                            className="text-gray-400 hover:text-white text-sm flex items-center gap-1 mb-2 transition-colors"
+                            className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-sm flex items-center gap-1 mb-2 transition-colors"
                         >
                             ← Teacher Dashboard
                         </button>
-                        <h1 className="text-4xl font-bold text-white">Manage Topics</h1>
-                        <p className="text-gray-400 mt-1">Create topics and set essay + review deadlines</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white">Manage Topics</h1>
+                        <p className="text-slate-500 dark:text-gray-400 mt-1">Create topics and set essay + review deadlines</p>
                     </div>
                     <div className="text-5xl">🏷️</div>
                 </div>
@@ -164,15 +164,15 @@ export default function ManageTopics() {
                 {success && <Alert type="success" message={success} />}
 
                 {/* Add Topic Form */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 mb-8">
-                    <h2 className="text-xl font-semibold text-white mb-4">Add New Topic</h2>
+                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Add New Topic</h2>
                     <form onSubmit={handleAdd} className="flex gap-3">
                         <input
                             type="text"
                             value={newTopic}
                             onChange={e => setNewTopic(e.target.value)}
                             placeholder="e.g. Environment & Climate, Technology, Health…"
-                            className="flex-1 bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                            className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                             maxLength={80}
                         />
                         <button
@@ -186,10 +186,10 @@ export default function ManageTopics() {
                 </div>
 
                 {/* Topics List with inline deadline editors */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                        <h2 className="text-xl font-semibold text-white">All Topics</h2>
-                        <span className="text-sm text-gray-400">{topics.length} topic{topics.length !== 1 ? 's' : ''}</span>
+                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">All Topics</h2>
+                        <span className="text-sm text-slate-500 dark:text-gray-400">{topics.length} topic{topics.length !== 1 ? 's' : ''}</span>
                     </div>
 
                     {loading ? (
@@ -218,12 +218,12 @@ export default function ManageTopics() {
                                 }
 
                                 return (
-                                    <li key={topic.id} className="px-6 py-5 hover:bg-white/5 transition-colors">
+                                    <li key={topic.id} className="px-6 py-5 hover:bg-white dark:bg-slate-800/5 transition-colors">
                                         {/* Row 1: name + delete */}
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-3">
                                                 <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-                                                <span className="text-white font-semibold text-lg">{topic.name}</span>
+                                                <span className="text-slate-900 dark:text-white font-semibold text-lg">{topic.name}</span>
                                             </div>
                                             <button
                                                 onClick={() => handleDelete(topic.id, topic.name)}
@@ -235,8 +235,8 @@ export default function ManageTopics() {
 
                                         {/* Row 2: deadline pickers */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div className="bg-slate-700/40 rounded-lg p-3 border border-white/10">
-                                                <label className="block text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
+                                            <div className="bg-slate-100 dark:bg-slate-900/50/40 rounded-lg p-3 border border-slate-200 dark:border-white/10 shadow-sm">
+                                                <label className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
                                                     📝 Essay Submission Deadline
                                                 </label>
                                                 {deadlinePill(essayD, 'essay', 'blue')}
@@ -244,11 +244,11 @@ export default function ManageTopics() {
                                                     type="date"
                                                     value={ed.essayDeadline}
                                                     onChange={e => setField(topic.id, 'essayDeadline', e.target.value)}
-                                                    className="mt-2 w-full bg-slate-600/50 text-white border border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                                    className="mt-2 w-full bg-slate-600/50 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
                                                 />
                                             </div>
-                                            <div className="bg-slate-700/40 rounded-lg p-3 border border-white/10">
-                                                <label className="block text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
+                                            <div className="bg-slate-100 dark:bg-slate-900/50/40 rounded-lg p-3 border border-slate-200 dark:border-white/10 shadow-sm">
+                                                <label className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
                                                     👥 Peer Review Deadline
                                                 </label>
                                                 {deadlinePill(reviewD, 'review', 'purple')}
@@ -256,7 +256,7 @@ export default function ManageTopics() {
                                                     type="date"
                                                     value={ed.reviewDeadline}
                                                     onChange={e => setField(topic.id, 'reviewDeadline', e.target.value)}
-                                                    className="mt-2 w-full bg-slate-600/50 text-white border border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                                    className="mt-2 w-full bg-slate-600/50 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
                                                 />
                                             </div>
                                         </div>

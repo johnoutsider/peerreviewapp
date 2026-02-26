@@ -19,9 +19,9 @@ export default function IELTSRubric() {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-900 rounded-2xl max-w-6xl w-full h-[90vh] flex flex-col border border-white/20">
-                <div className="bg-slate-900 border-b border-white/10 p-4 flex justify-between items-center rounded-t-2xl">
-                    <h2 className="text-xl font-bold text-white">Assessment Rubric</h2>
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl max-w-6xl w-full h-[90vh] flex flex-col border border-slate-300 dark:border-white/20">
+                <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 shadow-sm p-4 flex justify-between items-center rounded-t-2xl">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Assessment Rubric</h2>
                     <div className="flex gap-4 items-center">
                         <a
                             href="/rubric.pdf"
@@ -32,14 +32,14 @@ export default function IELTSRubric() {
                         </a>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="text-gray-400 hover:text-white text-2xl"
+                            className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-2xl"
                         >
                             ✕
                         </button>
                     </div>
                 </div>
 
-                <div className="flex-1 bg-white rounded-b-2xl overflow-hidden">
+                <div className="flex-1 bg-white dark:bg-slate-800 rounded-b-2xl overflow-hidden">
                     <iframe
                         src="/rubric.pdf"
                         className="w-full h-full"

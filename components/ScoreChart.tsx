@@ -21,8 +21,8 @@ export default function ScoreChart({ scores, title = 'IELTS Criteria Breakdown' 
     ]
 
     return (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <h3 className="text-xl font-semibold text-white mb-4">{title}</h3>
+        <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">{title}</h3>
             <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={data}>
                     <PolarGrid stroke="#475569" />

@@ -47,7 +47,7 @@ export default function Home() {
     }
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <div className="container mx-auto px-4 py-16">
                 <div className="max-w-4xl mx-auto">
                     {/* Configuration Warning */}
@@ -57,9 +57,9 @@ export default function Home() {
                             <p className="text-yellow-200 mb-4">
                                 Firebase is not configured yet. Please set up your environment variables to enable authentication and database features.
                             </p>
-                            <div className="bg-slate-900/50 rounded-lg p-4 mb-4">
-                                <p className="text-sm text-gray-300 mb-2">Follow these steps:</p>
-                                <ol className="text-sm text-gray-400 list-decimal list-inside space-y-1">
+                            <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-4 mb-4">
+                                <p className="text-sm text-slate-600 dark:text-gray-300 mb-2">Follow these steps:</p>
+                                <ol className="text-sm text-slate-500 dark:text-gray-400 list-decimal list-inside space-y-1">
                                     <li>Create a Firebase project at console.firebase.google.com</li>
                                     <li>Enable Google Authentication</li>
                                     <li>Create a Firestore database</li>
@@ -68,7 +68,7 @@ export default function Home() {
                                 </ol>
                             </div>
                             <p className="text-xs text-yellow-300">
-                                See <code className="bg-slate-900/50 px-2 py-1 rounded">SETUP.md</code> for detailed instructions
+                                See <code className="bg-slate-100 dark:bg-slate-900/50 px-2 py-1 rounded">SETUP.md</code> for detailed instructions
                             </p>
                         </div>
                     )}
@@ -78,27 +78,27 @@ export default function Home() {
                         <h1 className="text-6xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
                             <span className="block mt-2">Peer Feedback App</span>
                         </h1>
-                        <p className="text-xl text-gray-300 mb-8">
+                        <p className="text-xl text-slate-600 dark:text-gray-300 mb-8">
                             Collaborative essay grading powered by AI and peer review
                         </p>
                     </div>
 
                     {/* Features */}
                     <div className="grid md:grid-cols-3 gap-6 mb-12">
-                        <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-xl border border-white/10 relative z-10">
+                        <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm relative z-10">
                             <div className="text-4xl mb-4">✍️</div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Submit Essays</h3>
-                            <p className="text-gray-300">Upload your essays and receive comprehensive feedback</p>
+                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Submit Essays</h3>
+                            <p className="text-slate-600 dark:text-gray-300">Upload your essays and receive comprehensive feedback</p>
                         </div>
-                        <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-xl border border-white/10 relative z-10">
+                        <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm relative z-10">
                             <div className="text-4xl mb-4">🤝</div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Peer Review</h3>
-                            <p className="text-gray-300">Review classmates&apos; essays using standardized criteria</p>
+                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Peer Review</h3>
+                            <p className="text-slate-600 dark:text-gray-300">Review classmates&apos; essays using standardized criteria</p>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                        <div className="bg-white dark:bg-slate-800/10 backdrop-blur-lg rounded-xl p-6 border border-slate-300 dark:border-white/20">
                             <div className="text-4xl mb-4">🤖</div>
-                            <h3 className="text-xl font-semibold text-white mb-2">AI Feedback</h3>
-                            <p className="text-gray-300">Get instant AI-powered analysis and suggestions</p>
+                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">AI Feedback</h3>
+                            <p className="text-slate-600 dark:text-gray-300">Get instant AI-powered analysis and suggestions</p>
                         </div>
                     </div>
 
@@ -107,7 +107,7 @@ export default function Home() {
                         {showConfigWarning ? (
                             <button
                                 disabled
-                                className="inline-block bg-gray-600 text-gray-400 font-semibold px-8 py-4 rounded-lg text-lg cursor-not-allowed shadow-lg"
+                                className="inline-block bg-gray-600 text-slate-500 dark:text-gray-400 font-semibold px-8 py-4 rounded-lg text-lg cursor-not-allowed shadow-lg"
                             >
                                 Configure Firebase First
                             </button>

@@ -3,27 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 15, 23, 42;
+  /* text-slate-900 */
+  --background-start-rgb: 248, 250, 252;
+  /* bg-slate-50 */
+  --background-end-rgb: 248, 250, 252;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+html.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 23, 42;
+  /* bg-slate-900 */
+  --background-end-rgb: 15, 23, 42;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: rgb(var(--background-start-rgb));
 }
 
 @layer utilities {
@@ -39,14 +35,32 @@ body {
 }
 
 ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  /* slate-100 */
+}
+
+html.dark ::-webkit-scrollbar-track {
   background: #1e293b;
+  /* slate-800 */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #cbd5e1;
+  /* slate-300 */
   border-radius: 4px;
 }
 
+html.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  /* slate-600 */
+}
+
 ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  /* slate-400 */
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+  /* slate-500 */
 }

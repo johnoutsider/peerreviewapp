@@ -233,7 +233,7 @@ export default function TeacherAssistant() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
             </div>
         )
@@ -242,14 +242,14 @@ export default function TeacherAssistant() {
     if (!isTeacher) return null
 
     return (
-        <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
+        <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
             <Header />
 
-            <main className="flex-1 flex overflow-hidden bg-slate-800">
+            <main className="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10">
                 {/* Sidebar Area */}
                 <div className={`
                     absolute md:static top-0 left-0 h-full w-72 shrink-0
-                    bg-slate-900 z-30 transition-transform duration-300
+                    bg-slate-50 dark:bg-slate-900 z-30 transition-transform duration-300
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'}
                     flex flex-col border-r border-slate-700 shadow-2xl md:shadow-none
                 `}>
@@ -266,9 +266,9 @@ export default function TeacherAssistant() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-3">
-                        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Chat History</div>
+                        <div className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 px-2">Chat History</div>
                         {chatSessions.length === 0 ? (
-                            <div className="text-sm text-slate-500 pl-2 italic">No past sessions found.</div>
+                            <div className="text-sm text-slate-500 dark:text-gray-400 pl-2 italic">No past sessions found.</div>
                         ) : (
                             <div className="space-y-1">
                                 {chatSessions.map(session => (
@@ -276,8 +276,8 @@ export default function TeacherAssistant() {
                                         key={session.id}
                                         onClick={() => loadChat(session)}
                                         className={`w-full text-left p-3 rounded-lg text-sm transition-all truncate flex items-center gap-3 ${activeChatId === session.id
-                                            ? 'bg-slate-700 text-white font-medium shadow-sm'
-                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                            ? 'bg-slate-100 dark:bg-slate-900/50 text-slate-900 dark:text-white font-medium shadow-sm'
+                                            : 'text-slate-400 hover:bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10 hover:text-slate-200'
                                             }`}
                                     >
                                         <svg className="w-4 h-4 shrink-0 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -292,20 +292,20 @@ export default function TeacherAssistant() {
                 </div>
 
                 {/* Main Chat Layout Container */}
-                <div className="flex-1 flex flex-col min-w-0 bg-slate-800 relative">
+                <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10 relative">
 
                     {/* Header bar */}
-                    <div className="h-16 border-b border-slate-700 flex items-center justify-between px-4 lg:px-6 shrink-0 bg-slate-900/40">
+                    <div className="h-16 border-b border-slate-700 flex items-center justify-between px-4 lg:px-6 shrink-0 bg-slate-50 dark:bg-slate-900/40">
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className="text-slate-400 hover:text-white transition-colors"
+                                className="text-slate-400 hover:text-slate-900 dark:text-white transition-colors"
                             >
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
-                            <h1 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
+                            <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
                                 AI Assistant
                             </h1>
                         </div>
@@ -329,7 +329,7 @@ export default function TeacherAssistant() {
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[90%] md:max-w-[75%] rounded-2xl p-5 shadow-sm ${msg.role === 'user'
                                         ? 'bg-blue-600 text-white rounded-br-sm'
-                                        : 'bg-slate-700 text-slate-100 rounded-bl-sm border border-slate-600'
+                                        : 'bg-slate-100 dark:bg-slate-900/50 text-slate-100 rounded-bl-sm border border-slate-600'
                                         }`}>
                                         <div className="prose prose-invert max-w-none text-[15px] leading-relaxed">
                                             {msg.content.split('\n').map((line, i) => (
@@ -341,7 +341,7 @@ export default function TeacherAssistant() {
                             ))}
                             {sending && (
                                 <div className="flex justify-start">
-                                    <div className="bg-slate-700 text-slate-200 border border-slate-600 rounded-2xl rounded-bl-sm p-5 flex gap-2 items-center shadow-sm">
+                                    <div className="bg-slate-100 dark:bg-slate-900/50 text-slate-200 border border-slate-600 rounded-2xl rounded-bl-sm p-5 flex gap-2 items-center shadow-sm">
                                         <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
                                         <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                         <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
@@ -353,7 +353,7 @@ export default function TeacherAssistant() {
                     </div>
 
                     {/* Static Input Area Fixed at Bottom */}
-                    <div className="p-4 bg-slate-900 shrink-0 border-t border-slate-700">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 shrink-0 border-t border-slate-700">
                         <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative flex items-center">
                             <input
                                 type="text"
@@ -361,7 +361,7 @@ export default function TeacherAssistant() {
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder={loadingData ? "Syncing data, please wait..." : "Ask your assistant..."}
                                 disabled={sending || loadingData}
-                                className="w-full bg-slate-800 border border-slate-600 hover:border-slate-500 rounded-2xl pl-6 pr-16 py-4 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-all text-[15px] shadow-inner font-medium"
+                                className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10 border border-slate-600 hover:border-slate-500 rounded-2xl pl-6 pr-16 py-4 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-all text-[15px] shadow-inner font-medium"
                             />
                             <button
                                 type="submit"
@@ -377,7 +377,7 @@ export default function TeacherAssistant() {
                                 )}
                             </button>
                         </form>
-                        <p className="text-center text-xs text-slate-500 mt-3 font-medium">
+                        <p className="text-center text-xs text-slate-500 dark:text-gray-400 mt-3 font-medium">
                             AI may make mistakes. Verify important information securely from the dashboard.
                         </p>
                     </div>

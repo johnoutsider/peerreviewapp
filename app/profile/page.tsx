@@ -56,13 +56,13 @@ export default function Profile() {
     }
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
             <main className="container mx-auto px-4 py-8 max-w-xl">
                 <div className="mb-8 flex items-center gap-4">
@@ -70,51 +70,51 @@ export default function Profile() {
                         {(displayName || googleName || '?')[0].toUpperCase()}
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-white">My Profile</h1>
-                        <p className="text-gray-400 text-sm">{email}</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Profile</h1>
+                        <p className="text-slate-500 dark:text-gray-400 text-sm">{email}</p>
                     </div>
                 </div>
 
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-8 border border-white/10">
+                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-8 border border-slate-200 dark:border-white/10 shadow-sm">
                     {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
                     {success && <Alert type="success" message={success} />}
 
                     <form onSubmit={handleSave} className="space-y-6">
                         <div>
-                            <label className="block text-white font-semibold mb-1">
-                                Display Name <span className="text-gray-400 font-normal text-sm">(your real name)</span>
+                            <label className="block text-slate-900 dark:text-white font-semibold mb-1">
+                                Display Name <span className="text-slate-500 dark:text-gray-400 font-normal text-sm">(your real name)</span>
                             </label>
                             <input
                                 type="text"
                                 value={displayName}
                                 onChange={e => setDisplayName(e.target.value)}
                                 placeholder={googleName || 'Enter your real name'}
-                                className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                                 maxLength={60}
                             />
                             <p className="text-gray-500 text-xs mt-1">This is the name your teacher will see</p>
                         </div>
 
                         <div>
-                            <label className="block text-white font-semibold mb-1">
-                                Group Name <span className="text-gray-400 font-normal text-sm">(e.g. Group A, Wednesday 14:00)</span>
+                            <label className="block text-slate-900 dark:text-white font-semibold mb-1">
+                                Group Name <span className="text-slate-500 dark:text-gray-400 font-normal text-sm">(e.g. Group A, Wednesday 14:00)</span>
                             </label>
                             <input
                                 type="text"
                                 value={groupName}
                                 onChange={e => setGroupName(e.target.value)}
                                 placeholder="Enter your group or class"
-                                className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                                 maxLength={60}
                             />
                         </div>
 
-                        <div className="bg-slate-900/40 rounded-lg p-4 border border-white/5">
-                            <p className="text-gray-400 text-sm">
-                                <span className="text-gray-300 font-medium">Google Account:</span> {googleName}
+                        <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-4 border border-slate-200 dark:border-white/10">
+                            <p className="text-slate-500 dark:text-gray-400 text-sm">
+                                <span className="text-slate-600 dark:text-gray-300 font-medium">Google Account:</span> {googleName}
                             </p>
-                            <p className="text-gray-400 text-sm mt-1">
-                                <span className="text-gray-300 font-medium">Email:</span> {email}
+                            <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">
+                                <span className="text-slate-600 dark:text-gray-300 font-medium">Email:</span> {email}
                             </p>
                         </div>
 

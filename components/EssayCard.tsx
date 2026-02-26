@@ -49,10 +49,10 @@ export default function EssayCard({
     return (
         <div
             onClick={onClick}
-            className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-blue-500/50 transition-all cursor-pointer group"
+            className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm hover:border-blue-500/50 transition-all cursor-pointer group"
         >
             <div className="flex justify-between items-start mb-3">
-                <h3 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white group-hover:text-blue-400 transition-colors">
                     {title}
                 </h3>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -92,7 +92,7 @@ export default function EssayCard({
                 </div>
             </div>
 
-            <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+            <p className="text-slate-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">
                 {content}
             </p>
 

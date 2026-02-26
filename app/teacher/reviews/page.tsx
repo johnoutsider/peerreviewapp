@@ -123,23 +123,23 @@ export default function TeacherReviewActivity() {
     const crossGroup = filtered.filter(r => r.reviewerGroup !== r.essayAuthorGroup).length
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
             <main className="container mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
                     <div>
-                        <button onClick={() => router.push('/teacher')} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 mb-3 transition-colors">
+                        <button onClick={() => router.push('/teacher')} className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-sm flex items-center gap-1 mb-3 transition-colors">
                             ← Teacher Dashboard
                         </button>
-                        <h1 className="text-4xl font-bold text-white mb-1">👥 Review Activity</h1>
-                        <p className="text-gray-400">See exactly who is reviewing whose work</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-1">👥 Review Activity</h1>
+                        <p className="text-slate-500 dark:text-gray-400">See exactly who is reviewing whose work</p>
                     </div>
                 </div>
 
@@ -152,7 +152,7 @@ export default function TeacherReviewActivity() {
                         { label: 'Cross-Group Reviews', value: crossGroup, color: 'yellow' },
                     ].map(({ label, value, color }) => (
                         <div key={label} className={`bg-${color}-500/10 border border-${color}-500/30 rounded-xl p-4 text-center`}>
-                            <div className="text-2xl font-bold text-white">{value}</div>
+                            <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
                             <div className={`text-${color}-300 text-sm mt-1`}>{label}</div>
                         </div>
                     ))}
@@ -165,14 +165,14 @@ export default function TeacherReviewActivity() {
                         placeholder="🔍 Search reviews…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full sm:flex-1 bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full sm:flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
                     />
                     <div className="flex gap-3">
                         {groups.length > 0 && (
                             <select
                                 value={groupFilter}
                                 onChange={e => setGroupFilter(e.target.value)}
-                                className="flex-1 sm:flex-none bg-slate-700/50 text-white border border-white/20 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                                className="flex-1 sm:flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"
                             >
                                 <option value="">All Groups</option>
                                 {groups.map(g => <option key={g} value={g}>{g}</option>)}
@@ -181,7 +181,7 @@ export default function TeacherReviewActivity() {
                         <select
                             value={sortBy}
                             onChange={e => setSortBy(e.target.value as any)}
-                            className="flex-1 sm:flex-none bg-slate-700/50 text-white border border-white/20 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                            className="flex-1 sm:flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"
                         >
                             <option value="date">Sort: Latest First</option>
                             <option value="reviewer">Sort: Reviewer A–Z</option>
@@ -192,19 +192,19 @@ export default function TeacherReviewActivity() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-900/60">
+                            <thead className="bg-slate-50 dark:bg-slate-900/60">
                                 <tr>
-                                    <th className="py-4 px-5 text-gray-300 font-semibold text-sm">Reviewer</th>
-                                    <th className="py-4 px-3 text-gray-400 font-normal text-xs">→</th>
-                                    <th className="py-4 px-5 text-gray-300 font-semibold text-sm">Essay Author</th>
-                                    <th className="py-4 px-5 text-gray-300 font-semibold text-sm">Essay</th>
-                                    <th className="py-4 px-5 text-gray-300 font-semibold text-sm">Topic</th>
-                                    <th className="py-4 px-5 text-center text-gray-300 font-semibold text-sm">Band</th>
-                                    <th className="py-4 px-5 text-gray-300 font-semibold text-sm">Date</th>
-                                    <th className="py-4 px-5 text-gray-300 font-semibold text-sm">Actions</th>
+                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Reviewer</th>
+                                    <th className="py-4 px-3 text-slate-500 dark:text-gray-400 font-normal text-xs">→</th>
+                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Essay Author</th>
+                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Essay</th>
+                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Topic</th>
+                                    <th className="py-4 px-5 text-center text-slate-600 dark:text-gray-300 font-semibold text-sm">Band</th>
+                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Date</th>
+                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -217,7 +217,7 @@ export default function TeacherReviewActivity() {
                                 ) : filtered.map(row => {
                                     const sameGrp = row.reviewerGroup && row.reviewerGroup === row.essayAuthorGroup
                                     return (
-                                        <tr key={row.reviewId} className="hover:bg-white/5 transition-colors">
+                                        <tr key={row.reviewId} className="hover:bg-white dark:bg-slate-800/5 transition-colors">
                                             {/* Reviewer */}
                                             <td className="py-3.5 px-5">
                                                 <button
@@ -248,7 +248,7 @@ export default function TeacherReviewActivity() {
                                             <td className="py-3.5 px-5">
                                                 <button
                                                     onClick={() => router.push(`/feedback/${row.essayId}`)}
-                                                    className="text-gray-200 hover:text-white text-sm text-left line-clamp-1 transition-colors max-w-[180px]"
+                                                    className="text-slate-700 dark:text-gray-200 hover:text-slate-900 dark:text-white text-sm text-left line-clamp-1 transition-colors max-w-[180px]"
                                                 >
                                                     {row.essayTitle}
                                                 </button>
@@ -270,7 +270,7 @@ export default function TeacherReviewActivity() {
                                                 ) : <span className="text-gray-600 text-sm">—</span>}
                                             </td>
                                             {/* Date */}
-                                            <td className="py-3.5 px-5 text-gray-400 text-sm whitespace-nowrap">
+                                            <td className="py-3.5 px-5 text-slate-500 dark:text-gray-400 text-sm whitespace-nowrap">
                                                 {row.submittedAt?.toDate?.().toLocaleDateString() || '—'}
                                             </td>
                                             {/* Actions */}
@@ -289,7 +289,7 @@ export default function TeacherReviewActivity() {
                         </table>
                     </div>
                     {filtered.length > 0 && (
-                        <div className="px-5 py-3 border-t border-white/5 text-xs text-gray-500">
+                        <div className="px-5 py-3 border-t border-slate-200 dark:border-white/10 text-xs text-gray-500">
                             Showing {filtered.length} of {rows.length} reviews
                         </div>
                     )}

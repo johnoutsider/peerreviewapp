@@ -6,6 +6,7 @@ import { auth, db } from '@/lib/firebase'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { useEffect, useState } from 'react'
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore'
+import { useTheme } from 'next-themes'
 
 export default function Header() {
     const router = useRouter()
@@ -14,6 +15,12 @@ export default function Header() {
     const [userProfile, setUserProfile] = useState<any>(null)
     const [unreadCount, setUnreadCount] = useState(0)
     const [menuOpen, setMenuOpen] = useState(false)
+    const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -72,13 +79,13 @@ export default function Header() {
     const links: NavLink[] = isTeacher ? teacherLinks : studentLinks
 
     return (
-        <header className="bg-slate-900/80 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+        <header className="bg-blue-600 backdrop-blur-lg border-b border-slate-200 dark:border-white/10 shadow-sm sticky top-0 z-50">
             <div className="container mx-auto px-4 py-3">
                 <div className="flex items-center justify-between gap-4">
                     {/* Logo */}
                     <Link
                         href={isTeacher ? '/teacher' : '/dashboard'}
-                        className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 shrink-0"
+                        className="text-xl font-bold text-white text-2xl drop-shadow-sm shrink-0"
                     >
                         Peer feedback app
                     </Link>
@@ -89,7 +96,7 @@ export default function Header() {
                             <Link
                                 key={href}
                                 href={href}
-                                className={`relative text-sm transition-colors ${pathname === href ? 'text-blue-400' : 'text-gray-300 hover:text-white'}`}
+                                className={`relative text-sm transition-colors ${pathname === href ? 'text-white font-bold border-b-2 border-white' : 'text-blue-100 hover:text-white'}`}
                             >
                                 {label}
                                 {badge != null && badge > 0 && (
@@ -104,7 +111,7 @@ export default function Header() {
                     {/* Right side: teacher badge + sign out + hamburger */}
                     <div className="flex items-center gap-3">
                         {isTeacher && (
-                            <span className="hidden sm:block px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                            <span className="hidden sm:block px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-100 border border-blue-500/30">
                                 Teacher
                             </span>
                         )}
@@ -114,6 +121,17 @@ export default function Header() {
                         >
                             Sign Out
                         </button>
+
+                        {/* Theme Toggle */}
+                        {mounted && (
+                            <button
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                className="p-2 rounded-lg hover:bg-blue-500 transition-colors text-white text-xl flex items-center justify-center w-10 h-10"
+                                aria-label="Toggle Dark Mode"
+                            >
+                                {theme === 'dark' ? '☀️' : '🌙'}
+                            </button>
+                        )}
 
                         {/* Messages badge (mobile only) */}
                         {!isTeacher && unreadCount > 0 && (
@@ -127,27 +145,27 @@ export default function Header() {
 
                         {/* Hamburger (mobile) */}
                         <button
-                            className="md:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            className="md:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-blue-500 transition-colors"
                             onClick={() => setMenuOpen(o => !o)}
                             aria-label="Toggle menu"
                         >
-                            <span className={`block w-5 h-0.5 bg-white transition-transform ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
-                            <span className={`block w-5 h-0.5 bg-white transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
-                            <span className={`block w-5 h-0.5 bg-white transition-transform ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+                            <span className={`block w-5 h-0.5 bg-white dark:bg-slate-800 transition-transform ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                            <span className={`block w-5 h-0.5 bg-white dark:bg-slate-800 transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
+                            <span className={`block w-5 h-0.5 bg-white dark:bg-slate-800 transition-transform ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
                         </button>
                     </div>
                 </div>
 
                 {/* Mobile dropdown menu */}
                 {menuOpen && (
-                    <nav className="md:hidden absolute top-full left-0 w-full bg-slate-900/95 backdrop-blur-xl border-b border-white/10 p-4 flex flex-col gap-2 z-50 shadow-2xl">
+                    <nav className="md:hidden absolute top-full left-0 w-full bg-blue-600 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-sm p-4 flex flex-col gap-2 z-50 shadow-2xl">
                         {links.map(({ href, label, badge }) => (
                             <Link
                                 key={href}
                                 href={href}
                                 className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${pathname === href
-                                    ? 'bg-blue-500/20 text-blue-400'
-                                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                                    ? 'bg-blue-500/20 text-white font-bold border-b-2 border-white'
+                                    : 'text-blue-100 hover:bg-blue-500 hover:text-white'
                                     }`}
                             >
                                 <span>{label}</span>
@@ -158,7 +176,7 @@ export default function Header() {
                                 )}
                             </Link>
                         ))}
-                        <div className="mt-2 border-t border-white/10 pt-2">
+                        <div className="mt-2 border-t border-slate-200 dark:border-white/10 shadow-sm pt-2">
                             <button
                                 onClick={handleSignOut}
                                 className="w-full text-left px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-sm"
@@ -169,6 +187,6 @@ export default function Header() {
                     </nav>
                 )}
             </div>
-        </header>
+        </header >
     )
 }

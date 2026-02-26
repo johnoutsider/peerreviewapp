@@ -20,17 +20,17 @@ export default function SignIn() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-4">
-            <div className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4">
+            <div className="max-w-md w-full bg-white dark:bg-slate-800/10 backdrop-blur-lg rounded-2xl p-8 border border-slate-300 dark:border-white/20 shadow-2xl">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-                    <p className="text-gray-300">Sign in to access your essays and reviews</p>
+                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h1>
+                    <p className="text-slate-600 dark:text-gray-300">Sign in to access your essays and reviews</p>
                 </div>
 
                 <button
                     onClick={handleSignIn}
                     disabled={loading}
-                    className="w-full bg-white text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-white dark:bg-slate-800 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? (
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
@@ -59,7 +59,7 @@ export default function SignIn() {
                     )}
                 </button>
 
-                <p className="mt-6 text-sm text-gray-400 text-center">
+                <p className="mt-6 text-sm text-slate-500 dark:text-gray-400 text-center">
                     Use your school Google account to sign in
                 </p>
             </div>

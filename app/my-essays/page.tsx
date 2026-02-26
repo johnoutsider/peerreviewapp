@@ -114,29 +114,29 @@ export default function MyEssays() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
 
             {/* Delete Confirmation Modal */}
             {confirmDeleteId && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-                    <div className="bg-slate-800 border border-red-500/30 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+                    <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10 border border-red-500/30 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
                         <div className="text-5xl mb-4">🗑️</div>
-                        <h2 className="text-2xl font-bold text-white mb-2">Delete Essay?</h2>
-                        <p className="text-gray-400 mb-6">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Delete Essay?</h2>
+                        <p className="text-slate-500 dark:text-gray-400 mb-6">
                             This action cannot be undone. Your essay will be permanently removed.
                         </p>
                         <div className="flex gap-4">
                             <button
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="flex-1 bg-slate-700 text-gray-300 font-semibold py-3 rounded-lg hover:bg-slate-600 transition-colors"
+                                className="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-gray-300 font-semibold py-3 rounded-lg hover:bg-slate-600 transition-colors"
                             >
                                 Cancel
                             </button>
@@ -162,8 +162,8 @@ export default function MyEssays() {
             <main className="container mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-4xl font-bold text-white mb-2">My Essays</h1>
-                        <p className="text-gray-400">View your submissions and feedback</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">My Essays</h1>
+                        <p className="text-slate-500 dark:text-gray-400">View your submissions and feedback</p>
                     </div>
                     <button
                         onClick={() => router.push('/submit-essay')}
@@ -174,10 +174,10 @@ export default function MyEssays() {
                 </div>
 
                 {essays.length === 0 ? (
-                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-12 border border-white/10 text-center">
+                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-12 border border-slate-200 dark:border-white/10 shadow-sm text-center">
                         <div className="text-6xl mb-4">📝</div>
-                        <h3 className="text-2xl font-semibold text-white mb-2">No Essays Yet</h3>
-                        <p className="text-gray-400 mb-6">You haven&apos;t submitted any essays yet.</p>
+                        <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">No Essays Yet</h3>
+                        <p className="text-slate-500 dark:text-gray-400 mb-6">You haven&apos;t submitted any essays yet.</p>
                         <button
                             onClick={() => router.push('/submit-essay')}
                             className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"

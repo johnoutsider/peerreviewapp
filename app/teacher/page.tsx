@@ -88,26 +88,26 @@ export default function TeacherDashboard() {
     const filtered = groupFilter ? students.filter(s => s.groupName === groupFilter) : students
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
             <main className="container mx-auto px-4 py-8">
                 <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <h1 className="text-4xl font-bold text-white mb-1">Teacher Dashboard</h1>
-                        <p className="text-gray-400">Monitor student progress and peer review activity</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-1">Teacher Dashboard</h1>
+                        <p className="text-slate-500 dark:text-gray-400">Monitor student progress and peer review activity</p>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
                         {groups.length > 0 && (
                             <select
                                 value={groupFilter}
                                 onChange={e => setGroupFilter(e.target.value)}
-                                className="bg-slate-700/50 text-white border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                             >
                                 <option value="">All Groups</option>
                                 {groups.map(g => <option key={g} value={g}>{g}</option>)}
@@ -149,31 +149,31 @@ export default function TeacherDashboard() {
                         { label: 'Reviews Given', value: students.reduce((a, s) => a + s.reviewsGiven, 0), color: 'yellow' },
                     ].map(({ label, value, color }) => (
                         <div key={label} className={`bg-${color}-500/10 border border-${color}-500/30 rounded-xl p-4 text-center`}>
-                            <div className="text-2xl font-bold text-white">{value}</div>
+                            <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
                             <div className={`text-${color}-300 text-sm mt-1`}>{label}</div>
                         </div>
                     ))}
                 </div>
 
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-900/50">
+                            <thead className="bg-slate-100 dark:bg-slate-900/50">
                                 <tr>
-                                    <th className="py-4 px-6 text-gray-300 font-semibold">Student</th>
-                                    <th className="py-4 px-6 text-gray-300 font-semibold">Group</th>
-                                    <th className="py-4 px-6 text-gray-300 font-semibold">Email</th>
-                                    <th className="py-4 px-6 text-center text-gray-300 font-semibold">Essays</th>
-                                    <th className="py-4 px-6 text-center text-gray-300 font-semibold">Reviews Given</th>
-                                    <th className="py-4 px-6 text-center text-gray-300 font-semibold">Avg Band</th>
-                                    <th className="py-4 px-6 text-right text-gray-300 font-semibold">Actions</th>
+                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Student</th>
+                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Group</th>
+                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Email</th>
+                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Essays</th>
+                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Reviews Given</th>
+                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Avg Band</th>
+                                    <th className="py-4 px-6 text-right text-slate-600 dark:text-gray-300 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/10">
                                 {filtered.map((student) => (
-                                    <tr key={student.uid} className="hover:bg-white/5 transition-colors">
+                                    <tr key={student.uid} className="hover:bg-white dark:bg-slate-800/5 transition-colors">
                                         <td className="py-4 px-6">
-                                            <div className="text-white font-medium">{student.displayName || student.name}</div>
+                                            <div className="text-slate-900 dark:text-white font-medium">{student.displayName || student.name}</div>
                                             {student.displayName && student.displayName !== student.name && (
                                                 <div className="text-gray-500 text-xs">{student.name}</div>
                                             )}
@@ -187,16 +187,16 @@ export default function TeacherDashboard() {
                                                 <span className="text-gray-600 text-sm">—</span>
                                             )}
                                         </td>
-                                        <td className="py-4 px-6 text-gray-400 text-sm">{student.email}</td>
+                                        <td className="py-4 px-6 text-slate-500 dark:text-gray-400 text-sm">{student.email}</td>
                                         <td className="py-4 px-6 text-center">
-                                            <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.submittedCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-400'}`}>
+                                            <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.submittedCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500 dark:text-gray-400'}`}>
                                                 {student.submittedCount}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-center">
                                             <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= student.requiredReviews ? 'bg-green-500/20 text-green-400' :
                                                 student.reviewsGiven > 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                    'bg-gray-700 text-gray-400'
+                                                    'bg-gray-700 text-slate-500 dark:text-gray-400'
                                                 }`}>
                                                 {student.reviewsGiven} / {student.requiredReviews}
                                             </span>

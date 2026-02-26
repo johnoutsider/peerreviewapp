@@ -171,14 +171,14 @@ export default function StudentProgressForTeacher() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
 
             <main className="container mx-auto px-4 py-8 max-w-6xl">
@@ -186,22 +186,22 @@ export default function StudentProgressForTeacher() {
                     <div>
                         <button
                             onClick={() => router.push(`/teacher/${studentId}`)}
-                            className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-sm mb-3"
+                            className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white transition-colors flex items-center gap-2 text-sm mb-3"
                         >
                             &larr; Back to Student Profile
                         </button>
-                        <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-3">
                             <span className="text-4xl text-blue-400">📈</span> {studentName}&apos;s Progress
                         </h1>
-                        <p className="text-gray-400">Detailed IELTS writing assessment history</p>
+                        <p className="text-slate-500 dark:text-gray-400">Detailed IELTS writing assessment history</p>
                     </div>
                 </div>
 
                 {progressData.length === 0 ? (
-                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-12 border border-white/10 text-center">
+                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-2xl p-12 border border-slate-200 dark:border-white/10 shadow-sm text-center">
                         <div className="text-6xl mb-4">🌱</div>
-                        <h3 className="text-2xl font-bold text-white mb-2">No Data Yet</h3>
-                        <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Data Yet</h3>
+                        <p className="text-slate-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
                             This student has not received any reviews on their essays yet. Progress tracking will appear automatically once reviews are completed.
                         </p>
                     </div>
@@ -212,25 +212,25 @@ export default function StudentProgressForTeacher() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="bg-blue-900/40 backdrop-blur-sm border border-blue-500/30 rounded-xl p-5">
                                 <div className="text-blue-300 text-sm mb-1">Average Band Score</div>
-                                <div className="text-3xl font-bold text-white">{stats.averageBand}</div>
+                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.averageBand}</div>
                             </div>
                             <div className="bg-purple-900/40 backdrop-blur-sm border border-purple-500/30 rounded-xl p-5">
                                 <div className="text-purple-300 text-sm mb-1">Assessed Essays</div>
-                                <div className="text-3xl font-bold text-white">{stats.totalReviewed}</div>
+                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalReviewed}</div>
                             </div>
                             <div className="bg-green-900/40 backdrop-blur-sm border border-green-500/30 rounded-xl p-5">
                                 <div className="text-green-300 text-sm mb-1">Strongest Skill</div>
-                                <div className="text-xl font-bold text-white leading-tight truncate" title={stats.strongestSkill.name}>
+                                <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.strongestSkill.name}>
                                     {stats.strongestSkill.name}
                                 </div>
-                                <div className="text-sm text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
+                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
                             </div>
                             <div className="bg-orange-900/40 backdrop-blur-sm border border-orange-500/30 rounded-xl p-5">
                                 <div className="text-orange-300 text-sm mb-1">Needs Focus</div>
-                                <div className="text-xl font-bold text-white leading-tight truncate" title={stats.weakestSkill.name}>
+                                <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.weakestSkill.name}>
                                     {stats.weakestSkill.name}
                                 </div>
-                                <div className="text-sm text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
+                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
                             </div>
                         </div>
 
@@ -238,8 +238,8 @@ export default function StudentProgressForTeacher() {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                             {/* Line Chart */}
-                            <div className="lg:col-span-2 bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-white mb-4">Score Trajectory</h3>
+                            <div className="lg:col-span-2 bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm h-[400px] flex flex-col">
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Score Trajectory</h3>
                                 <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={progressData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
@@ -275,8 +275,8 @@ export default function StudentProgressForTeacher() {
                             </div>
 
                             {/* Radar Chart */}
-                            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-white mb-4">Skill Profile</h3>
+                            <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm h-[400px] flex flex-col">
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Skill Profile</h3>
                                 <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={averageCriteria}>

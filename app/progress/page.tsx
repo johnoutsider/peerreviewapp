@@ -162,35 +162,35 @@ export default function Progress() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
 
             <main className="container mx-auto px-4 py-8 max-w-6xl">
                 <div className="mb-8 flex items-start justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold text-white mb-2">📈 Your Writing Progress</h1>
-                        <p className="text-gray-400">Track your IELTS scores across all reviewed essays</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">📈 Your Writing Progress</h1>
+                        <p className="text-slate-500 dark:text-gray-400">Track your IELTS scores across all reviewed essays</p>
                     </div>
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white transition-colors"
                     >
                         &larr; Back
                     </button>
                 </div>
 
                 {progressData.length === 0 ? (
-                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-12 border border-white/10 text-center">
+                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-2xl p-12 border border-slate-200 dark:border-white/10 shadow-sm text-center">
                         <div className="text-6xl mb-4">🌱</div>
-                        <h3 className="text-2xl font-bold text-white mb-2">No Data Yet</h3>
-                        <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Data Yet</h3>
+                        <p className="text-slate-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
                             Progress tracking will appear here once your submitted essays receive peer or AI reviews.
                         </p>
                         <button
@@ -207,25 +207,25 @@ export default function Progress() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="bg-blue-900/40 backdrop-blur-sm border border-blue-500/30 rounded-xl p-5">
                                 <div className="text-blue-300 text-sm mb-1">Average Band Score</div>
-                                <div className="text-3xl font-bold text-white">{stats.averageBand}</div>
+                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.averageBand}</div>
                             </div>
                             <div className="bg-purple-900/40 backdrop-blur-sm border border-purple-500/30 rounded-xl p-5">
                                 <div className="text-purple-300 text-sm mb-1">Reviewed Essays</div>
-                                <div className="text-3xl font-bold text-white">{stats.totalReviewed}</div>
+                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalReviewed}</div>
                             </div>
                             <div className="bg-green-900/40 backdrop-blur-sm border border-green-500/30 rounded-xl p-5">
                                 <div className="text-green-300 text-sm mb-1">Strongest Skill</div>
-                                <div className="text-xl font-bold text-white leading-tight truncate" title={stats.strongestSkill.name}>
+                                <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.strongestSkill.name}>
                                     {stats.strongestSkill.name}
                                 </div>
-                                <div className="text-sm text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
+                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
                             </div>
                             <div className="bg-orange-900/40 backdrop-blur-sm border border-orange-500/30 rounded-xl p-5">
                                 <div className="text-orange-300 text-sm mb-1">Needs Focus</div>
-                                <div className="text-xl font-bold text-white leading-tight truncate" title={stats.weakestSkill.name}>
+                                <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.weakestSkill.name}>
                                     {stats.weakestSkill.name}
                                 </div>
-                                <div className="text-sm text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
+                                <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
                             </div>
                         </div>
 
@@ -233,8 +233,8 @@ export default function Progress() {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                             {/* Line Chart: Overall Trend */}
-                            <div className="lg:col-span-2 bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-white mb-4">Overall Score Trend</h3>
+                            <div className="lg:col-span-2 bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm h-[400px] flex flex-col">
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Overall Score Trend</h3>
                                 <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart
@@ -278,8 +278,8 @@ export default function Progress() {
                             </div>
 
                             {/* Radar Chart: Skill Profile */}
-                            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-white mb-4">Skill Profile (Average)</h3>
+                            <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm h-[400px] flex flex-col">
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Skill Profile (Average)</h3>
                                 <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={averageCriteria}>
@@ -305,17 +305,17 @@ export default function Progress() {
                         </div>
 
                         {/* Recent Essays History List */}
-                        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                            <h3 className="text-xl font-semibold text-white mb-6">Assessed Essays History</h3>
+                        <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm">
+                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Assessed Essays History</h3>
                             <div className="space-y-4">
                                 {[...progressData].reverse().map(essay => (
                                     <div
                                         key={essay.essayId}
                                         onClick={() => router.push(`/feedback/${essay.essayId}`)}
-                                        className="bg-slate-900/40 hover:bg-slate-700/50 transition-colors rounded-lg p-4 border border-white/5 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                                        className="bg-slate-50 dark:bg-slate-900/40 hover:bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 transition-colors rounded-lg p-4 border border-slate-200 dark:border-white/10 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
                                     >
                                         <div className="flex-1">
-                                            <h4 className="text-white font-medium mb-1 line-clamp-1">{essay.title}</h4>
+                                            <h4 className="text-slate-900 dark:text-white font-medium mb-1 line-clamp-1">{essay.title}</h4>
                                             <div className="flex items-center gap-2 text-xs">
                                                 <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">
                                                     {essay.topicName}
@@ -330,22 +330,22 @@ export default function Progress() {
                                             <div className="hidden md:flex gap-3 text-sm text-center">
                                                 <div>
                                                     <div className="text-gray-500 mb-0.5">TA</div>
-                                                    <div className="text-gray-300 font-medium">{essay.scores.taskAchievement}</div>
+                                                    <div className="text-slate-600 dark:text-gray-300 font-medium">{essay.scores.taskAchievement}</div>
                                                 </div>
                                                 <div>
                                                     <div className="text-gray-500 mb-0.5">CC</div>
-                                                    <div className="text-gray-300 font-medium">{essay.scores.coherenceCohesion}</div>
+                                                    <div className="text-slate-600 dark:text-gray-300 font-medium">{essay.scores.coherenceCohesion}</div>
                                                 </div>
                                                 <div>
                                                     <div className="text-gray-500 mb-0.5">LR</div>
-                                                    <div className="text-gray-300 font-medium">{essay.scores.lexicalResource}</div>
+                                                    <div className="text-slate-600 dark:text-gray-300 font-medium">{essay.scores.lexicalResource}</div>
                                                 </div>
                                                 <div>
                                                     <div className="text-gray-500 mb-0.5">GRA</div>
-                                                    <div className="text-gray-300 font-medium">{essay.scores.grammaticalRange}</div>
+                                                    <div className="text-slate-600 dark:text-gray-300 font-medium">{essay.scores.grammaticalRange}</div>
                                                 </div>
                                             </div>
-                                            <div className="text-right pl-4 sm:border-l border-white/10 text-center sm:text-right w-[60px]">
+                                            <div className="text-right pl-4 sm:border-l border-slate-200 dark:border-white/10 shadow-sm text-center sm:text-right w-[60px]">
                                                 <div className="text-xs text-gray-500 uppercase font-semibold mb-0.5">Band</div>
                                                 <div className="text-xl font-bold text-white bg-blue-500/20 px-2 rounded">{essay.overallBand}</div>
                                             </div>

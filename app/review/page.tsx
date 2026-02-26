@@ -172,7 +172,7 @@ export default function Review() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
         )
@@ -181,20 +181,20 @@ export default function Review() {
     // Gate: Students MUST submit an essay before they can review
     if (!isTeacher && studentSubmittedTopicIds.length === 0) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
                 <Header />
                 <main className="container mx-auto px-4 py-16 max-w-xl text-center">
-                    <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-white/10 p-10 shadow-2xl">
+                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm p-10 shadow-2xl">
                         <div className="text-7xl mb-6">🔒</div>
-                        <h1 className="text-3xl font-bold text-white mb-3">Reviews Locked</h1>
-                        <p className="text-gray-300 mb-6 text-lg">
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Reviews Locked</h1>
+                        <p className="text-slate-600 dark:text-gray-300 mb-6 text-lg">
                             To participate in peer reviews, you need to{' '}
                             <span className="text-purple-400 font-semibold">submit your own essay first</span>.
                         </p>
 
                         <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-6 mb-8 text-left">
                             <h3 className="text-purple-400 font-semibold mb-2">How it works:</h3>
-                            <ul className="text-gray-300 text-sm space-y-2">
+                            <ul className="text-slate-600 dark:text-gray-300 text-sm space-y-2">
                                 <li>1️⃣ Write and submit your essay for a specific topic</li>
                                 <li>2️⃣ Unlock the peer review system for that topic</li>
                                 <li>3️⃣ Review classmates' essays on the same topic</li>
@@ -215,14 +215,14 @@ export default function Review() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
 
             <main className="container mx-auto px-4 py-8">
                 <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                     <div>
-                        <h1 className="text-4xl font-bold text-white mb-2">Peer Review</h1>
-                        <p className="text-gray-400">Review your classmates&apos; essays and provide constructive feedback</p>
+                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">Peer Review</h1>
+                        <p className="text-slate-500 dark:text-gray-400">Review your classmates&apos; essays and provide constructive feedback</p>
                     </div>
                     <button
                         onClick={() => setShowFindPanel(prev => !prev)}
@@ -234,17 +234,17 @@ export default function Review() {
 
                 {/* Find Essay Panel */}
                 {showFindPanel && (
-                    <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-500/30 mb-6">
-                        <h3 className="text-lg font-semibold text-white mb-4">🔍 Search for an Essay to Review</h3>
+                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-purple-500/30 mb-6">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🔍 Search for an Essay to Review</h3>
                         <div className="flex flex-col sm:flex-row gap-4 items-end">
                             <div className="flex-1">
-                                <label className="block text-gray-300 text-sm mb-2">
+                                <label className="block text-slate-600 dark:text-gray-300 text-sm mb-2">
                                     {isTeacher ? 'Filter by Topic (optional)' : 'Select Unlocked Topic to Review'}
                                 </label>
                                 <select
                                     value={selectedTopicId}
                                     onChange={e => setSelectedTopicId(e.target.value)}
-                                    className="w-full bg-slate-700/50 text-white border border-white/20 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 transition-colors"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 transition-colors"
                                 >
                                     {isTeacher && <option value="">Any Topic</option>}
                                     {topics
@@ -281,10 +281,10 @@ export default function Review() {
                 {actionSuccess && <Alert type="success" message={actionSuccess} />}
 
                 {assignedEssays.length === 0 ? (
-                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-12 border border-white/10 text-center">
+                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-12 border border-slate-200 dark:border-white/10 shadow-sm text-center">
                         <div className="text-6xl mb-4">📝</div>
-                        <h3 className="text-2xl font-semibold text-white mb-2">No Essays to Review</h3>
-                        <p className="text-gray-400 mb-6">You don&apos;t have any essays assigned for review yet.</p>
+                        <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">No Essays to Review</h3>
+                        <p className="text-slate-500 dark:text-gray-400 mb-6">You don&apos;t have any essays assigned for review yet.</p>
                         <button
                             onClick={() => setShowFindPanel(true)}
                             className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg transition-colors"
@@ -326,7 +326,7 @@ export default function Review() {
 
                 <div className="mt-8 bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
                     <h3 className="text-blue-400 font-semibold mb-3">💡 Review Tips</h3>
-                    <ul className="text-gray-300 space-y-2">
+                    <ul className="text-slate-600 dark:text-gray-300 space-y-2">
                         <li>• Be constructive and specific in your feedback</li>
                         <li>• Use the assessment rubric as a guide for scoring</li>
                         <li>• Highlight both strengths and areas for improvement</li>
