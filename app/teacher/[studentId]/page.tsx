@@ -135,9 +135,17 @@ export default function StudentDetails() {
             )}
 
             <main className="container mx-auto px-4 py-8 max-w-5xl">
-                <button onClick={() => router.push('/teacher')} className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors text-sm">
-                    ← Back to Dashboard
-                </button>
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+                    <button onClick={() => router.push('/teacher')} className="text-gray-400 hover:text-white flex items-center gap-2 transition-colors text-sm">
+                        ← Back to Dashboard
+                    </button>
+                    <button
+                        onClick={() => router.push(`/teacher/progress/${studentId}`)}
+                        className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                        📈 View Progress Chart
+                    </button>
+                </div>
 
                 {/* Student Profile Card */}
                 <div className="mb-8 p-6 bg-slate-800/50 rounded-xl border border-white/10">

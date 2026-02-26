@@ -57,6 +57,7 @@ export default function Header() {
         { href: '/submit-essay', label: '✍️ Submit Essay' },
         { href: '/review', label: '🤝 Peer Review' },
         { href: '/my-essays', label: '📚 My Essays' },
+        { href: '/progress', label: '📈 Progress' },
         { href: '/rubric', label: '📋 Rubric' },
         { href: '/messages', label: '📬 Messages', badge: unreadCount },
         { href: '/profile', label: '👤 Profile' },
