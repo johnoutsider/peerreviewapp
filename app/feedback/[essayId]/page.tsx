@@ -73,7 +73,18 @@ export default function Feedback() {
                     where('essayId', '==', essayId)
                 )
                 const reviewsSnapshot = await getDocs(reviewsQuery)
-                const reviewsData = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+                // Deduplicate reviews by reviewerId so one user can't skew the score with double submissions
+                const uniqueReviewsMap = new Map()
+                reviewsSnapshot.docs.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as any
+                    // Keep the latest review if duplicates exist
+                    if (!uniqueReviewsMap.has(data.reviewerId) ||
+                        data.completedAt?.toMillis() > uniqueReviewsMap.get(data.reviewerId).completedAt?.toMillis()) {
+                        uniqueReviewsMap.set(data.reviewerId, data)
+                    }
+                })
+                const reviewsData = Array.from(uniqueReviewsMap.values())
 
                 // Check how many reviews this student has GIVEN + same-topic gating
                 if (!isTeacherRole) {

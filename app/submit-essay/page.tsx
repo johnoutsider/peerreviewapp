@@ -113,7 +113,7 @@ export default function SubmitEssay() {
                     const aiData = await aiResponse.json()
                     await addDoc(collection(db, 'reviews'), {
                         essayId: essayRef.id,
-                        reviewerId: auth.currentUser.uid,
+                        reviewerId: 'ai-examiner',
                         reviewerName: 'AI Examiner',
                         reviewerRole: 'ai',
                         scores: aiData.assessment.scores,

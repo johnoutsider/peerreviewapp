@@ -48,17 +48,28 @@ export default function TeacherReviewActivity() {
                 const usersMap = new Map(usersSnap.docs.map(d => [d.id, d.data() as any]))
                 const essaysMap = new Map(essaysSnap.docs.map(d => [d.id, { id: d.id, ...d.data() as any }]))
 
-                const built: ReviewRow[] = reviewsSnap.docs
-                    .map(d => {
-                        const r = d.data() as any
-                        if (r.reviewerRole === 'ai') return null  // skip AI reviews
+                // Deduplicate reviews by (reviewerId + essayId) 
+                // in case students accidentally submitted multiple reviews for the same essay
+                const uniqueReviewsMap = new Map()
+                reviewsSnap.docs.forEach(d => {
+                    const r = d.data() as any
+                    if (r.reviewerRole === 'ai') return // skip AI reviews
 
+                    const dedupeKey = `${r.reviewerId}_${r.essayId}`
+                    if (!uniqueReviewsMap.has(dedupeKey) ||
+                        r.submittedAt?.toMillis() > uniqueReviewsMap.get(dedupeKey).data.submittedAt?.toMillis()) {
+                        uniqueReviewsMap.set(dedupeKey, { id: d.id, data: r })
+                    }
+                })
+
+                const built: ReviewRow[] = Array.from(uniqueReviewsMap.values())
+                    .map(({ id, data: r }) => {
                         const essay = essaysMap.get(r.essayId) as any
                         const reviewer = usersMap.get(r.reviewerId) as any
                         const author = essay ? usersMap.get(essay.studentId) as any : null
 
                         return {
-                            reviewId: d.id,
+                            reviewId: id,
                             reviewerName: reviewer ? (reviewer.displayName || reviewer.name || 'Unknown') : (r.reviewerName || 'Unknown'),
                             reviewerId: r.reviewerId,
                             reviewerGroup: reviewer?.groupName || '',
