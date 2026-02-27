@@ -60,5 +60,22 @@ service cloud.firestore {
         allow update, delete: if request.auth != null && resource.data.studentId == request.auth.uid;
       }
     }
+
+    // Telegram temporary link codes (created by client with auth)
+    match /telegram_links/{linkId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow the owner to read their own link
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow unauthenticated reads so the webhook API route can look up a code
+      allow read: if true;
+    }
+
+    // Telegram verified — written by the webhook (no auth), read+deleted by the client once linked
+    match /telegram_verified/{docId} {
+      // Webhook writes here (no auth token) after a valid /start command
+      allow create: if true;
+      // Client reads and deletes after linking (the random code acts as the capability token)
+      allow read, delete: if true;
+    }
   }
 }

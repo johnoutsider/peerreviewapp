@@ -90,6 +90,28 @@ export default function ReviewEssay() {
                 completedAt: serverTimestamp(),
             })
 
+            // Trigger Telegram notification (fire and forget)
+            // We read the essay author's telegramChatId client-side (auth is present)
+            // and pass it directly to the API — no server Firestore access needed.
+            try {
+                const authorDoc = await getDoc(doc(db, 'users', essay.studentId))
+                const authorChatId = authorDoc.exists() ? authorDoc.data().telegramChatId : null
+
+                if (authorChatId) {
+                    fetch('/api/notifications/telegram', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chatId: authorChatId,
+                            essayTitle: essay.title,
+                        })
+                    }).catch(err => console.error('Notification fetch failed:', err))
+                }
+            } catch (notifyError) {
+                console.error('Failed to trigger notification:', notifyError)
+                // Never block the review flow for a notification failure
+            }
+
             setSuccess('Review submitted successfully! Redirecting...')
             setTimeout(() => {
                 router.push('/review')

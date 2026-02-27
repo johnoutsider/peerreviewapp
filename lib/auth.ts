@@ -13,6 +13,8 @@ export interface UserProfile {
     name: string
     role: 'teacher' | 'student'
     classId: string
+    telegramChatId?: string
+    telegramUsername?: string
     createdAt: Date
 }
 
