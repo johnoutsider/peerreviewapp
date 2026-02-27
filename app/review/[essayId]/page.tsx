@@ -234,14 +234,14 @@ export default function ReviewEssay() {
                             <textarea
                                 value={feedback}
                                 onChange={(e) => setFeedback(e.target.value)}
-                                placeholder="Provide detailed feedback on strengths and areas for improvement (minimum 400 characters)..."
+                                placeholder="Provide detailed feedback on strengths and areas for improvement (minimum 200 characters)..."
                                 rows={10}
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                                 required
                             />
                             <div className="mt-2 flex justify-end">
-                                <span className={`text-sm font-medium ${feedback.trim().length < 400 ? 'text-orange-400' : 'text-green-400'}`}>
-                                    {feedback.trim().length} / 400 characters min
+                                <span className={`text-sm font-medium ${feedback.trim().length < 200 ? 'text-orange-400' : 'text-green-400'}`}>
+                                    {feedback.trim().length} / 200 characters min
                                 </span>
                             </div>
                         </div>
@@ -249,7 +249,7 @@ export default function ReviewEssay() {
                         <div className="pt-4 mt-auto">
                             <button
                                 type="submit"
-                                disabled={submitting || feedback.trim().length < 400}
+                                disabled={submitting || feedback.trim().length < 200}
                                 className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold text-xl py-5 rounded-xl hover:from-green-600 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-green-500/20"
                             >
                                 {submitting ? (
