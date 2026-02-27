@@ -152,6 +152,12 @@ export default function TeacherDashboard() {
                         >
                             🤖 AI Assistant
                         </button>
+                        <button
+                            onClick={() => router.push('/teacher/eva-settings')}
+                            className="flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                        >
+                            EVA Settings
+                        </button>
                     </div>
                 </div>
 

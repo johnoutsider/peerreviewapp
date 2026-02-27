@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore'
 import { assignPeerReviewers } from '@/lib/peer-assignment'
 import Header from '@/components/Header'
 import Alert from '@/components/Alert'
@@ -36,6 +36,9 @@ export default function SubmitEssay() {
     const [timerResult, setTimerResult] = useState<TimerResult>({ durationMinutes: null, elapsedSeconds: 0 })
     const handleTimerUpdate = useCallback((r: TimerResult) => setTimerResult(r), [])
 
+    // EVA access
+    const [evaAllowed, setEvaAllowed] = useState(false)
+
     useEffect(() => {
         const fetchTopics = async () => {
             try {
@@ -54,7 +57,24 @@ export default function SubmitEssay() {
                 setLoadingTopics(false)
             }
         }
+
+        const checkEvaAccess = async () => {
+            try {
+                const user = auth.currentUser
+                if (!user) return
+                const profile = await getUserProfile(user.uid)
+                const group: string = (profile as any)?.groupName || ''
+                if (!group) return
+                const evaDoc = await getDoc(doc(db, 'settings', 'eva'))
+                if (evaDoc.exists()) {
+                    const allowed: string[] = evaDoc.data().allowedGroups || []
+                    setEvaAllowed(allowed.includes(group))
+                }
+            } catch (e) { console.error('EVA check error', e) }
+        }
+
         fetchTopics()
+        checkEvaAccess()
     }, [])
 
     const handleTopicChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -281,10 +301,12 @@ export default function SubmitEssay() {
                         </form>
                     </div>{/* end form */}
 
-                    {/* EVA side panel */}
-                    <div className="w-96 shrink-0 sticky top-6" style={{ height: 'calc(100vh - 6rem)' }}>
-                        <EssayAssistant essayContent={content} />
-                    </div>
+                    {/* EVA side panel — only for groups with access */}
+                    {evaAllowed && (
+                        <div className="w-96 shrink-0 sticky top-6" style={{ height: 'calc(100vh - 6rem)' }}>
+                            <EssayAssistant essayContent={content} />
+                        </div>
+                    )}
 
                 </div>{/* end two-column */}
             </main>

@@ -77,5 +77,12 @@ service cloud.firestore {
       // Client reads and deletes after linking (the random code acts as the capability token)
       allow read, delete: if true;
     }
+    // Settings collection — teachers write, all authenticated users read
+    // (used for EVA access control: settings/eva)
+    match /settings/{settingId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
   }
 }
