@@ -41,7 +41,15 @@ export default function Header() {
         if (!user?.uid || userProfile?.role === 'teacher') return
         const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'))
         const unsub = onSnapshot(q, snap => {
-            setUnreadCount(snap.docs.filter(d => !((d.data().readBy as string[] || []).includes(user.uid))).length)
+            const count = snap.docs.filter(d => {
+                const data = d.data()
+                // Only count messages the student is a recipient of
+                const recipients: string[] | null = data.recipients ?? null
+                if (recipients && !recipients.includes(user.uid)) return false
+                // Count as unread if UID not in readBy
+                return !((data.readBy as string[] || []).includes(user.uid))
+            }).length
+            setUnreadCount(count)
         })
         return () => unsub()
     }, [user, userProfile])
