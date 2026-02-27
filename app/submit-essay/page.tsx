@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp } from 'firebase/firestore'
@@ -8,6 +8,8 @@ import { assignPeerReviewers } from '@/lib/peer-assignment'
 import Header from '@/components/Header'
 import Alert from '@/components/Alert'
 import DeadlineBanner from '@/components/DeadlineBanner'
+import EssayEditor from '@/components/EssayEditor'
+import EssayTimer, { TimerResult } from '@/components/EssayTimer'
 import { getUserProfile } from '@/lib/auth'
 
 interface Topic {
@@ -28,6 +30,10 @@ export default function SubmitEssay() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
+
+    // Timer (optional)
+    const [timerResult, setTimerResult] = useState<TimerResult>({ durationMinutes: null, elapsedSeconds: 0 })
+    const handleTimerUpdate = useCallback((r: TimerResult) => setTimerResult(r), [])
 
     useEffect(() => {
         const fetchTopics = async () => {
@@ -98,6 +104,10 @@ export default function SubmitEssay() {
                 submittedAt: serverTimestamp(),
                 status: 'under_review',
                 peerReviewIds: [],
+                // Timer data (null / 0 if timer wasn't used)
+                timerUsed: timerResult.durationMinutes !== null,
+                timerDurationMinutes: timerResult.durationMinutes,
+                timerElapsedSeconds: timerResult.elapsedSeconds,
             })
 
             // Step 2: AI assessment — currently disabled
@@ -225,25 +235,16 @@ export default function SubmitEssay() {
                             />
                         </div>
 
+                        {/* ── Optional Timer ── */}
+                        <EssayTimer onUpdate={handleTimerUpdate} />
+
                         <div className="mb-6">
                             <label className="block text-slate-900 dark:text-white font-semibold mb-2">Essay Content</label>
-                            <textarea
+                            <EssayEditor
                                 value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder="Paste or type your essay here (minimum 250 words recommended)..."
-                                rows={15}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors resize-none"
-                                required
+                                onChange={setContent}
+                                placeholder="Write your essay here. Minimum 250 words recommended."
                             />
-                            <div className="mt-2 flex items-center justify-between">
-                                <span className={`text-sm font-medium ${wordCount >= 250 ? 'text-green-400' : wordCount >= 150 ? 'text-yellow-400' : 'text-slate-500 dark:text-gray-400'}`}>
-                                    📝 {wordCount} words
-                                    {wordCount < 250 && wordCount > 0 && (
-                                        <span className="ml-2 text-slate-500 dark:text-gray-400">({250 - wordCount} more to reach minimum)</span>
-                                    )}
-                                    {wordCount >= 250 && <span className="ml-2">✓ Minimum met</span>}
-                                </span>
-                            </div>
                         </div>
 
                         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">

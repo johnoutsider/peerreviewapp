@@ -73,8 +73,8 @@ export default function ReviewEssay() {
 
         if (!auth.currentUser || !essay) return
 
-        if (feedback.trim().length < 400) {
-            setError('Please provide at least 400 characters of feedback to help your peer improve.')
+        if (feedback.trim().length < 200) {
+            setError('Please provide at least 200 characters of feedback to help your peer improve.')
             return
         }
 

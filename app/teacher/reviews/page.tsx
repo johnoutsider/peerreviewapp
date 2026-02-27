@@ -16,9 +16,10 @@ interface ReviewRow {
     essayAuthorName: string
     essayAuthorId: string
     essayAuthorGroup: string
+    essaySubmittedAt: any          // when the essay was submitted
     topicName: string
     overallBand: number | null
-    submittedAt: any
+    submittedAt: any               // when the review was submitted
     reviewerRole: string
 }
 
@@ -28,7 +29,8 @@ export default function TeacherReviewActivity() {
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [groupFilter, setGroupFilter] = useState('')
-    const [sortBy, setSortBy] = useState<'reviewer' | 'author' | 'band' | 'date'>('date')
+    const [sortBy, setSortBy] = useState<string>('date')
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
     useEffect(() => {
         const fetchData = async () => {
@@ -56,8 +58,10 @@ export default function TeacherReviewActivity() {
                     if (r.reviewerRole === 'ai') return // skip AI reviews
 
                     const dedupeKey = `${r.reviewerId}_${r.essayId}`
+                    const reviewDate = r.completedAt || r.submittedAt
+                    const existingDate = uniqueReviewsMap.get(dedupeKey)?.data?.completedAt || uniqueReviewsMap.get(dedupeKey)?.data?.submittedAt
                     if (!uniqueReviewsMap.has(dedupeKey) ||
-                        r.submittedAt?.toMillis() > uniqueReviewsMap.get(dedupeKey).data.submittedAt?.toMillis()) {
+                        reviewDate?.toMillis() > existingDate?.toMillis()) {
                         uniqueReviewsMap.set(dedupeKey, { id: d.id, data: r })
                     }
                 })
@@ -67,6 +71,18 @@ export default function TeacherReviewActivity() {
                         const essay = essaysMap.get(r.essayId) as any
                         const reviewer = usersMap.get(r.reviewerId) as any
                         const author = essay ? usersMap.get(essay.studentId) as any : null
+
+                        const reviewDate = r.completedAt || r.submittedAt
+
+                        // Compute overallBand from scores when not stored directly
+                        let band = r.overallBand ?? null
+                        if (band === null && r.scores && typeof r.scores === 'object') {
+                            const vals = Object.values(r.scores as Record<string, number>).filter(v => typeof v === 'number')
+                            if (vals.length > 0) {
+                                const avg = vals.reduce((a, b) => a + b, 0) / vals.length
+                                band = Math.round(avg * 2) / 2  // round to nearest 0.5 (IELTS style)
+                            }
+                        }
 
                         return {
                             reviewId: id,
@@ -78,9 +94,10 @@ export default function TeacherReviewActivity() {
                             essayAuthorName: author ? (author.displayName || author.name || 'Unknown') : 'Unknown',
                             essayAuthorId: essay?.studentId || '',
                             essayAuthorGroup: author?.groupName || '',
+                            essaySubmittedAt: essay?.submittedAt ?? null,
                             topicName: essay?.topicName || '',
-                            overallBand: r.overallBand ?? null,
-                            submittedAt: r.submittedAt,
+                            overallBand: band,
+                            submittedAt: reviewDate,
                             reviewerRole: r.reviewerRole || 'student',
                         } as ReviewRow
                     })
@@ -98,6 +115,12 @@ export default function TeacherReviewActivity() {
 
     const groups = useMemo(() => [...new Set(rows.map(r => r.reviewerGroup).filter(Boolean))].sort(), [rows])
 
+    const toggleSort = (col: string) => {
+        if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+        else { setSortBy(col); setSortDir('desc') }
+    }
+    const sortArrow = (col: string) => sortBy === col ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'
+
     const filtered = useMemo(() => {
         const q = search.toLowerCase()
         return rows
@@ -111,13 +134,16 @@ export default function TeacherReviewActivity() {
                 return matchesSearch && matchesGroup
             })
             .sort((a, b) => {
-                if (sortBy === 'reviewer') return a.reviewerName.localeCompare(b.reviewerName)
-                if (sortBy === 'author') return a.essayAuthorName.localeCompare(b.essayAuthorName)
-                if (sortBy === 'band') return (b.overallBand ?? 0) - (a.overallBand ?? 0)
-                // date
-                return (b.submittedAt?.toMillis() || 0) - (a.submittedAt?.toMillis() || 0)
+                const dir = sortDir === 'asc' ? 1 : -1
+                if (sortBy === 'reviewer') return dir * a.reviewerName.localeCompare(b.reviewerName)
+                if (sortBy === 'author') return dir * a.essayAuthorName.localeCompare(b.essayAuthorName)
+                if (sortBy === 'essay') return dir * a.essayTitle.localeCompare(b.essayTitle)
+                if (sortBy === 'topic') return dir * (a.topicName || '').localeCompare(b.topicName || '')
+                if (sortBy === 'band') return dir * ((a.overallBand ?? -1) - (b.overallBand ?? -1))
+                // date (default)
+                return dir * ((a.submittedAt?.toMillis() || 0) - (b.submittedAt?.toMillis() || 0))
             })
-    }, [rows, search, groupFilter, sortBy])
+    }, [rows, search, groupFilter, sortBy, sortDir])
 
     const sameGroup = filtered.filter(r => r.reviewerGroup && r.reviewerGroup === r.essayAuthorGroup).length
     const crossGroup = filtered.filter(r => r.reviewerGroup !== r.essayAuthorGroup).length
@@ -167,28 +193,16 @@ export default function TeacherReviewActivity() {
                         onChange={e => setSearch(e.target.value)}
                         className="w-full sm:flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
                     />
-                    <div className="flex gap-3">
-                        {groups.length > 0 && (
-                            <select
-                                value={groupFilter}
-                                onChange={e => setGroupFilter(e.target.value)}
-                                className="flex-1 sm:flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                            >
-                                <option value="">All Groups</option>
-                                {groups.map(g => <option key={g} value={g}>{g}</option>)}
-                            </select>
-                        )}
+                    {groups.length > 0 && (
                         <select
-                            value={sortBy}
-                            onChange={e => setSortBy(e.target.value as any)}
+                            value={groupFilter}
+                            onChange={e => setGroupFilter(e.target.value)}
                             className="flex-1 sm:flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"
                         >
-                            <option value="date">Sort: Latest First</option>
-                            <option value="reviewer">Sort: Reviewer A–Z</option>
-                            <option value="author">Sort: Author A–Z</option>
-                            <option value="band">Sort: Score High–Low</option>
+                            <option value="">All Groups</option>
+                            {groups.map(g => <option key={g} value={g}>{g}</option>)}
                         </select>
-                    </div>
+                    )}
                 </div>
 
                 {/* Table */}
@@ -197,13 +211,16 @@ export default function TeacherReviewActivity() {
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 dark:bg-slate-900/60">
                                 <tr>
-                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Reviewer</th>
-                                    <th className="py-4 px-3 text-slate-500 dark:text-gray-400 font-normal text-xs">→</th>
-                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Essay Author</th>
-                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Essay</th>
-                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Topic</th>
-                                    <th className="py-4 px-5 text-center text-slate-600 dark:text-gray-300 font-semibold text-sm">Band</th>
-                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Date</th>
+                                    {[['reviewer', 'Reviewer'], ['', '→'], ['author', 'Essay Author'], ['essay', 'Essay'], ['topic', 'Topic'], ['band', 'Band'], ['date', 'Date']].map(([col, label]) => (
+                                        <th
+                                            key={col || 'arrow'}
+                                            onClick={col ? () => toggleSort(col) : undefined}
+                                            className={`py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm whitespace-nowrap select-none
+                                                ${col ? 'cursor-pointer hover:text-blue-400 transition-colors' : 'text-slate-500 dark:text-gray-400 font-normal text-xs px-3'}`}
+                                        >
+                                            {label}{col ? <span className="text-slate-400 text-xs ml-0.5">{sortArrow(col)}</span> : null}
+                                        </th>
+                                    ))}
                                     <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Actions</th>
                                 </tr>
                             </thead>
@@ -226,9 +243,18 @@ export default function TeacherReviewActivity() {
                                                 >
                                                     {row.reviewerName}
                                                 </button>
-                                                {row.reviewerGroup && (
-                                                    <div className="text-xs text-purple-400 mt-0.5">{row.reviewerGroup}</div>
-                                                )}
+                                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                    {row.reviewerGroup && (
+                                                        <span className="text-xs text-purple-400">{row.reviewerGroup}</span>
+                                                    )}
+                                                    {row.submittedAt && (
+                                                        <span className="text-xs text-slate-400 dark:text-slate-500">
+                                                            {row.submittedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                            {' '}
+                                                            {row.submittedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             {/* Arrow */}
                                             <td className="px-3 text-gray-600 text-lg">→</td>
@@ -252,6 +278,11 @@ export default function TeacherReviewActivity() {
                                                 >
                                                     {row.essayTitle}
                                                 </button>
+                                                {row.essaySubmittedAt && (
+                                                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                                        Submitted {row.essaySubmittedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    </div>
+                                                )}
                                             </td>
                                             {/* Topic */}
                                             <td className="py-3.5 px-5">
@@ -270,8 +301,17 @@ export default function TeacherReviewActivity() {
                                                 ) : <span className="text-gray-600 text-sm">—</span>}
                                             </td>
                                             {/* Date */}
-                                            <td className="py-3.5 px-5 text-slate-500 dark:text-gray-400 text-sm whitespace-nowrap">
-                                                {row.submittedAt?.toDate?.().toLocaleDateString() || '—'}
+                                            <td className="py-3.5 px-5 whitespace-nowrap">
+                                                {row.submittedAt ? (
+                                                    <>
+                                                        <div className="text-slate-700 dark:text-gray-200 text-sm">
+                                                            {row.submittedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                        </div>
+                                                        <div className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">
+                                                            {row.submittedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
+                                                    </>
+                                                ) : <span className="text-gray-500">—</span>}
                                             </td>
                                             {/* Actions */}
                                             <td className="py-3.5 px-5">

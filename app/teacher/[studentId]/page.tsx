@@ -293,6 +293,16 @@ export default function StudentDetails() {
                                             <span>📅 {essay.submittedAt?.toDate().toLocaleDateString()}</span>
                                             <span>📝 {essay.wordCount} words</span>
                                             <span>👥 {essay.reviewCount} review{essay.reviewCount !== 1 ? 's' : ''}</span>
+                                            {essay.timerUsed && essay.timerElapsedSeconds > 0 && (() => {
+                                                const m = Math.floor(essay.timerElapsedSeconds / 60)
+                                                const s = essay.timerElapsedSeconds % 60
+                                                const elapsed = `${m}m ${s}s`
+                                                return (
+                                                    <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full text-xs font-medium">
+                                                        ⏱ {essay.timerDurationMinutes}min preset · {elapsed} used
+                                                    </span>
+                                                )
+                                            })()}
                                             {essay.avgBand != null && (
                                                 <span className={`font-semibold ${essay.avgBand >= 7 ? 'text-green-400' : essay.avgBand >= 5.5 ? 'text-yellow-400' : 'text-red-400'}`}>
                                                     Band {essay.avgBand}

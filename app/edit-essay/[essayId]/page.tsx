@@ -6,6 +6,7 @@ import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import Header from '@/components/Header'
 import Alert from '@/components/Alert'
+import EssayEditor from '@/components/EssayEditor'
 
 interface Topic { id: string; name: string }
 
@@ -180,15 +181,12 @@ export default function EditEssay() {
 
                         <div className="mb-6">
                             <label className="block text-slate-900 dark:text-white font-semibold mb-2">Essay Content</label>
-                            <textarea
+                            <EssayEditor
                                 value={content}
-                                onChange={e => setContent(e.target.value)}
-                                rows={18}
+                                onChange={setContent}
                                 disabled={isReviewed}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors resize-none disabled:opacity-40 disabled:cursor-not-allowed"
-                                required
+                                placeholder="Edit your essay here…"
                             />
-                            <div className="mt-2 text-sm text-slate-500 dark:text-gray-400">Word count: {wordCount}</div>
                         </div>
 
                         {isReviewed ? (
