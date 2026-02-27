@@ -26,11 +26,13 @@ interface Topic {
     reviewDeadline?: Timestamp | null
 }
 
-// Format a Firestore Timestamp (or null) to "YYYY-MM-DD" for <input type="date">
+// Format a Firestore Timestamp (or null) to "YYYY-MM-DDTHH:MM" for <input type="datetime-local">
 function tsToDateStr(ts?: Timestamp | null): string {
     if (!ts) return ''
     const d = ts.toDate()
-    return d.toISOString().slice(0, 10)
+    // datetime-local format: YYYY-MM-DDTHH:MM
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 export default function ManageTopics() {
@@ -120,7 +122,7 @@ export default function ManageTopics() {
         setEditing(prev => ({ ...prev, [topicId]: { ...prev[topicId], saving: true } }))
         try {
             const toTimestamp = (dateStr: string) =>
-                dateStr ? Timestamp.fromDate(new Date(dateStr + 'T23:59:59')) : null
+                dateStr ? Timestamp.fromDate(new Date(dateStr)) : null  // exact time chosen by teacher
 
             await updateDoc(doc(db, 'topics', topicId), {
                 essayDeadline: toTimestamp(state.essayDeadline),
@@ -205,8 +207,8 @@ export default function ManageTopics() {
                         <ul className="divide-y divide-white/10">
                             {topics.map(topic => {
                                 const ed = editing[topic.id] || { essayDeadline: '', reviewDeadline: '', saving: false }
-                                const essayD = ed.essayDeadline ? new Date(ed.essayDeadline + 'T23:59:59') : null
-                                const reviewD = ed.reviewDeadline ? new Date(ed.reviewDeadline + 'T23:59:59') : null
+                                const essayD = ed.essayDeadline ? new Date(ed.essayDeadline) : null
+                                const reviewD = ed.reviewDeadline ? new Date(ed.reviewDeadline) : null
                                 const now = Date.now()
 
                                 const deadlinePill = (d: Date | null, label: string, color: string) => {
@@ -214,7 +216,7 @@ export default function ManageTopics() {
                                     const days = Math.ceil((d.getTime() - now) / 86400000)
                                     const pastColor = 'text-red-400'
                                     const cl = days <= 0 ? pastColor : days <= 3 ? 'text-orange-400' : days <= 7 ? 'text-yellow-400' : `text-${color}-400`
-                                    return <span className={`text-xs font-medium ${cl}`}>{days <= 0 ? '🔒 Expired' : `⏳ ${days}d left`} · {d.toLocaleDateString()}</span>
+                                    return <span className={`text-xs font-medium ${cl}`}>{days <= 0 ? '🔒 Expired' : `⏳ ${days}d left`} · {d.toLocaleDateString()} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 }
 
                                 return (
@@ -241,7 +243,7 @@ export default function ManageTopics() {
                                                 </label>
                                                 {deadlinePill(essayD, 'essay', 'blue')}
                                                 <input
-                                                    type="date"
+                                                    type="datetime-local"
                                                     value={ed.essayDeadline}
                                                     onChange={e => setField(topic.id, 'essayDeadline', e.target.value)}
                                                     className="mt-2 w-full bg-slate-600/50 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
@@ -253,7 +255,7 @@ export default function ManageTopics() {
                                                 </label>
                                                 {deadlinePill(reviewD, 'review', 'purple')}
                                                 <input
-                                                    type="date"
+                                                    type="datetime-local"
                                                     value={ed.reviewDeadline}
                                                     onChange={e => setField(topic.id, 'reviewDeadline', e.target.value)}
                                                     className="mt-2 w-full bg-slate-600/50 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"

@@ -10,6 +10,7 @@ import Alert from '@/components/Alert'
 import DeadlineBanner from '@/components/DeadlineBanner'
 import EssayEditor from '@/components/EssayEditor'
 import EssayTimer, { TimerResult } from '@/components/EssayTimer'
+import EssayAssistant from '@/components/EssayAssistant'
 import { getUserProfile } from '@/lib/auth'
 
 interface Topic {
@@ -169,7 +170,7 @@ export default function SubmitEssay() {
                     <p className="text-slate-500 dark:text-gray-400">Your essay will be reviewed by 3 peers</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-8 border border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-white/10 shadow-sm">
                     {/* Alerts */}
                     {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
                     {success && <Alert type="success" message={success} />}
@@ -275,6 +276,10 @@ export default function SubmitEssay() {
                         </div>
                     </form>
                 </div>
+
+                {/* Floating AI assistant */}
+                <EssayAssistant essayContent={content} />
+
             </main>
         </div>
     )

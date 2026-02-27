@@ -38,7 +38,11 @@ export default function DeadlineBanner({ label, deadline, emoji = '📅' }: Dead
 
     return (
         <div className={`flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm font-medium ${bg}`}>
-            <span>{emoji} <span className="font-semibold">{label} deadline:</span> {deadline.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            <span>{emoji} <span className="font-semibold">{label} deadline:</span>{' '}
+                {deadline.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                {' at '}
+                {deadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
             <span className={`ml-4 whitespace-nowrap font-bold ${expired ? 'text-red-400' : ''}`}>
                 {expired ? '🔒 Closed' : `⏳ ${urgency}`}
             </span>
