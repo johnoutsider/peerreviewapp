@@ -48,12 +48,19 @@ export default function StudentMessages() {
             setProfile(p)
 
             const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'))
-            msgUnsub = onSnapshot(q, snap => {
+            msgUnsub = onSnapshot(q, async snap => {
                 const all = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Message[]
-                // Filter: show if recipients is null (all) OR includes this student
                 const visible = all.filter(m => !m.recipients || m.recipients.includes(user.uid))
                 setMessages(visible)
                 setLoading(false)
+
+                // Auto-mark all visible unread messages as read
+                const unreadVisible = visible.filter(m => !m.readBy?.includes(user.uid))
+                await Promise.all(
+                    unreadVisible.map(m =>
+                        updateDoc(doc(db, 'messages', m.id), { readBy: arrayUnion(user.uid) }).catch(() => { })
+                    )
+                )
             })
         })
         return () => { authUnsub(); if (msgUnsub) msgUnsub() }
@@ -201,10 +208,10 @@ export default function StudentMessages() {
                                                         return (
                                                             <div key={r.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
                                                                 <div className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${isTeacher
-                                                                        ? 'bg-green-700/40 text-green-100 rounded-tl-none border border-green-500/20'
-                                                                        : isMe
-                                                                            ? 'bg-blue-600/40 text-blue-100 rounded-tr-none'
-                                                                            : 'bg-slate-100 dark:bg-slate-900/50/60 text-slate-700 dark:text-gray-200 rounded-tl-none'
+                                                                    ? 'bg-green-700/40 text-green-100 rounded-tl-none border border-green-500/20'
+                                                                    : isMe
+                                                                        ? 'bg-blue-600/40 text-blue-100 rounded-tr-none'
+                                                                        : 'bg-slate-100 dark:bg-slate-900/50/60 text-slate-700 dark:text-gray-200 rounded-tl-none'
                                                                     }`}>
                                                                     {(isTeacher || !isMe) && (
                                                                         <p className={`text-xs mb-1 font-medium ${isTeacher ? 'text-green-300' : 'text-slate-500 dark:text-gray-400'}`}>
