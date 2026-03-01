@@ -4,7 +4,7 @@ import OpenAI from 'openai'
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const PROMPT_ID = 'pmpt_69a1bc5e243081909ee8b62b295b28fb0d3a1c5963939838'
-const PROMPT_VERSION = '6'
+const PROMPT_VERSION = '8'
 
 export async function POST(req: NextRequest) {
     try {
