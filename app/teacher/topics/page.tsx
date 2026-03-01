@@ -44,8 +44,11 @@ export default function ManageTopics() {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
-    // Per-topic editing state: { [topicId]: { essayDeadline: string, reviewDeadline: string, saving: bool } }
+    // Per-topic deadline editing state
     const [editing, setEditing] = useState<Record<string, { essayDeadline: string; reviewDeadline: string; saving: boolean }>>({})
+
+    // Per-topic name renaming state: { [topicId]: { value: string, active: bool, saving: bool } }
+    const [renaming, setRenaming] = useState<Record<string, { value: string; active: boolean; saving: boolean }>>({})
 
     useEffect(() => {
         if (!auth.currentUser) { router.push('/'); return }
@@ -142,6 +145,36 @@ export default function ManageTopics() {
         setEditing(prev => ({ ...prev, [topicId]: { ...prev[topicId], [field]: value } }))
     }
 
+    const startRename = (topic: Topic) => {
+        setRenaming(prev => ({ ...prev, [topic.id]: { value: topic.name, active: true, saving: false } }))
+    }
+
+    const cancelRename = (topicId: string) => {
+        setRenaming(prev => ({ ...prev, [topicId]: { ...prev[topicId], active: false } }))
+    }
+
+    const handleRenameTopic = async (topicId: string) => {
+        const state = renaming[topicId]
+        if (!state) return
+        const newName = state.value.trim()
+        if (!newName) { setError('Topic name cannot be empty.'); return }
+        if (topics.some(t => t.id !== topicId && t.name.toLowerCase() === newName.toLowerCase())) {
+            setError('A topic with this name already exists.')
+            return
+        }
+        setRenaming(prev => ({ ...prev, [topicId]: { ...prev[topicId], saving: true } }))
+        try {
+            await updateDoc(doc(db, 'topics', topicId), { name: newName })
+            setRenaming(prev => ({ ...prev, [topicId]: { value: newName, active: false, saving: false } }))
+            setSuccess('Topic name updated!')
+            setTimeout(() => setSuccess(null), 2500)
+        } catch (err) {
+            console.error('Error renaming topic:', err)
+            setError('Failed to rename topic.')
+            setRenaming(prev => ({ ...prev, [topicId]: { ...prev[topicId], saving: false } }))
+        }
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             <Header />
@@ -221,19 +254,62 @@ export default function ManageTopics() {
 
                                 return (
                                     <li key={topic.id} className="px-6 py-5 hover:bg-white dark:bg-slate-800/5 transition-colors">
-                                        {/* Row 1: name + delete */}
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center gap-3">
-                                                <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-                                                <span className="text-slate-900 dark:text-white font-semibold text-lg">{topic.name}</span>
-                                            </div>
-                                            <button
-                                                onClick={() => handleDelete(topic.id, topic.name)}
-                                                className="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded hover:bg-red-500/10 transition-all"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
+                                        {/* Row 1: name + rename + delete */}
+                                        {(() => {
+                                            const rn = renaming[topic.id]
+                                            const isRenaming = rn?.active
+                                            return (
+                                                <div className="flex items-center justify-between mb-3 gap-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                                                        {isRenaming ? (
+                                                            <div className="flex items-center gap-2 flex-1">
+                                                                <input
+                                                                    autoFocus
+                                                                    value={rn.value}
+                                                                    onChange={e => setRenaming(prev => ({ ...prev, [topic.id]: { ...prev[topic.id], value: e.target.value } }))}
+                                                                    onKeyDown={e => { if (e.key === 'Enter') handleRenameTopic(topic.id); if (e.key === 'Escape') cancelRename(topic.id) }}
+                                                                    className="flex-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border border-blue-500 rounded-lg px-3 py-1.5 text-base font-semibold focus:outline-none"
+                                                                    maxLength={80}
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleRenameTopic(topic.id)}
+                                                                    disabled={rn.saving}
+                                                                    className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-1 whitespace-nowrap"
+                                                                >
+                                                                    {rn.saving ? <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />Saving…</> : '✓ Save'}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => cancelRename(topic.id)}
+                                                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <span className="text-slate-900 dark:text-white font-semibold text-lg truncate">{topic.name}</span>
+                                                                <button
+                                                                    onClick={() => startRename(topic)}
+                                                                    title="Edit topic name"
+                                                                    className="text-slate-400 hover:text-blue-400 transition-colors p-1 rounded"
+                                                                >
+                                                                    ✏️
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    {!isRenaming && (
+                                                        <button
+                                                            onClick={() => handleDelete(topic.id, topic.name)}
+                                                            className="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded hover:bg-red-500/10 transition-all shrink-0"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )
+                                        })()}
 
                                         {/* Row 2: deadline pickers */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

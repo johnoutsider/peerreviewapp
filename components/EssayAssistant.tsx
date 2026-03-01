@@ -30,7 +30,6 @@ const MIN_CHANGE_PCT = 5
 const MIN_WORDS = 10
 
 export default function EssayAssistant({ essayContent }: EssayAssistantProps) {
-    const [isOpen, setIsOpen] = useState(false)
     const [history, setHistory] = useState<FeedbackEntry[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -46,8 +45,8 @@ export default function EssayAssistant({ essayContent }: EssayAssistantProps) {
     const progressColor = changePct >= MIN_CHANGE_PCT ? '#22c55e' : '#3b82f6'
 
     useEffect(() => {
-        if (isOpen) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [history, loading, isOpen])
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [history, loading])
 
     const runCheck = async () => {
         if (!canCheck) return
@@ -82,39 +81,22 @@ export default function EssayAssistant({ essayContent }: EssayAssistantProps) {
             className="flex flex-col rounded-2xl overflow-hidden shadow-sm"
             style={{ background: '#ffffff', border: '2px solid #3b82f6' }}
         >
-            {/* ── Header (always visible, toggles panel) ── */}
-            <button
-                type="button"
-                onClick={() => setIsOpen(o => !o)}
-                className="flex items-center justify-between px-4 py-3 w-full text-left shrink-0 hover:opacity-90 transition-opacity"
+            {/* ── Header (label only, no toggle) ── */}
+            <div
+                className="flex items-center gap-3 px-4 py-3 shrink-0"
                 style={{ background: '#3b82f6' }}
             >
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center font-extrabold text-blue-500 text-xs shrink-0">
-                        EVA
-                    </div>
-                    <div>
-                        <div className="text-white font-bold text-sm tracking-wide">EVA</div>
-                        <div className="text-blue-100 text-xs">Essay Virtual Assistant</div>
-                    </div>
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center font-extrabold text-blue-500 text-xs shrink-0">
+                    EVA
                 </div>
-                <span className="text-white text-base">{isOpen ? '▲' : '▼'}</span>
-            </button>
-
-            {/* ── Collapsed hint ── */}
-            {!isOpen && (
-                <div className="px-4 py-3 text-center">
-                    <p className="text-gray-500 text-sm">Click to open EVA and get feedback on your essay.</p>
-                    {history.length > 0 && (
-                        <p className="text-blue-500 text-xs mt-1 font-medium">
-                            {history.length} check{history.length !== 1 ? 's' : ''} done
-                        </p>
-                    )}
+                <div>
+                    <div className="text-white font-bold text-sm tracking-wide">EVA</div>
+                    <div className="text-blue-100 text-xs">Essay Virtual Assistant</div>
                 </div>
-            )}
+            </div>
 
-            {/* ── Expanded panel ── */}
-            {isOpen && (
+            {/* ── Always-expanded panel ── */}
+            <>
                 <>
                     {/* Progress bar — shown after first check */}
                     {history.length > 0 && (
@@ -227,7 +209,7 @@ export default function EssayAssistant({ essayContent }: EssayAssistantProps) {
                         </button>
                     </div>
                 </>
-            )}
+            </>
         </div>
     )
 }
