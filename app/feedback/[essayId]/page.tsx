@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore'
 import Header from '@/components/Header'
 import ScoreChart from '@/components/ScoreChart'
 import { calculateFinalScores, getScoreColor, getScoreLabel } from '@/lib/score-calculator'
@@ -33,6 +33,14 @@ export default function Feedback() {
         grammaticalRange: 5,
     })
     const [submittingTeacherReview, setSubmittingTeacherReview] = useState(false)
+
+    // Per-review student response state: { [reviewId]: { rating, response, saving, saved } }
+    const [studentResponses, setStudentResponses] = useState<Record<string, {
+        rating: number | null
+        response: string
+        saving: boolean
+        saved: boolean
+    }>>({})
 
     // AI assessment is performed at submission time. No on-demand AI button is needed.
 
@@ -85,6 +93,18 @@ export default function Feedback() {
                     }
                 })
                 const reviewsData = Array.from(uniqueReviewsMap.values())
+
+                // Seed student response state from existing Firestore data
+                const initialResponses: typeof studentResponses = {}
+                reviewsData.forEach((r: any) => {
+                    initialResponses[r.id] = {
+                        rating: r.studentRating ?? null,
+                        response: r.studentResponse ?? '',
+                        saving: false,
+                        saved: !!(r.studentRating || r.studentResponse),
+                    }
+                })
+                setStudentResponses(initialResponses)
 
                 // Check how many reviews this student has GIVEN + same-topic gating
                 if (!isTeacherRole) {
@@ -163,6 +183,22 @@ export default function Feedback() {
             alert('Failed to submit review')
         } finally {
             setSubmittingTeacherReview(false)
+        }
+    }
+
+    const handleSaveResponse = async (reviewId: string) => {
+        const state = studentResponses[reviewId]
+        if (!state || state.saving) return
+        setStudentResponses(prev => ({ ...prev, [reviewId]: { ...prev[reviewId], saving: true } }))
+        try {
+            await updateDoc(doc(db, 'reviews', reviewId), {
+                studentRating: state.rating,
+                studentResponse: state.response,
+            })
+            setStudentResponses(prev => ({ ...prev, [reviewId]: { ...prev[reviewId], saving: false, saved: true } }))
+        } catch (err) {
+            console.error('Error saving response:', err)
+            setStudentResponses(prev => ({ ...prev, [reviewId]: { ...prev[reviewId], saving: false } }))
         }
     }
 
@@ -517,6 +553,80 @@ export default function Feedback() {
                                         <div className="text-sm text-slate-500 dark:text-gray-400 mb-2">Feedback:</div>
                                         <p className="text-slate-600 dark:text-gray-300 whitespace-pre-wrap">{review.feedback}</p>
                                     </div>
+
+                                    {/* ── Helpfulness rating + student response ── */}
+                                    {!isTeacher && !isAI && !isTeacherReview && studentResponses[review.id] && (
+                                        <div className="mt-4 border-t border-slate-200 dark:border-white/10 pt-4 space-y-4">
+                                            {/* Rating */}
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-700 dark:text-gray-200 mb-1">
+                                                    Is this reviewer&apos;s feedback helpful?
+                                                </p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">1 = very unhelpful; 5 = very helpful</p>
+                                                <div className="flex gap-2">
+                                                    {[1, 2, 3, 4, 5].map(n => (
+                                                        <button
+                                                            key={n}
+                                                            type="button"
+                                                            onClick={() => setStudentResponses(prev => ({ ...prev, [review.id]: { ...prev[review.id], rating: n, saved: false } }))}
+                                                            className={`w-9 h-9 rounded-lg border text-sm font-bold transition-all ${studentResponses[review.id].rating === n
+                                                                ? 'bg-blue-500 border-blue-500 text-white'
+                                                                : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-white/20 text-slate-700 dark:text-white hover:border-blue-400'
+                                                                }`}
+                                                        >
+                                                            {n}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Written response */}
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-700 dark:text-gray-200 mb-1">
+                                                    Your response to the reviewer&apos;s feedback:
+                                                </p>
+                                                <textarea
+                                                    rows={3}
+                                                    value={studentResponses[review.id].response}
+                                                    onChange={e => setStudentResponses(prev => ({ ...prev, [review.id]: { ...prev[review.id], response: e.target.value, saved: false } }))}
+                                                    placeholder="Clarify the changes you've made in response to the reviewer's feedback. If you have any disagreements with their comments, provide a clear and logical justification."
+                                                    className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 resize-none transition-colors"
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSaveResponse(review.id)}
+                                                    disabled={studentResponses[review.id].saving || (!studentResponses[review.id].rating && !studentResponses[review.id].response.trim())}
+                                                    className="bg-blue-500 hover:bg-blue-600 disabled:opacity-40 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                                                >
+                                                    {studentResponses[review.id].saving ? 'Saving…' : 'Save Response'}
+                                                </button>
+                                                {studentResponses[review.id].saved && (
+                                                    <span className="text-green-500 text-sm font-medium">✓ Saved</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* ── Teacher sees the student's rating + response ── */}
+                                    {isTeacher && !isAI && !isTeacherReview && (review.studentRating || review.studentResponse) && (
+                                        <div className="mt-4 border-t border-slate-200 dark:border-white/10 pt-4 space-y-2">
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Student's Response to this Review</p>
+                                            {review.studentRating && (
+                                                <p className="text-sm text-slate-700 dark:text-gray-200">
+                                                    <span className="font-medium">Helpfulness rating:</span>{' '}
+                                                    <span className="text-blue-400 font-bold">{review.studentRating} / 5</span>
+                                                </p>
+                                            )}
+                                            {review.studentResponse && (
+                                                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 text-sm text-slate-700 dark:text-gray-300 whitespace-pre-wrap border border-slate-200 dark:border-white/10">
+                                                    {review.studentResponse}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )
                         })}

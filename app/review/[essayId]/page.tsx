@@ -182,14 +182,13 @@ export default function ReviewEssay() {
                 <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
                     {/* Essay Content */}
                     <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-slate-200 dark:border-white/10 shadow-sm h-max">
-                        <div className="flex items-start justify-between mb-6 gap-4">
-                            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">{essay.title}</h2>
-                            {essay.topicName && (
-                                <span className="shrink-0 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap">
+                        {essay.topicName && (
+                            <div className="mb-6">
+                                <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-full text-sm font-medium">
                                     🏷️ {essay.topicName}
                                 </span>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-5 md:p-6 mb-4">
                             <p className="text-slate-700 dark:text-gray-200 text-lg leading-relaxed whitespace-pre-wrap font-serif">
