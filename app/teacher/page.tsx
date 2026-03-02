@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import Header from '@/components/Header'
 import { calculateFinalScores } from '@/lib/score-calculator'
 
@@ -14,10 +14,16 @@ interface StudentData {
     displayName?: string
     groupName?: string
     role: string
-    submittedCount: number
+    submittedCount: number       // total essays (all topics)
+    filteredCount: number        // essays matching the selected topic filter
     reviewsGiven: number
     requiredReviews: number
     avgBand: number | null
+}
+
+interface Topic {
+    id: string
+    name: string
 }
 
 export default function TeacherDashboard() {
@@ -25,15 +31,27 @@ export default function TeacherDashboard() {
     const [loading, setLoading] = useState(true)
     const [students, setStudents] = useState<StudentData[]>([])
     const [groupFilter, setGroupFilter] = useState('')
+    const [topicFilter, setTopicFilter] = useState('')
+    const [topics, setTopics] = useState<Topic[]>([])
+
+    // Map of topicId -> topicName for quick lookup
+    const topicMap = Object.fromEntries(topics.map(t => [t.id, t.name]))
 
     useEffect(() => {
         const fetchData = async () => {
             if (!auth.currentUser) { router.push('/'); return }
 
             try {
-                const studentsSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'student')))
-                const essaysSnap = await getDocs(collection(db, 'essays'))
-                const reviewsSnap = await getDocs(collection(db, 'reviews'))
+                const [studentsSnap, essaysSnap, reviewsSnap, topicsSnap] = await Promise.all([
+                    getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
+                    getDocs(collection(db, 'essays')),
+                    getDocs(collection(db, 'reviews')),
+                    getDocs(query(collection(db, 'topics'), orderBy('createdAt', 'desc'))),
+                ])
+
+                // Build topics list
+                const topicList = topicsSnap.docs.map(d => ({ id: d.id, name: (d.data() as any).name as string }))
+                setTopics(topicList)
 
                 const studentStats = await Promise.all(studentsSnap.docs.map(async (sDoc) => {
                     const s = sDoc.data() as any
@@ -54,7 +72,6 @@ export default function TeacherDashboard() {
                         let totalBand = 0
                         let essaysWithReviews = 0
 
-                        // Calculate each essay's final overall band based on its peer reviews
                         for (const essayId of essayIds) {
                             const reviewsForEssay = receivedReviews.filter(r => r.essayId === essayId)
                             if (reviewsForEssay.length > 0) {
@@ -77,19 +94,37 @@ export default function TeacherDashboard() {
                         groupName: s.groupName || '',
                         role: s.role,
                         submittedCount: myEssays.length,
+                        filteredCount: myEssays.length, // placeholder, computed below
                         reviewsGiven: myReviews.length,
-                        requiredReviews: myEssays.length * 3 || 3, // Each essay requires 3 reviews
+                        requiredReviews: myEssays.length * 3 || 3,
                         avgBand,
-                    } as StudentData
+                        // carry essays for filtering
+                        _essays: myEssays,
+                    } as StudentData & { _essays: typeof myEssays }
+                }))
+
+                const finalStats: StudentData[] = studentStats.map(({ _essays, ...rest }: any) => ({
+                    ...rest,
+                    // filteredCount updated dynamically by computed variable below
                 }))
 
                 // Sort: by group then by name
-                studentStats.sort((a, b) => {
+                finalStats.sort((a, b) => {
                     const g = (a.groupName || '').localeCompare(b.groupName || '')
                     return g !== 0 ? g : (a.displayName || '').localeCompare(b.displayName || '')
                 })
 
-                setStudents(studentStats)
+                // Store raw essays per student in a side map for filtering
+                const essaysByStudent: Record<string, typeof essaysSnap.docs> = {}
+                studentsSnap.docs.forEach(sDoc => {
+                    essaysByStudent[sDoc.id] = essaysSnap.docs.filter(e => e.data().studentId === sDoc.id)
+                })
+
+                // We attach essaysByStudent to state via a ref trick—store it alongside students
+                setStudents(finalStats.map(s => ({
+                    ...s,
+                    _essayTopics: essaysByStudent[s.uid]?.map(e => e.data().topicId || '') ?? [],
+                } as any)))
             } catch (error) {
                 console.error('Error fetching teacher data:', error)
             } finally {
@@ -100,7 +135,27 @@ export default function TeacherDashboard() {
     }, [router])
 
     const groups = [...new Set(students.map(s => s.groupName).filter(Boolean))]
-    const filtered = groupFilter ? students.filter(s => s.groupName === groupFilter) : students
+
+    // Compute filtered list and per-student essay counts
+    const filtered = students
+        .map((student: any) => {
+            const essayTopics: string[] = student._essayTopics ?? []
+            const filteredCount = topicFilter
+                ? essayTopics.filter(t => t === topicFilter).length
+                : student.submittedCount
+            return { ...student, filteredCount }
+        })
+        .filter(student => {
+            const groupMatch = groupFilter ? student.groupName === groupFilter : true
+            // When topic filtered, only show students who submitted for that topic
+            const topicMatch = topicFilter ? student.filteredCount > 0 : true
+            return groupMatch && topicMatch
+        })
+
+    // Summary stats reflect the current filter
+    const totalEssays = topicFilter
+        ? filtered.reduce((a, s) => a + s.filteredCount, 0)
+        : students.reduce((a, s) => a + s.submittedCount, 0)
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -166,7 +221,7 @@ export default function TeacherDashboard() {
                     {[
                         { label: 'Total Students', value: students.length, color: 'blue' },
                         { label: 'Groups', value: groups.length || '—', color: 'purple' },
-                        { label: 'Essays Submitted', value: students.reduce((a, s) => a + s.submittedCount, 0), color: 'green' },
+                        { label: 'Essays Submitted', value: totalEssays, color: 'green' },
                         { label: 'Reviews Given', value: students.reduce((a, s) => a + s.reviewsGiven, 0), color: 'yellow' },
                     ].map(({ label, value, color }) => (
                         <div key={label} className={`bg-${color}-500/10 border border-${color}-500/30 rounded-xl p-4 text-center`}>
@@ -176,78 +231,130 @@ export default function TeacherDashboard() {
                     ))}
                 </div>
 
+                {/* Student table with topic filter */}
                 <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+                    {/* Table header with topic filter */}
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-3">
+                            <span className="text-slate-700 dark:text-gray-200 font-semibold text-sm">Filter by topic:</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    onClick={() => setTopicFilter('')}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${topicFilter === ''
+                                        ? 'bg-blue-500 text-white border-blue-500'
+                                        : 'bg-transparent text-slate-500 dark:text-gray-400 border-slate-300 dark:border-white/20 hover:border-blue-400 hover:text-blue-400'
+                                        }`}
+                                >
+                                    All Topics
+                                </button>
+                                {topics.map(t => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setTopicFilter(topicFilter === t.id ? '' : t.id)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${topicFilter === t.id
+                                            ? 'bg-blue-500 text-white border-blue-500'
+                                            : 'bg-transparent text-slate-500 dark:text-gray-400 border-slate-300 dark:border-white/20 hover:border-blue-400 hover:text-blue-400'
+                                            }`}
+                                    >
+                                        🏷️ {t.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        {topicFilter && (
+                            <span className="text-xs text-blue-400 font-medium">
+                                Showing {filtered.length} student{filtered.length !== 1 ? 's' : ''} who submitted for &quot;{topicMap[topicFilter]}&quot;
+                            </span>
+                        )}
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="bg-slate-100 dark:bg-slate-900/50">
                                 <tr>
+                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold w-12">#</th>
                                     <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Student</th>
                                     <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Group</th>
                                     <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Email</th>
-                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Essays</th>
+                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">
+                                        Essays
+                                        {topicFilter && (
+                                            <span className="ml-1 text-xs text-blue-400 font-normal">(topic)</span>
+                                        )}
+                                    </th>
                                     <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Reviews Given</th>
                                     <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Avg Band</th>
                                     <th className="py-4 px-6 text-right text-slate-600 dark:text-gray-300 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/10">
-                                {filtered.map((student) => (
-                                    <tr key={student.uid} className="hover:bg-white dark:bg-slate-800/5 transition-colors">
-                                        <td className="py-4 px-6">
-                                            <div className="text-slate-900 dark:text-white font-medium">{student.displayName || student.name}</div>
-                                            {student.displayName && student.displayName !== student.name && (
-                                                <div className="text-gray-500 text-xs">{student.name}</div>
-                                            )}
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            {student.groupName ? (
-                                                <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full text-xs font-medium">
-                                                    {student.groupName}
+                                {filtered.map((student, index) => {
+                                    const essayCount = topicFilter ? student.filteredCount : student.submittedCount
+                                    return (
+                                        <tr key={student.uid} className="hover:bg-white dark:bg-slate-800/5 transition-colors">
+                                            <td className="py-4 px-6 text-slate-400 dark:text-gray-500 text-sm font-medium">{index + 1}</td>
+                                            <td className="py-4 px-6">
+                                                <div className="text-slate-900 dark:text-white font-medium">{student.displayName || student.name}</div>
+                                                {student.displayName && student.displayName !== student.name && (
+                                                    <div className="text-gray-500 text-xs">{student.name}</div>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-6">
+                                                {student.groupName ? (
+                                                    <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full text-xs font-medium">
+                                                        {student.groupName}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-600 text-sm">—</span>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-6 text-slate-500 dark:text-gray-400 text-sm">{student.email}</td>
+                                            <td className="py-4 px-6 text-center">
+                                                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${essayCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500 dark:text-gray-400'}`}>
+                                                    {topicFilter
+                                                        ? `${student.filteredCount} / ${student.submittedCount}`
+                                                        : student.submittedCount
+                                                    }
                                                 </span>
-                                            ) : (
-                                                <span className="text-gray-600 text-sm">—</span>
-                                            )}
-                                        </td>
-                                        <td className="py-4 px-6 text-slate-500 dark:text-gray-400 text-sm">{student.email}</td>
-                                        <td className="py-4 px-6 text-center">
-                                            <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.submittedCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500 dark:text-gray-400'}`}>
-                                                {student.submittedCount}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= student.requiredReviews ? 'bg-green-500/20 text-green-400' :
-                                                student.reviewsGiven > 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                    'bg-gray-700 text-slate-500 dark:text-gray-400'
-                                                }`}>
-                                                {student.reviewsGiven} / {student.requiredReviews}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-6 text-center">
-                                            {student.avgBand != null ? (
-                                                <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${student.avgBand >= 7 ? 'bg-green-500/20 text-green-400' :
-                                                    student.avgBand >= 5.5 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        'bg-red-500/20 text-red-400'
+                                            </td>
+                                            <td className="py-4 px-6 text-center">
+                                                <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= student.requiredReviews ? 'bg-green-500/20 text-green-400' :
+                                                    student.reviewsGiven > 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                        'bg-gray-700 text-slate-500 dark:text-gray-400'
                                                     }`}>
-                                                    {student.avgBand}
+                                                    {student.reviewsGiven} / {student.requiredReviews}
                                                 </span>
-                                            ) : (
-                                                <span className="text-gray-600 text-sm">—</span>
-                                            )}
-                                        </td>
-                                        <td className="py-4 px-6 text-right">
-                                            <button
-                                                className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                                                onClick={() => router.push(`/teacher/${student.uid}`)}
-                                            >
-                                                View Details →
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="py-4 px-6 text-center">
+                                                {student.avgBand != null ? (
+                                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${student.avgBand >= 7 ? 'bg-green-500/20 text-green-400' :
+                                                        student.avgBand >= 5.5 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                            'bg-red-500/20 text-red-400'
+                                                        }`}>
+                                                        {student.avgBand}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-600 text-sm">—</span>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-6 text-right">
+                                                <button
+                                                    className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                                                    onClick={() => router.push(`/teacher/${student.uid}`)}
+                                                >
+                                                    View Details →
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} className="py-8 text-center text-gray-500">
-                                            No students found.
+                                        <td colSpan={8} className="py-8 text-center text-gray-500">
+                                            {topicFilter
+                                                ? `No students have submitted essays for "${topicMap[topicFilter]}" yet.`
+                                                : 'No students found.'
+                                            }
                                         </td>
                                     </tr>
                                 )}
