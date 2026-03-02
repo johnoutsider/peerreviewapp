@@ -611,19 +611,42 @@ export default function Feedback() {
                                     )}
 
                                     {/* ── Teacher sees the student's rating + response ── */}
-                                    {isTeacher && !isAI && !isTeacherReview && (review.studentRating || review.studentResponse) && (
-                                        <div className="mt-4 border-t border-slate-200 dark:border-white/10 pt-4 space-y-2">
-                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Student's Response to this Review</p>
-                                            {review.studentRating && (
-                                                <p className="text-sm text-slate-700 dark:text-gray-200">
-                                                    <span className="font-medium">Helpfulness rating:</span>{' '}
-                                                    <span className="text-blue-400 font-bold">{review.studentRating} / 5</span>
-                                                </p>
-                                            )}
-                                            {review.studentResponse && (
-                                                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 text-sm text-slate-700 dark:text-gray-300 whitespace-pre-wrap border border-slate-200 dark:border-white/10">
+                                    {isTeacher && !isAI && !isTeacherReview && (
+                                        <div className="mt-4 border-t border-slate-200 dark:border-white/10 pt-4 space-y-3">
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                                💬 Student&apos;s Response to this Review
+                                            </p>
+
+                                            {/* Helpfulness rating */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-slate-600 dark:text-gray-300 font-medium">Helpfulness:</span>
+                                                {review.studentRating ? (
+                                                    <div className="flex items-center gap-1">
+                                                        {[1, 2, 3, 4, 5].map(n => (
+                                                            <span
+                                                                key={n}
+                                                                className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold border ${n <= review.studentRating
+                                                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                                                        : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-white/10 text-slate-400'
+                                                                    }`}
+                                                            >
+                                                                {n}
+                                                            </span>
+                                                        ))}
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">{review.studentRating}/5</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-slate-400 italic">Not rated yet</span>
+                                                )}
+                                            </div>
+
+                                            {/* Written reply */}
+                                            {review.studentResponse ? (
+                                                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 text-sm text-slate-700 dark:text-gray-300 whitespace-pre-wrap border border-slate-200 dark:border-white/10 shadow-sm">
                                                     {review.studentResponse}
                                                 </div>
+                                            ) : (
+                                                <p className="text-sm text-slate-400 italic">No written reply yet.</p>
                                             )}
                                         </div>
                                     )}
