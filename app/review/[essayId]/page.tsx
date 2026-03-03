@@ -5,8 +5,146 @@ import { useRouter, useParams } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
 import Header from '@/components/Header'
-import Alert from '@/components/Alert'
 
+// ─── Rubric Definition ─────────────────────────────────────────────────────────
+const ASPECTS = [
+    {
+        id: 'content', title: 'Content',
+        levels: [
+            { range: '27–30', desc: 'Essay clearly addresses topic · Ideas are developed thoroughly · Essay reflects substantive thought · No extraneous material' },
+            { range: '22–26', desc: 'Essay mostly focused on topic · Expresses a few advanced ideas · Some details and reasons included, though thesis not fully developed' },
+            { range: '17–21', desc: 'Essay minimally addresses the topic (at the surface level) · Development of ideas is not complete · Lacks detail and support' },
+            { range: '13–16', desc: 'Essay does not adequately address the topic · Ideas are either non-substantive or not pertinent · OR Not enough to evaluate' },
+        ],
+    },
+    {
+        id: 'organization', title: 'Organization',
+        levels: [
+            { range: '18–20', desc: 'Essay is well-organized · Paragraphs demonstrate logical sequencing · Sophisticated use of connectors contribute to cohesion' },
+            { range: '14–17', desc: 'Somewhat choppy and loosely organized, but clear main ideas · Mostly logical sequencing · Frequent and appropriate use of connectors' },
+            { range: '10–13', desc: 'Essay organization barely seen; lacks fluidity · Ideas appear disconnected and lack logical flow · Some simple connectors may be used' },
+            { range: '7–9', desc: 'Essay lacks any discernible organization of ideas · Sentences unrelated to one another, or randomly written · OR Not enough to evaluate' },
+        ],
+    },
+    {
+        id: 'vocabulary', title: 'Vocabulary',
+        levels: [
+            { range: '18–20', desc: 'Effective and appropriate word/idiom choice and usage · Wide range of vocabulary; more frequent use of academic vocabulary · Word form mastery' },
+            { range: '14–17', desc: 'Occasional errors of word/idiom choice and usage, but meaning not obscured · Adequate range; some use of low-frequency or specialized vocabulary' },
+            { range: '10–13', desc: 'More frequent errors of word/idiom choice and usage; meaning occasionally obscured · More limited range of vocabulary; repetitive' },
+            { range: '7–9', desc: 'Large number of errors in word choice and usage such that meaning is frequently obscured · Very limited range and/or too little writing to evaluate' },
+        ],
+    },
+    {
+        id: 'languageUse', title: 'Language Use',
+        levels: [
+            { range: '22–25', desc: 'Effective complex constructions · No, or only a few minor errors in use of relative clauses, agreement, tense, articles, pronouns, prepositions' },
+            { range: '18–21', desc: 'Effective but simple constructions · Errors of agreement, tense, articles, pronouns, and prepositions, but meaning not obscured' },
+            { range: '11–17', desc: 'Definite problems in simple/complex constructions · Little variety in sentence type · Frequent errors obscure meaning' },
+            { range: '5–10', desc: 'Virtually no mastery of sentence construction rules · Dominated by errors and grammar problems · Barely communicates' },
+        ],
+    },
+    {
+        id: 'mechanics', title: 'Mechanics',
+        levels: [
+            { range: '5', desc: 'Demonstrates mastery of conventions · Few errors of spelling, punctuation, capitalization, paragraphing' },
+            { range: '4', desc: 'Occasional errors of spelling, punctuation, capitalization, paragraphing but meaning not obscured' },
+            { range: '3', desc: 'Frequent errors of spelling, punctuation, capitalization, paragraphing · Poor handwriting · Meaning confused or obscured' },
+            { range: '2', desc: 'No mastery of conventions · Dominated by errors · Handwriting illegible · OR Not enough to evaluate' },
+        ],
+    },
+]
+
+const ACCENT = '#2563eb'
+
+function getHighest(range: string | null): number {
+    if (!range) return 0
+    const nums = range.split('–').map(n => parseInt(n.trim(), 10))
+    return Math.max(...nums)
+}
+
+// ─── Sub-components ─────────────────────────────────────────────────────────────
+function AspectCard({
+    aspect, index, selected, onSelect,
+}: {
+    aspect: typeof ASPECTS[0]
+    index: number
+    selected: string | null
+    onSelect: (range: string | null) => void
+}) {
+    return (
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, marginBottom: 12, background: '#fff', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ width: 26, height: 26, borderRadius: '50%', background: ACCENT, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{index}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{aspect.title}</span>
+            </div>
+            <div style={{ padding: '10px 16px 12px' }}>
+                {aspect.levels.map((lv, i) => {
+                    const isSelected = selected === lv.range
+                    return (
+                        <div key={i} style={{
+                            display: 'flex', alignItems: 'stretch',
+                            borderRadius: 6, marginBottom: 4, overflow: 'hidden',
+                            border: isSelected ? `1.5px solid ${ACCENT}` : '1.5px solid transparent',
+                            background: i % 2 === 0 ? '#f9fafb' : '#fff',
+                        }}>
+                            <button
+                                type="button"
+                                onClick={() => onSelect(isSelected ? null : lv.range)}
+                                style={{
+                                    padding: '8px 12px',
+                                    background: isSelected ? ACCENT : '#f3f4f6',
+                                    color: isSelected ? '#fff' : '#374151',
+                                    fontSize: 11, fontWeight: 700,
+                                    border: 'none',
+                                    borderRight: `1px solid ${isSelected ? ACCENT : '#e5e7eb'}`,
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0,
+                                    transition: 'all 0.15s',
+                                }}
+                            >
+                                {lv.range}
+                            </button>
+                            <span style={{ padding: '8px 12px', fontSize: 12.5, color: '#374151', lineHeight: 1.6 }}>
+                                {lv.desc}
+                            </span>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+function EssayPanel({ essay }: { essay: any }) {
+    const wordCount = essay?.content?.trim().split(/\s+/).filter(Boolean).length ?? 0
+    return (
+        <div style={{ padding: '16px' }}>
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '16px', marginBottom: 16 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px' }}>Topic</p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 14px' }}>{essay?.topicName || 'Essay'}</p>
+                {essay?.topicInstruction && (
+                    <>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Task Instruction</p>
+                        <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.75, margin: 0 }}>{essay.topicInstruction}</p>
+                    </>
+                )}
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '18px 16px' }}>
+                {essay?.title && (
+                    <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 14px', paddingBottom: 12, borderBottom: '1px solid #f3f4f6' }}>{essay.title}</p>
+                )}
+                <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.85, margin: 0, whiteSpace: 'pre-wrap' }}>{essay?.content}</p>
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
+                    <span style={{ fontSize: 12, color: '#6b7280', background: '#f3f4f6', padding: '3px 10px', borderRadius: 20 }}>📝 {wordCount} words</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────────
 export default function ReviewEssay() {
     const router = useRouter()
     const params = useParams()
@@ -20,126 +158,112 @@ export default function ReviewEssay() {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
-    const [scores, setScores] = useState({
-        taskAchievement: 5,
-        coherenceCohesion: 5,
-        lexicalResource: 5,
-        grammaticalRange: 5,
+    // Rubric scores: { content: '27–30' | null, organization: ... }
+    const [scores, setScores] = useState<Record<string, string | null>>({
+        content: null, organization: null, vocabulary: null, languageUse: null, mechanics: null,
     })
     const [feedback, setFeedback] = useState('')
 
+    // Mobile tab
+    const [activeTab, setActiveTab] = useState<'essay' | 'rubric'>('essay')
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener('resize', check)
+        return () => window.removeEventListener('resize', check)
+    }, [])
+
     useEffect(() => {
         const fetchEssay = async () => {
-            if (!auth.currentUser) {
-                router.push('/')
-                return
-            }
-
+            if (!auth.currentUser) { router.push('/'); return }
             try {
-                // Get essay
                 const essayDoc = await getDoc(doc(db, 'essays', essayId))
-                if (!essayDoc.exists()) {
-                    setNotFound(true)
-                    return
-                }
+                if (!essayDoc.exists()) { setNotFound(true); return }
 
-                // Check if already reviewed
-                const reviewsQuery = query(
+                const reviewsQ = query(
                     collection(db, 'reviews'),
                     where('essayId', '==', essayId),
                     where('reviewerId', '==', auth.currentUser.uid)
                 )
-                const reviewsSnapshot = await getDocs(reviewsQuery)
-
-                if (!reviewsSnapshot.empty) {
-                    setAlreadyReviewed(true)
-                }
+                const reviewsSnap = await getDocs(reviewsQ)
+                if (!reviewsSnap.empty) setAlreadyReviewed(true)
 
                 setEssay({ id: essayDoc.id, ...essayDoc.data() })
-            } catch (error) {
-                console.error('Error fetching essay:', error)
+            } catch (err) {
+                console.error('Error fetching essay:', err)
             } finally {
                 setLoading(false)
             }
         }
-
         fetchEssay()
     }, [essayId, router])
+
+    const allScored = ASPECTS.every(a => scores[a.id] !== null)
+    const totalScore = ASPECTS.reduce((sum, a) => sum + getHighest(scores[a.id]), 0)
+    const wordCount = feedback.trim() === '' ? 0 : feedback.trim().split(/\s+/).length
+    const feedbackValid = wordCount >= 20
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
-        setSuccess(null)
-
         if (!auth.currentUser || !essay) return
-
-        if (feedback.trim().length < 200) {
-            setError('Please provide at least 200 characters of feedback to help your peer improve.')
-            return
-        }
+        if (!allScored) { setError('Please select a score for all 5 rubric categories.'); return }
+        if (!feedbackValid) { setError('Please write at least 20 words of feedback.'); return }
 
         setSubmitting(true)
-
         try {
             await addDoc(collection(db, 'reviews'), {
                 essayId,
                 reviewerId: auth.currentUser.uid,
                 reviewerName: auth.currentUser.displayName || 'Anonymous',
                 scores,
+                totalScore,
                 feedback,
                 completedAt: serverTimestamp(),
             })
 
-            // Trigger Telegram notification (fire and forget)
-            // We read the essay author's telegramChatId client-side (auth is present)
-            // and pass it directly to the API — no server Firestore access needed.
+            // Telegram notification (fire-and-forget)
             try {
                 const authorDoc = await getDoc(doc(db, 'users', essay.studentId))
-                const authorChatId = authorDoc.exists() ? authorDoc.data().telegramChatId : null
-
-                if (authorChatId) {
+                const chatId = authorDoc.exists() ? authorDoc.data().telegramChatId : null
+                if (chatId) {
                     fetch('/api/notifications/telegram', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chatId: authorChatId,
-                            essayTitle: essay.title,
-                        })
-                    }).catch(err => console.error('Notification fetch failed:', err))
+                        body: JSON.stringify({ chatId, essayTitle: essay.title }),
+                    }).catch(() => { })
                 }
-            } catch (notifyError) {
-                console.error('Failed to trigger notification:', notifyError)
-                // Never block the review flow for a notification failure
-            }
+            } catch { }
 
             setSuccess('Review submitted successfully! Redirecting...')
-            setTimeout(() => {
-                router.push('/review')
-            }, 1500)
-        } catch (error) {
-            console.error('Error submitting review:', error)
+            setTimeout(() => router.push('/review'), 1500)
+        } catch (err) {
+            console.error('Error submitting review:', err)
             setError('Failed to submit review. Please try again.')
         } finally {
             setSubmitting(false)
         }
     }
 
+    // ── Loading / guard states ────────────────────────────────────────────
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', border: `3px solid ${ACCENT}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }
 
     if (notFound) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Essay Not Found</h1>
-                    <button onClick={() => router.push('/review')} className="text-blue-400 hover:text-blue-300">
-                        &larr; Back to Reviews
-                    </button>
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', fontFamily: 'system-ui, sans-serif' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 48, margin: '0 0 12px' }}>🔍</p>
+                    <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>Essay Not Found</h2>
+                    <button onClick={() => router.push('/review')} style={{ color: ACCENT, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>← Back to Reviews</button>
                 </div>
             </div>
         )
@@ -147,123 +271,167 @@ export default function ReviewEssay() {
 
     if (alreadyReviewed) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+            <div style={{ minHeight: '100vh', background: '#f3f4f6', fontFamily: 'system-ui, sans-serif' }}>
                 <Header />
-                <main className="container mx-auto px-4 py-8 max-w-4xl">
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-12 text-center">
-                        <div className="text-6xl mb-4">✅</div>
-                        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">Already Reviewed</h2>
-                        <p className="text-slate-500 dark:text-gray-400 mb-6">You&apos;ve already submitted a review for this essay.</p>
-                        <button
-                            onClick={() => router.push('/review')}
-                            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                            Back to Reviews
-                        </button>
-                    </div>
-                </main>
+                <div style={{ maxWidth: 480, margin: '80px auto', padding: '40px 32px', background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <p style={{ fontSize: 52, margin: '0 0 12px' }}>✅</p>
+                    <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>Already Reviewed</h2>
+                    <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 24px' }}>You've already submitted a review for this essay.</p>
+                    <button onClick={() => router.push('/review')} style={{ background: ACCENT, color: '#fff', border: 'none', padding: '10px 28px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Back to Reviews</button>
+                </div>
             </div>
         )
     }
 
-    return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
+    // ── Rubric panel (right side) ─────────────────────────────────────────
+    const RubricPanel = () => (
+        <div style={{ padding: '16px', background: '#f9fafb' }}>
+            <p style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Writing Development Rubric</p>
+            <p style={{ fontSize: 12.5, color: '#6b7280', margin: '0 0 16px', lineHeight: 1.6 }}>
+                Click a score range to select it for each category.
+            </p>
 
-            <main className="container mx-auto px-4 py-8 max-w-5xl">
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">Review Essay</h1>
-                    <p className="text-slate-500 dark:text-gray-400">Provide constructive feedback using the assessment criteria</p>
+            {error && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#b91c1c' }}>
+                    {error}
+                </div>
+            )}
+            {success && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#15803d' }}>
+                    {success}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                {ASPECTS.map((aspect, i) => (
+                    <AspectCard
+                        key={aspect.id}
+                        aspect={aspect}
+                        index={i + 1}
+                        selected={scores[aspect.id]}
+                        onSelect={(range) => setScores(prev => ({ ...prev, [aspect.id]: range }))}
+                    />
+                ))}
+
+                {/* Total Score */}
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', padding: '14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px' }}>Total Score</p>
+                        <p style={{ fontSize: 28, fontWeight: 800, color: allScored ? ACCENT : '#d1d5db', margin: 0, lineHeight: 1 }}>
+                            {allScored ? totalScore : '—'}
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
+                        {ASPECTS.map(a => (
+                            <div key={a.id} style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{a.title}</div>
+                                <div style={{ padding: '2px 8px', borderRadius: 4, background: scores[a.id] ? ACCENT : '#f3f4f6', color: scores[a.id] ? '#fff' : '#9ca3af', fontSize: 12, fontWeight: 700 }}>
+                                    {scores[a.id] ? getHighest(scores[a.id]) : '–'}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
-                {success && <Alert type="success" message={success} />}
-
-                <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
-                    {/* Essay Content */}
-                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-slate-200 dark:border-white/10 shadow-sm h-max">
-                        {essay.topicName && (
-                            <div className="mb-6">
-                                <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-full text-sm font-medium">
-                                    🏷️ {essay.topicName}
-                                </span>
-                            </div>
-                        )}
-
-                        <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-5 md:p-6 mb-4">
-                            <p className="text-slate-700 dark:text-gray-200 text-lg leading-relaxed whitespace-pre-wrap font-serif">
-                                {essay.content}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
-                                📝 {essay.content?.trim().split(/\s+/).filter((w: string) => w).length ?? 0} words
+                {/* Write Your Review */}
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', overflow: 'hidden', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid #f3f4f6' }}>
+                        <span style={{ width: 26, height: 26, borderRadius: '50%', background: ACCENT, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>6</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Write Your Review</span>
+                    </div>
+                    <div style={{ padding: '12px 16px' }}>
+                        <textarea
+                            value={feedback}
+                            onChange={e => { setFeedback(e.target.value); setError(null) }}
+                            placeholder="Please input at least 20 words. When providing comments, please avoid simply copying and pasting the descriptors from the rating rubric. Your peers would benefit from personalized feedback that is specific to their work."
+                            style={{
+                                width: '100%', minHeight: 130, padding: '10px 12px',
+                                border: '1px solid #e5e7eb', borderRadius: 6,
+                                fontSize: 13, color: '#374151', lineHeight: 1.65,
+                                resize: 'vertical', outline: 'none', boxSizing: 'border-box',
+                                fontFamily: 'system-ui, -apple-system, sans-serif',
+                                background: '#f8fafc',
+                            }}
+                        />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                            <span style={{ fontSize: 12, color: feedbackValid ? '#6b7280' : '#ef4444' }}>
+                                {wordCount} word{wordCount !== 1 ? 's' : ''}
+                                {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
                             </span>
                         </div>
                     </div>
-
-                    {/* Review Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6 flex flex-col h-full">
-                        <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm">
-                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Assessment Criteria Scores (0-9)</h3>
-
-                            {Object.entries(scores).map(([key, value]) => (
-                                <div key={key} className="mb-4">
-                                    <label className="block text-slate-600 dark:text-gray-300 mb-2 capitalize">
-                                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                                    </label>
-                                    <div className="flex items-center gap-4">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="9"
-                                            step="0.5"
-                                            value={value}
-                                            onChange={(e) => setScores({ ...scores, [key]: parseFloat(e.target.value) })}
-                                            className="flex-1"
-                                        />
-                                        <span className="text-2xl font-bold text-blue-400 min-w-[40px]">{value}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm">
-                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Written Feedback</h3>
-                            <textarea
-                                value={feedback}
-                                onChange={(e) => setFeedback(e.target.value)}
-                                placeholder="Provide detailed feedback on strengths and areas for improvement (minimum 200 characters)..."
-                                rows={10}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors resize-none"
-                                required
-                            />
-                            <div className="mt-2 flex justify-end">
-                                <span className={`text-sm font-medium ${feedback.trim().length < 200 ? 'text-orange-400' : 'text-green-400'}`}>
-                                    {feedback.trim().length} / 200 characters min
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="pt-4 mt-auto">
-                            <button
-                                type="submit"
-                                disabled={submitting || feedback.trim().length < 200}
-                                className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold text-xl py-5 rounded-xl hover:from-green-600 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-green-500/20"
-                            >
-                                {submitting ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                                        Submitting Review...
-                                    </>
-                                ) : (
-                                    'Submit Review'
-                                )}
-                            </button>
-                        </div>
-                    </form>
                 </div>
-            </main>
+
+                {/* Submit */}
+                <button
+                    type="submit"
+                    disabled={submitting || !allScored || !feedbackValid}
+                    style={{
+                        width: '100%', padding: '13px 0', borderRadius: 9,
+                        background: allScored && feedbackValid ? '#16a34a' : '#e5e7eb',
+                        color: allScored && feedbackValid ? '#fff' : '#9ca3af',
+                        fontSize: 15, fontWeight: 700, border: 'none',
+                        cursor: allScored && feedbackValid ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.2s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    }}
+                >
+                    {submitting ? (
+                        <>
+                            <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                            Submitting…
+                            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                        </>
+                    ) : 'Submit Review'}
+                </button>
+            </form>
+        </div>
+    )
+
+    // ── Layout ────────────────────────────────────────────────────────────
+    return (
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, -apple-system, sans-serif', background: '#f3f4f6' }}>
+            <Header />
+
+            {/* Mobile tabs */}
+            {isMobile && (
+                <div style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
+                    {(['essay', 'rubric'] as const).map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            style={{
+                                flex: 1, padding: '12px 0',
+                                fontSize: 14, fontWeight: 600,
+                                border: 'none', cursor: 'pointer',
+                                background: 'transparent',
+                                color: activeTab === tab ? ACCENT : '#6b7280',
+                                borderBottom: activeTab === tab ? `2.5px solid ${ACCENT}` : '2.5px solid transparent',
+                                transition: 'all 0.15s',
+                                textTransform: 'capitalize',
+                            }}
+                        >
+                            {tab === 'essay' ? 'Essay' : 'Rubric'}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Body */}
+            {isMobile ? (
+                <div style={{ flex: 1, overflow: 'auto' }}>
+                    {activeTab === 'essay' ? <EssayPanel essay={essay} /> : <RubricPanel />}
+                </div>
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
+                    <div style={{ overflow: 'auto', borderRight: '1px solid #e5e7eb' }}>
+                        <EssayPanel essay={essay} />
+                    </div>
+                    <div style={{ overflow: 'auto' }}>
+                        <RubricPanel />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
