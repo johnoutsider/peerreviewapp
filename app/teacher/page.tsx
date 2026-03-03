@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore'
 import Header from '@/components/Header'
 import { calculateFinalScores } from '@/lib/score-calculator'
 
@@ -37,21 +37,25 @@ export default function TeacherDashboard() {
     // Map of topicId -> topicName for quick lookup
     const topicMap = Object.fromEntries(topics.map(t => [t.id, t.name]))
 
+    // Live topic listener — updates instantly when teacher adds/removes topics
+    useEffect(() => {
+        const unsub = onSnapshot(
+            query(collection(db, 'topics'), orderBy('createdAt', 'desc')),
+            snap => setTopics(snap.docs.map(d => ({ id: d.id, name: (d.data() as any).name as string })))
+        )
+        return () => unsub()
+    }, [])
+
     useEffect(() => {
         const fetchData = async () => {
             if (!auth.currentUser) { router.push('/'); return }
 
             try {
-                const [studentsSnap, essaysSnap, reviewsSnap, topicsSnap] = await Promise.all([
+                const [studentsSnap, essaysSnap, reviewsSnap] = await Promise.all([
                     getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
                     getDocs(collection(db, 'essays')),
                     getDocs(collection(db, 'reviews')),
-                    getDocs(query(collection(db, 'topics'), orderBy('createdAt', 'desc'))),
                 ])
-
-                // Build topics list
-                const topicList = topicsSnap.docs.map(d => ({ id: d.id, name: (d.data() as any).name as string }))
-                setTopics(topicList)
 
                 const studentStats = await Promise.all(studentsSnap.docs.map(async (sDoc) => {
                     const s = sDoc.data() as any
@@ -237,29 +241,16 @@ export default function TeacherDashboard() {
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between gap-4 flex-wrap">
                         <div className="flex items-center gap-3">
                             <span className="text-slate-700 dark:text-gray-200 font-semibold text-sm">Filter by topic:</span>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <button
-                                    onClick={() => setTopicFilter('')}
-                                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${topicFilter === ''
-                                        ? 'bg-blue-500 text-white border-blue-500'
-                                        : 'bg-transparent text-slate-500 dark:text-gray-400 border-slate-300 dark:border-white/20 hover:border-blue-400 hover:text-blue-400'
-                                        }`}
-                                >
-                                    All Topics
-                                </button>
+                            <select
+                                value={topicFilter}
+                                onChange={e => setTopicFilter(e.target.value)}
+                                className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                            >
+                                <option value="">All Topics</option>
                                 {topics.map(t => (
-                                    <button
-                                        key={t.id}
-                                        onClick={() => setTopicFilter(topicFilter === t.id ? '' : t.id)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${topicFilter === t.id
-                                            ? 'bg-blue-500 text-white border-blue-500'
-                                            : 'bg-transparent text-slate-500 dark:text-gray-400 border-slate-300 dark:border-white/20 hover:border-blue-400 hover:text-blue-400'
-                                            }`}
-                                    >
-                                        🏷️ {t.name}
-                                    </button>
+                                    <option key={t.id} value={t.id}>🏷️ {t.name}</option>
                                 ))}
-                            </div>
+                            </select>
                         </div>
                         {topicFilter && (
                             <span className="text-xs text-blue-400 font-medium">
