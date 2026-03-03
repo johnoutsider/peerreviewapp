@@ -6,7 +6,7 @@ import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore'
 import Header from '@/components/Header'
 import ScoreChart from '@/components/ScoreChart'
-import { calculateFinalScores, getScoreColor, getScoreLabel } from '@/lib/score-calculator'
+import { calculateFinalScores, getScoreColor, getScoreLabel, isNewRubric, getScore100, getScore100Label, getScore100Color } from '@/lib/score-calculator'
 
 export default function Feedback() {
     const router = useRouter()
@@ -295,6 +295,23 @@ export default function Feedback() {
         { key: 'grammaticalRange', label: 'Grammatical Range & Accuracy' },
     ]
 
+    // Detect rubric format from the first peer review (not AI/teacher)
+    const firstPeerReview = reviews.find(r => r.reviewerRole !== 'ai' && r.reviewerRole !== 'teacher')
+    const usingNewRubric = firstPeerReview ? isNewRubric(firstPeerReview.scores ?? {}) : false
+
+    // For new rubric: compute avg /100 across peer reviews
+    const newRubricAspects = [
+        { key: 'content', label: 'Content', max: 30 },
+        { key: 'organization', label: 'Organization', max: 20 },
+        { key: 'vocabulary', label: 'Vocabulary', max: 20 },
+        { key: 'languageUse', label: 'Language Use', max: 25 },
+        { key: 'mechanics', label: 'Mechanics', max: 5 },
+    ]
+    const peerReviews = reviews.filter(r => r.reviewerRole !== 'ai' && r.reviewerRole !== 'teacher')
+    const avgScore100 = usingNewRubric && peerReviews.length > 0
+        ? Math.round(peerReviews.reduce((sum, r) => sum + getScore100(r.scores ?? {}), 0) / peerReviews.length)
+        : 0
+
 
 
     return (
@@ -339,8 +356,22 @@ export default function Feedback() {
                     </div>
                 </div>
 
-                {/* Overall Band Score */}
-                {finalScores && (
+                {/* Overall Score Banner — format depends on rubric type */}
+                {usingNewRubric ? (
+                    /* New 5-category rubric → /100 */
+                    <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 mb-8 text-center">
+                        <div className="text-slate-600 dark:text-gray-300 text-lg mb-2">Overall Score</div>
+                        <div className={`text-7xl font-bold mb-2 ${getScore100Color(avgScore100)}`}>{avgScore100}</div>
+                        <div className="text-slate-500 dark:text-gray-400 text-base mb-1">out of 100</div>
+                        <div className="text-2xl font-semibold text-slate-900 dark:text-white mb-3">
+                            {getScore100Label(avgScore100)}
+                        </div>
+                        <div className="text-sm text-slate-500 dark:text-gray-400">
+                            Average of {peerReviews.length} peer review{peerReviews.length !== 1 ? 's' : ''}
+                        </div>
+                    </div>
+                ) : finalScores ? (
+                    /* Legacy IELTS rubric → band 0-9 */
                     <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 mb-8 text-center">
                         <div className="text-slate-600 dark:text-gray-300 text-lg mb-2">Overall Band Score</div>
                         <div className="text-7xl font-bold text-slate-900 dark:text-white mb-2">{finalScores.overallBand}</div>
@@ -348,61 +379,107 @@ export default function Feedback() {
                             {getScoreLabel(finalScores.overallBand)}
                         </div>
                         <div className="mt-4 text-sm text-slate-500 dark:text-gray-400">
-                            Based on 3 peer reviews (100%)
+                            Based on {peerReviews.length} peer review{peerReviews.length !== 1 ? 's' : ''}
                         </div>
                     </div>
-                )}
+                ) : null}
 
-                {/* Score Visualization */}
-                {finalScores && (
+                {/* Score Visualization — only for old IELTS rubric */}
+                {!usingNewRubric && finalScores && (
                     <div className="mb-8">
                         <ScoreChart scores={finalScores.finalScores} title="Final Scores by Criterion" />
                     </div>
                 )}
 
-                {/* Detailed Score Breakdown */}
+                {/* Score Breakdown — adapts to rubric format */}
                 <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
                     <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">Score Breakdown</h2>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="border-b border-slate-200 dark:border-white/10 shadow-sm">
-                                    <th className="py-3 px-4 text-slate-600 dark:text-gray-300">Criterion</th>
-
-                                    {reviews.map((review, idx) => (
-                                        <th key={idx} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">
-                                            {review.reviewerRole === 'ai'
-                                                ? '🤖 AI'
-                                                : review.reviewerRole === 'teacher'
-                                                    ? 'Teacher'
-                                                    : `Peer ${idx + 1}`
-                                            }
-                                        </th>
-                                    ))}
-                                    {finalScores && <th className="py-3 px-4 text-center text-slate-600 dark:text-gray-300 font-bold">Final</th>}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {criteria.map(({ key, label }) => (
-                                    <tr key={key} className="border-b border-slate-200 dark:border-white/10 shadow-sm">
-                                        <td className="py-3 px-4 text-slate-900 dark:text-white">{label}</td>
-
-                                        {reviews.map((review, idx) => (
-                                            <td key={idx} className="py-3 px-4 text-center text-slate-900 dark:text-white font-bold">
-                                                {review.scores?.[key] || 'N/A'}
-                                            </td>
+                    {usingNewRubric ? (
+                        /* New rubric: show 5 aspects with max scores and per-review columns */
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-slate-200 dark:border-white/10">
+                                        <th className="py-3 px-4 text-slate-600 dark:text-gray-300">Aspect</th>
+                                        <th className="py-3 px-4 text-center text-slate-500 dark:text-gray-400 text-xs">Max</th>
+                                        {peerReviews.map((r, i) => (
+                                            <th key={i} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">Peer {i + 1}</th>
                                         ))}
-                                        {finalScores && (
-                                            <td className="py-3 px-4 text-center font-bold text-slate-900 dark:text-white">
-                                                {finalScores.finalScores[key]}
-                                            </td>
+                                        {peerReviews.length > 1 && <th className="py-3 px-4 text-center text-slate-600 dark:text-gray-300 font-bold">Avg</th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {newRubricAspects.map(({ key, label, max }) => {
+                                        const vals = peerReviews.map(r => {
+                                            const raw = r.scores?.[key]
+                                            if (typeof raw === 'number') return raw
+                                            const nums = String(raw ?? '').split('\u2013').map((n: string) => parseInt(n.trim(), 10)).filter((n: number) => !isNaN(n))
+                                            return nums.length ? Math.max(...nums) : 0
+                                        })
+                                        const avgVal = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
+                                        return (
+                                            <tr key={key} className="border-b border-slate-100 dark:border-white/5">
+                                                <td className="py-3 px-4 text-slate-900 dark:text-white font-medium">{label}</td>
+                                                <td className="py-3 px-4 text-center text-slate-400 text-sm">/{max}</td>
+                                                {vals.map((v, i) => (
+                                                    <td key={i} className="py-3 px-4 text-center font-bold text-slate-900 dark:text-white">{v}</td>
+                                                ))}
+                                                {peerReviews.length > 1 && (
+                                                    <td className="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400">{avgVal}</td>
+                                                )}
+                                            </tr>
+                                        )
+                                    })}
+                                    {/* Total row */}
+                                    <tr className="border-t-2 border-slate-200 dark:border-white/20 bg-slate-50 dark:bg-slate-900/30">
+                                        <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">Total</td>
+                                        <td className="py-3 px-4 text-center text-slate-400 text-sm">/100</td>
+                                        {peerReviews.map((r, i) => (
+                                            <td key={i} className="py-3 px-4 text-center font-extrabold text-slate-900 dark:text-white">{getScore100(r.scores ?? {})}</td>
+                                        ))}
+                                        {peerReviews.length > 1 && (
+                                            <td className={`py-3 px-4 text-center font-extrabold text-xl ${getScore100Color(avgScore100)}`}>{avgScore100}</td>
                                         )}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        /* Legacy IELTS rubric: original table */
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-slate-200 dark:border-white/10 shadow-sm">
+                                        <th className="py-3 px-4 text-slate-600 dark:text-gray-300">Criterion</th>
+                                        {reviews.map((review, idx) => (
+                                            <th key={idx} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">
+                                                {review.reviewerRole === 'ai' ? '🤖 AI' : review.reviewerRole === 'teacher' ? 'Teacher' : `Peer ${idx + 1}`}
+                                            </th>
+                                        ))}
+                                        {finalScores && <th className="py-3 px-4 text-center text-slate-600 dark:text-gray-300 font-bold">Final</th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {criteria.map(({ key, label }) => (
+                                        <tr key={key} className="border-b border-slate-200 dark:border-white/10 shadow-sm">
+                                            <td className="py-3 px-4 text-slate-900 dark:text-white">{label}</td>
+                                            {reviews.map((review, idx) => (
+                                                <td key={idx} className="py-3 px-4 text-center text-slate-900 dark:text-white font-bold">
+                                                    {review.scores?.[key] || 'N/A'}
+                                                </td>
+                                            ))}
+                                            {finalScores && (
+                                                <td className="py-3 px-4 text-center font-bold text-slate-900 dark:text-white">
+                                                    {finalScores.finalScores[key]}
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
 
 
@@ -626,8 +703,8 @@ export default function Feedback() {
                                                             <span
                                                                 key={n}
                                                                 className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold border ${n <= review.studentRating
-                                                                        ? 'bg-blue-500 border-blue-500 text-white'
-                                                                        : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-white/10 text-slate-400'
+                                                                    ? 'bg-blue-500 border-blue-500 text-white'
+                                                                    : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-white/10 text-slate-400'
                                                                     }`}
                                                             >
                                                                 {n}

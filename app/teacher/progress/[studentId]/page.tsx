@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import Header from '@/components/Header'
-import { calculateFinalScores } from '@/lib/score-calculator'
+import { calculateFinalScores, isNewRubric, getScore100 } from '@/lib/score-calculator'
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
@@ -16,13 +16,10 @@ interface EssayProgress {
     title: string
     topicName: string
     date: Date
-    overallBand: number
-    scores: {
-        taskAchievement: number
-        coherenceCohesion: number
-        lexicalResource: number
-        grammaticalRange: number
-    }
+    score100?: number
+    overallBand?: number
+    isNew: boolean
+    aspects: { subject: string; score: number; fullMark: number }[]
 }
 
 export default function StudentProgressForTeacher() {
@@ -100,21 +97,44 @@ export default function StudentProgressForTeacher() {
                     const validReviews = Array.from(uniqueReviewsMap.values())
 
                     if (validReviews.length > 0) {
-                        const { finalScores, overallBand } = calculateFinalScores(validReviews as any)
+                        const usingNew = isNewRubric(validReviews[0].scores ?? {})
 
                         let date = new Date()
                         if (essay.submittedAt) {
                             date = essay.submittedAt.toDate ? essay.submittedAt.toDate() : new Date(essay.submittedAt)
                         }
 
-                        processed.push({
-                            essayId: essay.id,
-                            title: essay.title || 'Untitled',
-                            topicName: essay.topicName || 'Custom Topic',
-                            date,
-                            overallBand,
-                            scores: finalScores
-                        })
+                        if (usingNew) {
+                            const avg100 = Math.round(
+                                validReviews.reduce((s: number, r: any) => s + getScore100(r.scores ?? {}), 0) / validReviews.length
+                            )
+                            const aspectKeys = [
+                                { key: 'content', label: 'Content', max: 30 },
+                                { key: 'organization', label: 'Organization', max: 20 },
+                                { key: 'vocabulary', label: 'Vocabulary', max: 20 },
+                                { key: 'languageUse', label: 'Lang. Use', max: 25 },
+                                { key: 'mechanics', label: 'Mechanics', max: 5 },
+                            ]
+                            const aspects = aspectKeys.map(({ key, label, max }) => {
+                                const avg = Math.round(validReviews.reduce((s: number, r: any) => {
+                                    const raw = r.scores?.[key]
+                                    if (typeof raw === 'number') return s + raw
+                                    const nums = String(raw ?? '').split('\u2013').map((n: string) => parseInt(n.trim(), 10)).filter((n: number) => !isNaN(n))
+                                    return s + (nums.length ? Math.max(...nums) : 0)
+                                }, 0) / validReviews.length)
+                                return { subject: label, score: Math.round((avg / max) * 100), fullMark: 100 }
+                            })
+                            processed.push({ essayId: essay.id, title: essay.title || 'Untitled', topicName: essay.topicName || 'Custom Topic', date, score100: avg100, isNew: true, aspects })
+                        } else {
+                            const { finalScores, overallBand } = calculateFinalScores(validReviews as any)
+                            const aspects = [
+                                { subject: 'Task Ach.', score: finalScores.taskAchievement, fullMark: 9 },
+                                { subject: 'Coherence', score: finalScores.coherenceCohesion, fullMark: 9 },
+                                { subject: 'Lexical', score: finalScores.lexicalResource, fullMark: 9 },
+                                { subject: 'Grammar', score: finalScores.grammaticalRange, fullMark: 9 },
+                            ]
+                            processed.push({ essayId: essay.id, title: essay.title || 'Untitled', topicName: essay.topicName || 'Custom Topic', date, overallBand, isNew: false, aspects })
+                        }
                     }
                 }
 
@@ -122,38 +142,21 @@ export default function StudentProgressForTeacher() {
                 processed.sort((a, b) => a.date.getTime() - b.date.getTime())
 
                 if (processed.length > 0) {
-                    const totals = {
-                        taskAchievement: 0,
-                        coherenceCohesion: 0,
-                        lexicalResource: 0,
-                        grammaticalRange: 0
-                    }
-                    let totalBand = 0
+                    const newEssays = processed.filter(p => p.isNew)
+                    const oldEssays = processed.filter(p => !p.isNew)
+                    const allNorm = processed.map(p => p.isNew ? p.score100! : Math.round((p.overallBand! / 9) * 100))
+                    const overallAvg = Math.round(allNorm.reduce((a, b) => a + b, 0) / allNorm.length)
 
-                    processed.forEach(p => {
-                        totals.taskAchievement += p.scores.taskAchievement
-                        totals.coherenceCohesion += p.scores.coherenceCohesion
-                        totals.lexicalResource += p.scores.lexicalResource
-                        totals.grammaticalRange += p.scores.grammaticalRange
-                        totalBand += p.overallBand
-                    })
+                    const radarData = newEssays.length > 0
+                        ? newEssays[newEssays.length - 1].aspects
+                        : oldEssays.length > 0 ? oldEssays[oldEssays.length - 1].aspects : []
 
-                    const count = processed.length
-                    const avgCriteria = [
-                        { subject: 'Task Ach.', score: +(totals.taskAchievement / count).toFixed(1), fullMark: 9 },
-                        { subject: 'Coherence', score: +(totals.coherenceCohesion / count).toFixed(1), fullMark: 9 },
-                        { subject: 'Lexical Res.', score: +(totals.lexicalResource / count).toFixed(1), fullMark: 9 },
-                        { subject: 'Grammar', score: +(totals.grammaticalRange / count).toFixed(1), fullMark: 9 }
-                    ]
-
-                    let sortedSkills = [...avgCriteria].sort((a, b) => b.score - a.score)
-
-                    setAverageCriteria(avgCriteria)
+                    setAverageCriteria(radarData)
                     setStats({
-                        strongestSkill: { name: sortedSkills[0].subject, score: sortedSkills[0].score },
-                        weakestSkill: { name: sortedSkills[3].subject, score: sortedSkills[3].score },
-                        averageBand: +(totalBand / count).toFixed(1),
-                        totalReviewed: count
+                        strongestSkill: { name: radarData.length ? radarData.reduce((a, b) => a.score > b.score ? a : b).subject : '-', score: radarData.length ? radarData.reduce((a, b) => a.score > b.score ? a : b).score : 0 },
+                        weakestSkill: { name: radarData.length ? radarData.reduce((a, b) => a.score < b.score ? a : b).subject : '-', score: radarData.length ? radarData.reduce((a, b) => a.score < b.score ? a : b).score : 0 },
+                        averageBand: overallAvg,
+                        totalReviewed: processed.length,
                     })
                 }
 
@@ -211,8 +214,8 @@ export default function StudentProgressForTeacher() {
                         {/* Top Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="bg-blue-50 border-blue-200 dark:bg-blue-900/40 backdrop-blur-sm border dark:border-blue-500/30 rounded-xl p-5">
-                                <div className="text-blue-700 dark:text-blue-300 text-sm mb-1 font-medium">Average Band Score</div>
-                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.averageBand}</div>
+                                <div className="text-blue-700 dark:text-blue-300 text-sm mb-1 font-medium">Average Score</div>
+                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.averageBand}<span className="text-base font-normal text-blue-400">/100</span></div>
                             </div>
                             <div className="bg-purple-50 border-purple-200 dark:bg-purple-900/40 backdrop-blur-sm border dark:border-purple-500/30 rounded-xl p-5">
                                 <div className="text-purple-700 dark:text-purple-300 text-sm mb-1 font-medium">Assessed Essays</div>
@@ -242,7 +245,7 @@ export default function StudentProgressForTeacher() {
                                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Score Trajectory</h3>
                                 <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={progressData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                                        <LineChart data={progressData.map(p => ({ ...p, displayScore: p.isNew ? p.score100 : p.overallBand }))} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
                                             <XAxis
                                                 dataKey="date"
@@ -251,7 +254,7 @@ export default function StudentProgressForTeacher() {
                                                 tick={{ fill: 'rgba(255,255,255,0.5)' }}
                                                 dy={10}
                                             />
-                                            <YAxis domain={[0, 9]} ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                                            <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
                                             <Tooltip
                                                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
                                                 itemStyle={{ color: '#60A5FA', fontWeight: 'bold' }}
@@ -259,11 +262,14 @@ export default function StudentProgressForTeacher() {
                                                     const item = items[0]?.payload
                                                     return item ? `Topic: ${item.topicName}` : ''
                                                 }}
-                                                formatter={(value, name) => [value, 'Overall Band']}
+                                                formatter={(value: any, _name: any, props: any) => [
+                                                    props.payload.isNew ? `${value}/100` : `Band ${value}`,
+                                                    'Score'
+                                                ]}
                                             />
                                             <Line
                                                 type="monotone"
-                                                dataKey="overallBand"
+                                                dataKey="displayScore"
                                                 stroke="#3B82F6"
                                                 strokeWidth={4}
                                                 dot={{ r: 6, fill: '#3B82F6', strokeWidth: 2, stroke: '#1E293B' }}
@@ -282,7 +288,7 @@ export default function StudentProgressForTeacher() {
                                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={averageCriteria}>
                                             <PolarGrid stroke="rgba(255,255,255,0.2)" />
                                             <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }} />
-                                            <PolarRadiusAxis angle={30} domain={[0, 9]} tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, averageCriteria[0]?.fullMark ?? 100]} tick={{ fill: 'rgba(255,255,255,0.5)' }} />
                                             <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }} />
                                             <Radar name="Average" dataKey="score" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.5} />
                                         </RadarChart>
