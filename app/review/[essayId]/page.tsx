@@ -6,7 +6,7 @@ import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
 import Header from '@/components/Header'
 
-// ─── Rubric Definition ─────────────────────────────────────────────────────────
+// ─── Rubric Definition ────────────────────────────────────────────────────────
 const ASPECTS = [
     {
         id: 'content', title: 'Content',
@@ -55,15 +55,13 @@ const ASPECTS = [
     },
 ]
 
-const ACCENT = '#2563eb'
-
 function getHighest(range: string | null): number {
     if (!range) return 0
     const nums = range.split('–').map(n => parseInt(n.trim(), 10))
     return Math.max(...nums)
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────────────────
+// ─── AspectCard ───────────────────────────────────────────────────────────────
 function AspectCard({
     aspect, index, selected, onSelect,
 }: {
@@ -73,40 +71,35 @@ function AspectCard({
     onSelect: (range: string | null) => void
 }) {
     return (
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, marginBottom: 12, background: '#fff', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid #f3f4f6' }}>
-                <span style={{ width: 26, height: 26, borderRadius: '50%', background: ACCENT, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{index}</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{aspect.title}</span>
+        <div className="border border-slate-200 dark:border-white/10 rounded-xl mb-3 bg-white dark:bg-slate-800 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10">
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    {index}
+                </span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">{aspect.title}</span>
             </div>
-            <div style={{ padding: '10px 16px 12px' }}>
+            <div className="p-3 space-y-1.5">
                 {aspect.levels.map((lv, i) => {
                     const isSelected = selected === lv.range
                     return (
-                        <div key={i} style={{
-                            display: 'flex', alignItems: 'stretch',
-                            borderRadius: 6, marginBottom: 4, overflow: 'hidden',
-                            border: isSelected ? `1.5px solid ${ACCENT}` : '1.5px solid transparent',
-                            background: i % 2 === 0 ? '#f9fafb' : '#fff',
-                        }}>
+                        <div
+                            key={i}
+                            className={`flex items-stretch rounded-lg overflow-hidden border transition-all ${isSelected
+                                    ? 'border-blue-500'
+                                    : 'border-transparent'
+                                } ${i % 2 === 0 ? 'bg-slate-50 dark:bg-slate-900/40' : 'bg-white dark:bg-slate-800'}`}
+                        >
                             <button
                                 type="button"
                                 onClick={() => onSelect(isSelected ? null : lv.range)}
-                                style={{
-                                    padding: '8px 12px',
-                                    background: isSelected ? ACCENT : '#f3f4f6',
-                                    color: isSelected ? '#fff' : '#374151',
-                                    fontSize: 11, fontWeight: 700,
-                                    border: 'none',
-                                    borderRight: `1px solid ${isSelected ? ACCENT : '#e5e7eb'}`,
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap',
-                                    flexShrink: 0,
-                                    transition: 'all 0.15s',
-                                }}
+                                className={`px-3 py-2 text-xs font-bold whitespace-nowrap shrink-0 border-r transition-all ${isSelected
+                                        ? 'bg-blue-600 text-white border-blue-500'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                                    }`}
                             >
                                 {lv.range}
                             </button>
-                            <span style={{ padding: '8px 12px', fontSize: 12.5, color: '#374151', lineHeight: 1.6 }}>
+                            <span className="px-3 py-2 text-xs text-slate-600 dark:text-gray-300 leading-relaxed">
                                 {lv.desc}
                             </span>
                         </div>
@@ -117,34 +110,44 @@ function AspectCard({
     )
 }
 
+// ─── Essay Panel (left) ───────────────────────────────────────────────────────
 function EssayPanel({ essay }: { essay: any }) {
     const wordCount = essay?.content?.trim().split(/\s+/).filter(Boolean).length ?? 0
     return (
-        <div style={{ padding: '16px' }}>
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '16px', marginBottom: 16 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px' }}>Topic</p>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 14px' }}>{essay?.topicName || 'Essay'}</p>
+        <div className="p-4 space-y-4">
+            {/* Topic card */}
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Topic</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white mb-3">{essay?.topicName || 'Essay'}</p>
                 {essay?.topicInstruction && (
                     <>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Task Instruction</p>
-                        <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.75, margin: 0 }}>{essay.topicInstruction}</p>
+                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Task Instruction</p>
+                        <p className="text-sm text-slate-600 dark:text-gray-300 leading-relaxed">{essay.topicInstruction}</p>
                     </>
                 )}
             </div>
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '18px 16px' }}>
+
+            {/* Essay content */}
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-4">
                 {essay?.title && (
-                    <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 14px', paddingBottom: 12, borderBottom: '1px solid #f3f4f6' }}>{essay.title}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 pb-3 border-b border-slate-100 dark:border-white/10">
+                        {essay.title}
+                    </p>
                 )}
-                <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.85, margin: 0, whiteSpace: 'pre-wrap' }}>{essay?.content}</p>
-                <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
-                    <span style={{ fontSize: 12, color: '#6b7280', background: '#f3f4f6', padding: '3px 10px', borderRadius: 20 }}>📝 {wordCount} words</span>
+                <p className="text-sm text-slate-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+                    {essay?.content}
+                </p>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-3 py-1 rounded-full">
+                        📝 {wordCount} words
+                    </span>
                 </div>
             </div>
         </div>
     )
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ReviewEssay() {
     const router = useRouter()
     const params = useParams()
@@ -158,13 +161,10 @@ export default function ReviewEssay() {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
-    // Rubric scores: { content: '27–30' | null, organization: ... }
     const [scores, setScores] = useState<Record<string, string | null>>({
         content: null, organization: null, vocabulary: null, languageUse: null, mechanics: null,
     })
     const [feedback, setFeedback] = useState('')
-
-    // Mobile tab
     const [activeTab, setActiveTab] = useState<'essay' | 'rubric'>('essay')
     const [isMobile, setIsMobile] = useState(false)
 
@@ -187,8 +187,7 @@ export default function ReviewEssay() {
                     where('essayId', '==', essayId),
                     where('reviewerId', '==', auth.currentUser.uid)
                 )
-                const reviewsSnap = await getDocs(reviewsQ)
-                if (!reviewsSnap.empty) setAlreadyReviewed(true)
+                if (!(await getDocs(reviewsQ)).empty) setAlreadyReviewed(true)
 
                 setEssay({ id: essayDoc.id, ...essayDoc.data() })
             } catch (err) {
@@ -204,6 +203,7 @@ export default function ReviewEssay() {
     const totalScore = ASPECTS.reduce((sum, a) => sum + getHighest(scores[a.id]), 0)
     const wordCount = feedback.trim() === '' ? 0 : feedback.trim().split(/\s+/).length
     const feedbackValid = wordCount >= 20
+    const canSubmit = allScored && feedbackValid && !submitting
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -237,33 +237,31 @@ export default function ReviewEssay() {
                 }
             } catch { }
 
-            setSuccess('Review submitted successfully! Redirecting...')
+            setSuccess('Review submitted! Redirecting...')
             setTimeout(() => router.push('/review'), 1500)
         } catch (err) {
-            console.error('Error submitting review:', err)
             setError('Failed to submit review. Please try again.')
         } finally {
             setSubmitting(false)
         }
     }
 
-    // ── Loading / guard states ────────────────────────────────────────────
+    // ── States ────────────────────────────────────────────────────────────
     if (loading) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6' }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', border: `3px solid ${ACCENT}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+                <div className="animate-spin rounded-full h-11 w-11 border-b-2 border-blue-500" />
             </div>
         )
     }
 
     if (notFound) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', fontFamily: 'system-ui, sans-serif' }}>
-                <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: 48, margin: '0 0 12px' }}>🔍</p>
-                    <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>Essay Not Found</h2>
-                    <button onClick={() => router.push('/review')} style={{ color: ACCENT, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>← Back to Reviews</button>
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-5xl mb-4">🔍</p>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Essay Not Found</h2>
+                    <button onClick={() => router.push('/review')} className="text-blue-500 dark:text-blue-400 hover:underline text-sm">← Back to Reviews</button>
                 </div>
             </div>
         )
@@ -271,33 +269,35 @@ export default function ReviewEssay() {
 
     if (alreadyReviewed) {
         return (
-            <div style={{ minHeight: '100vh', background: '#f3f4f6', fontFamily: 'system-ui, sans-serif' }}>
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
                 <Header />
-                <div style={{ maxWidth: 480, margin: '80px auto', padding: '40px 32px', background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', textAlign: 'center' }}>
-                    <p style={{ fontSize: 52, margin: '0 0 12px' }}>✅</p>
-                    <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>Already Reviewed</h2>
-                    <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 24px' }}>You've already submitted a review for this essay.</p>
-                    <button onClick={() => router.push('/review')} style={{ background: ACCENT, color: '#fff', border: 'none', padding: '10px 28px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Back to Reviews</button>
+                <div className="max-w-md mx-auto mt-20 p-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-2xl text-center shadow-sm">
+                    <p className="text-5xl mb-4">✅</p>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Already Reviewed</h2>
+                    <p className="text-slate-500 dark:text-gray-400 text-sm mb-6">You've already submitted a review for this essay.</p>
+                    <button onClick={() => router.push('/review')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+                        Back to Reviews
+                    </button>
                 </div>
             </div>
         )
     }
 
-    // ── Rubric panel (right side) ─────────────────────────────────────────
+    // ── Rubric panel ──────────────────────────────────────────────────────
     const RubricPanel = () => (
-        <div style={{ padding: '16px', background: '#f9fafb' }}>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Writing Development Rubric</p>
-            <p style={{ fontSize: 12.5, color: '#6b7280', margin: '0 0 16px', lineHeight: 1.6 }}>
-                Click a score range to select it for each category.
-            </p>
+        <div className="p-4 bg-slate-50 dark:bg-slate-900/50 space-y-0">
+            <div className="mb-4">
+                <p className="text-base font-bold text-slate-900 dark:text-white mb-0.5">Writing Development Rubric</p>
+                <p className="text-xs text-slate-500 dark:text-gray-400">Click a score range to select it for each category.</p>
+            </div>
 
             {error && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#b91c1c' }}>
+                <div className="mb-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-600 dark:text-red-400">
                     {error}
                 </div>
             )}
             {success && (
-                <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#15803d' }}>
+                <div className="mb-3 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-sm text-green-700 dark:text-green-400">
                     {success}
                 </div>
             )}
@@ -313,19 +313,19 @@ export default function ReviewEssay() {
                     />
                 ))}
 
-                {/* Total Score */}
-                <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', padding: '14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                {/* Total score bar */}
+                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 p-4 mb-3 flex items-center justify-between">
                     <div>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px' }}>Total Score</p>
-                        <p style={{ fontSize: 28, fontWeight: 800, color: allScored ? ACCENT : '#d1d5db', margin: 0, lineHeight: 1 }}>
+                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Total Score</p>
+                        <p className={`text-3xl font-extrabold leading-none ${allScored ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'}`}>
                             {allScored ? totalScore : '—'}
                         </p>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
+                    <div className="flex gap-2 flex-wrap justify-end max-w-[60%]">
                         {ASPECTS.map(a => (
-                            <div key={a.id} style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{a.title}</div>
-                                <div style={{ padding: '2px 8px', borderRadius: 4, background: scores[a.id] ? ACCENT : '#f3f4f6', color: scores[a.id] ? '#fff' : '#9ca3af', fontSize: 12, fontWeight: 700 }}>
+                            <div key={a.id} className="text-center">
+                                <div className="text-xs text-slate-400 dark:text-slate-500 mb-1">{a.title}</div>
+                                <div className={`px-2 py-0.5 rounded text-xs font-bold ${scores[a.id] ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
                                     {scores[a.id] ? getHighest(scores[a.id]) : '–'}
                                 </div>
                             </div>
@@ -334,53 +334,39 @@ export default function ReviewEssay() {
                 </div>
 
                 {/* Write Your Review */}
-                <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', overflow: 'hidden', marginBottom: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid #f3f4f6' }}>
-                        <span style={{ width: 26, height: 26, borderRadius: '50%', background: ACCENT, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>6</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Write Your Review</span>
+                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 overflow-hidden mb-3">
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10">
+                        <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">6</span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">Write Your Review</span>
                     </div>
-                    <div style={{ padding: '12px 16px' }}>
+                    <div className="p-4">
                         <textarea
                             value={feedback}
                             onChange={e => { setFeedback(e.target.value); setError(null) }}
                             placeholder="Please input at least 20 words. When providing comments, please avoid simply copying and pasting the descriptors from the rating rubric. Your peers would benefit from personalized feedback that is specific to their work."
-                            style={{
-                                width: '100%', minHeight: 130, padding: '10px 12px',
-                                border: '1px solid #e5e7eb', borderRadius: 6,
-                                fontSize: 13, color: '#374151', lineHeight: 1.65,
-                                resize: 'vertical', outline: 'none', boxSizing: 'border-box',
-                                fontFamily: 'system-ui, -apple-system, sans-serif',
-                                background: '#f8fafc',
-                            }}
+                            rows={5}
+                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         />
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                            <span style={{ fontSize: 12, color: feedbackValid ? '#6b7280' : '#ef4444' }}>
-                                {wordCount} word{wordCount !== 1 ? 's' : ''}
-                                {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
-                            </span>
-                        </div>
+                        <p className={`text-xs mt-1.5 ${feedbackValid ? 'text-slate-400 dark:text-slate-500' : 'text-red-500 dark:text-red-400'}`}>
+                            {wordCount} word{wordCount !== 1 ? 's' : ''}
+                            {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
+                        </p>
                     </div>
                 </div>
 
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={submitting || !allScored || !feedbackValid}
-                    style={{
-                        width: '100%', padding: '13px 0', borderRadius: 9,
-                        background: allScored && feedbackValid ? '#16a34a' : '#e5e7eb',
-                        color: allScored && feedbackValid ? '#fff' : '#9ca3af',
-                        fontSize: 15, fontWeight: 700, border: 'none',
-                        cursor: allScored && feedbackValid ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.2s',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    }}
+                    disabled={!canSubmit}
+                    className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${canSubmit
+                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-green-500/20'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                        }`}
                 >
                     {submitting ? (
                         <>
-                            <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                             Submitting…
-                            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                         </>
                     ) : 'Submit Review'}
                 </button>
@@ -390,26 +376,20 @@ export default function ReviewEssay() {
 
     // ── Layout ────────────────────────────────────────────────────────────
     return (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, -apple-system, sans-serif', background: '#f3f4f6' }}>
+        <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900 font-sans">
             <Header />
 
             {/* Mobile tabs */}
             {isMobile && (
-                <div style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
+                <div className="flex bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-white/10 shrink-0">
                     {(['essay', 'rubric'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            style={{
-                                flex: 1, padding: '12px 0',
-                                fontSize: 14, fontWeight: 600,
-                                border: 'none', cursor: 'pointer',
-                                background: 'transparent',
-                                color: activeTab === tab ? ACCENT : '#6b7280',
-                                borderBottom: activeTab === tab ? `2.5px solid ${ACCENT}` : '2.5px solid transparent',
-                                transition: 'all 0.15s',
-                                textTransform: 'capitalize',
-                            }}
+                            className={`flex-1 py-3 text-sm font-semibold capitalize transition-colors border-b-2 ${activeTab === tab
+                                    ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
+                                    : 'text-slate-500 dark:text-gray-400 border-transparent'
+                                }`}
                         >
                             {tab === 'essay' ? 'Essay' : 'Rubric'}
                         </button>
@@ -419,15 +399,15 @@ export default function ReviewEssay() {
 
             {/* Body */}
             {isMobile ? (
-                <div style={{ flex: 1, overflow: 'auto' }}>
+                <div className="flex-1 overflow-auto">
                     {activeTab === 'essay' ? <EssayPanel essay={essay} /> : <RubricPanel />}
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
-                    <div style={{ overflow: 'auto', borderRight: '1px solid #e5e7eb' }}>
+                <div className="grid grid-cols-2 flex-1 overflow-hidden">
+                    <div className="overflow-auto border-r border-slate-200 dark:border-white/10">
                         <EssayPanel essay={essay} />
                     </div>
-                    <div style={{ overflow: 'auto' }}>
+                    <div className="overflow-auto">
                         <RubricPanel />
                     </div>
                 </div>
