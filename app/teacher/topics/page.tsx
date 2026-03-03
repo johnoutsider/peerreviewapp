@@ -13,6 +13,7 @@ import {
     query,
     orderBy,
     updateDoc,
+    writeBatch,
     Timestamp,
 } from 'firebase/firestore'
 import Header from '@/components/Header'
@@ -22,6 +23,7 @@ interface Topic {
     id: string
     name: string
     createdAt: any
+    order?: number
     essayDeadline?: Timestamp | null
     reviewDeadline?: Timestamp | null
 }
@@ -30,7 +32,6 @@ interface Topic {
 function tsToDateStr(ts?: Timestamp | null): string {
     if (!ts) return ''
     const d = ts.toDate()
-    // datetime-local format: YYYY-MM-DDTHH:MM
     const pad = (n: number) => n.toString().padStart(2, '0')
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
@@ -43,21 +44,29 @@ export default function ManageTopics() {
     const [adding, setAdding] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
+    const [reordering, setReordering] = useState(false)
 
     // Per-topic deadline editing state
     const [editing, setEditing] = useState<Record<string, { essayDeadline: string; reviewDeadline: string; saving: boolean }>>({})
 
-    // Per-topic name renaming state: { [topicId]: { value: string, active: bool, saving: bool } }
+    // Per-topic name renaming state
     const [renaming, setRenaming] = useState<Record<string, { value: string; active: boolean; saving: boolean }>>({})
 
     useEffect(() => {
         if (!auth.currentUser) { router.push('/'); return }
 
-        const q = query(collection(db, 'topics'), orderBy('createdAt', 'desc'))
+        // Load by createdAt (guaranteed to exist), sort locally by `order` if set
+        const q = query(collection(db, 'topics'), orderBy('createdAt', 'asc'))
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Topic[]
-            setTopics(data)
-            // Seed local editing state for any new topics
+            // Sort by `order` field if present, otherwise keep createdAt order
+            const sorted = [...data].sort((a, b) => {
+                if (a.order !== undefined && b.order !== undefined) return a.order - b.order
+                if (a.order !== undefined) return -1
+                if (b.order !== undefined) return 1
+                return 0
+            })
+            setTopics(sorted)
             setEditing(prev => {
                 const next = { ...prev }
                 data.forEach(t => {
@@ -80,6 +89,29 @@ export default function ManageTopics() {
         return () => unsubscribe()
     }, [router])
 
+    // ── Move up / down ─────────────────────────────────────────────
+    const movetopic = async (index: number, direction: 'up' | 'down') => {
+        const newIndex = direction === 'up' ? index - 1 : index + 1
+        if (newIndex < 0 || newIndex >= topics.length) return
+        const next = [...topics]
+            ;[next[index], next[newIndex]] = [next[newIndex], next[index]]
+        setTopics(next)
+        setReordering(true)
+        try {
+            const batch = writeBatch(db)
+            next.forEach((topic, idx) => {
+                batch.update(doc(db, 'topics', topic.id), { order: idx })
+            })
+            await batch.commit()
+        } catch (err) {
+            console.error('Error saving order:', err)
+            setError('Failed to save order.')
+        } finally {
+            setReordering(false)
+        }
+    }
+
+    // ── CRUD handlers ──────────────────────────────────────────────
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault()
         const name = newTopic.trim()
@@ -91,10 +123,12 @@ export default function ManageTopics() {
         setAdding(true)
         setError(null)
         try {
+            // New topic goes to the end
             await addDoc(collection(db, 'topics'), {
                 name,
                 createdBy: auth.currentUser!.uid,
                 createdAt: serverTimestamp(),
+                order: topics.length,
                 essayDeadline: null,
                 reviewDeadline: null,
             })
@@ -125,7 +159,7 @@ export default function ManageTopics() {
         setEditing(prev => ({ ...prev, [topicId]: { ...prev[topicId], saving: true } }))
         try {
             const toTimestamp = (dateStr: string) =>
-                dateStr ? Timestamp.fromDate(new Date(dateStr)) : null  // exact time chosen by teacher
+                dateStr ? Timestamp.fromDate(new Date(dateStr)) : null
 
             await updateDoc(doc(db, 'topics', topicId), {
                 essayDeadline: toTimestamp(state.essayDeadline),
@@ -190,7 +224,7 @@ export default function ManageTopics() {
                             ← Teacher Dashboard
                         </button>
                         <h1 className="text-4xl font-bold text-slate-900 dark:text-white">Manage Topics</h1>
-                        <p className="text-slate-500 dark:text-gray-400 mt-1">Create topics and set essay + review deadlines</p>
+                        <p className="text-slate-500 dark:text-gray-400 mt-1">Create topics, set deadlines, and drag to reorder</p>
                     </div>
                     <div className="text-5xl">🏷️</div>
                 </div>
@@ -220,11 +254,19 @@ export default function ManageTopics() {
                     </form>
                 </div>
 
-                {/* Topics List with inline deadline editors */}
+                {/* Topics List */}
                 <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">All Topics</h2>
-                        <span className="text-sm text-slate-500 dark:text-gray-400">{topics.length} topic{topics.length !== 1 ? 's' : ''}</span>
+                        <div className="flex items-center gap-3">
+                            {reordering && (
+                                <span className="text-xs text-blue-400 flex items-center gap-1.5">
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-400" />
+                                    Saving order…
+                                </span>
+                            )}
+                            <span className="text-sm text-slate-500 dark:text-gray-400">{topics.length} topic{topics.length !== 1 ? 's' : ''}</span>
+                        </div>
                     </div>
 
                     {loading ? (
@@ -237,8 +279,8 @@ export default function ManageTopics() {
                             <p>No topics yet. Add your first one above!</p>
                         </div>
                     ) : (
-                        <ul className="divide-y divide-white/10">
-                            {topics.map(topic => {
+                        <ul className="divide-y divide-slate-100 dark:divide-white/10">
+                            {topics.map((topic, index) => {
                                 const ed = editing[topic.id] || { essayDeadline: '', reviewDeadline: '', saving: false }
                                 const essayD = ed.essayDeadline ? new Date(ed.essayDeadline) : null
                                 const reviewD = ed.reviewDeadline ? new Date(ed.reviewDeadline) : null
@@ -253,14 +295,31 @@ export default function ManageTopics() {
                                 }
 
                                 return (
-                                    <li key={topic.id} className="px-6 py-5 hover:bg-white dark:bg-slate-800/5 transition-colors">
-                                        {/* Row 1: name + rename + delete */}
+                                    <li
+                                        key={topic.id}
+                                        className="px-6 py-5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                                    >
+                                        {/* Row 1: drag handle + name + rename + delete */}
                                         {(() => {
                                             const rn = renaming[topic.id]
                                             const isRenaming = rn?.active
                                             return (
                                                 <div className="flex items-center justify-between mb-3 gap-2">
                                                     <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <div className="flex flex-col gap-0.5 shrink-0">
+                                                            <button
+                                                                onClick={() => movetopic(index, 'up')}
+                                                                disabled={index === 0 || reordering}
+                                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xs"
+                                                                title="Move up"
+                                                            >▲</button>
+                                                            <button
+                                                                onClick={() => movetopic(index, 'down')}
+                                                                disabled={index === topics.length - 1 || reordering}
+                                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xs"
+                                                                title="Move down"
+                                                            >▼</button>
+                                                        </div>
                                                         <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
                                                         {isRenaming ? (
                                                             <div className="flex items-center gap-2 flex-1">
@@ -312,7 +371,7 @@ export default function ManageTopics() {
                                         })()}
 
                                         {/* Row 2: deadline pickers */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-7">
                                             <div className="bg-slate-100 dark:bg-slate-900/50/40 rounded-lg p-3 border border-slate-200 dark:border-white/10 shadow-sm">
                                                 <label className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
                                                     📝 Essay Submission Deadline
@@ -340,7 +399,7 @@ export default function ManageTopics() {
                                         </div>
 
                                         {/* Row 3: save button */}
-                                        <div className="mt-3 flex justify-end">
+                                        <div className="mt-3 flex justify-end pl-7">
                                             <button
                                                 onClick={() => handleSaveDeadlines(topic.id)}
                                                 disabled={ed.saving}
@@ -359,7 +418,7 @@ export default function ManageTopics() {
                 </div>
 
                 <p className="text-gray-500 text-sm mt-4 text-center">
-                    💡 Deleting a topic won't affect essays already submitted under it. Deadlines are shown to students on all relevant pages.
+                    💡 Drag topics to reorder · Deleting a topic won't affect essays already submitted under it
                 </p>
             </main>
         </div>

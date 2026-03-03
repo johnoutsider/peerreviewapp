@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         const firstName: string | undefined = message.from?.first_name
 
         if (text === '/start') {
-            await sendTelegramMessage(chatId, `👋 Hi${firstName ? ` ${firstName}` : ''}! Please go to your Profile in the app and click "Connect Telegram" to link your account.`)
+            await sendTelegramMessage(chatId, `👋 Hi${firstName ? ` ${firstName}` : ''}! Welcome to the *Peer Feedback App*.\n\nPlease go to your Profile in the app and click "Connect Telegram" to link your account.`)
             return NextResponse.json({ status: 'plain_start' })
         }
 
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
             await sendTelegramMessage(
                 chatId,
-                `✅ *Almost there!*\n\nSwitch back to the app — it will finish linking your account automatically. You'll then receive Telegram notifications every time a peer reviews your essay! 🎉`
+                `✅ *Almost there!*\n\nSwitch back to the *Peer Feedback App* — it will finish linking your account automatically. You'll then receive Telegram notifications every time a peer reviews your essay! 🎉`
             )
 
             return NextResponse.json({ status: 'success' })

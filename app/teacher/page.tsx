@@ -156,10 +156,13 @@ export default function TeacherDashboard() {
             return groupMatch && topicMatch
         })
 
-    // Summary stats reflect the current filter
-    const totalEssays = topicFilter
-        ? filtered.reduce((a, s) => a + s.filteredCount, 0)
-        : students.reduce((a, s) => a + s.submittedCount, 0)
+    // Global totals (always unfiltered — for consistency in the stat cards)
+    const totalEssaysAll = students.reduce((a, s) => a + s.submittedCount, 0)
+    const totalReviewsAll = students.reduce((a, s) => a + s.reviewsGiven, 0)
+
+    // Topic-specific counts (only meaningful when a topic filter is active)
+    const topicEssayCount = topicFilter ? filtered.reduce((a, s) => a + s.filteredCount, 0) : 0
+    const topicStudentCount = topicFilter ? filtered.length : 0
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -220,13 +223,13 @@ export default function TeacherDashboard() {
                     </div>
                 </div>
 
-                {/* Stats row */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {/* Stats row — always global totals */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     {[
                         { label: 'Total Students', value: students.length, color: 'blue' },
                         { label: 'Groups', value: groups.length || '—', color: 'purple' },
-                        { label: 'Essays Submitted', value: totalEssays, color: 'green' },
-                        { label: 'Reviews Given', value: students.reduce((a, s) => a + s.reviewsGiven, 0), color: 'yellow' },
+                        { label: 'Essays Submitted', value: totalEssaysAll, color: 'green' },
+                        { label: 'Reviews Given', value: totalReviewsAll, color: 'yellow' },
                     ].map(({ label, value, color }) => (
                         <div key={label} className={`bg-${color}-500/10 border border-${color}-500/30 rounded-xl p-4 text-center`}>
                             <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
@@ -234,6 +237,29 @@ export default function TeacherDashboard() {
                         </div>
                     ))}
                 </div>
+
+                {/* Topic filter summary banner */}
+                {topicFilter ? (
+                    <div className="mb-6 px-5 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center gap-3 flex-wrap">
+                        <span className="text-blue-400 font-semibold text-sm">🏷️ {topicMap[topicFilter]}</span>
+                        <span className="text-slate-400 text-sm">—</span>
+                        <span className="text-slate-700 dark:text-gray-200 text-sm">
+                            <span className="font-bold text-white">{topicEssayCount}</span> essay{topicEssayCount !== 1 ? 's' : ''} submitted
+                        </span>
+                        <span className="text-slate-500">·</span>
+                        <span className="text-slate-700 dark:text-gray-200 text-sm">
+                            by <span className="font-bold text-white">{topicStudentCount}</span> student{topicStudentCount !== 1 ? 's' : ''}
+                        </span>
+                        <button
+                            onClick={() => setTopicFilter('')}
+                            className="ml-auto text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                        >
+                            ✕ Clear filter
+                        </button>
+                    </div>
+                ) : (
+                    <div className="mb-6" />
+                )}
 
                 {/* Student table with topic filter */}
                 <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
@@ -270,7 +296,7 @@ export default function TeacherDashboard() {
                                     <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">
                                         Essays
                                         {topicFilter && (
-                                            <span className="ml-1 text-xs text-blue-400 font-normal">(topic)</span>
+                                            <span className="ml-1 text-xs text-blue-400 font-normal">/ Total</span>
                                         )}
                                     </th>
                                     <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Reviews Given</th>
@@ -301,12 +327,18 @@ export default function TeacherDashboard() {
                                             </td>
                                             <td className="py-4 px-6 text-slate-500 dark:text-gray-400 text-sm">{student.email}</td>
                                             <td className="py-4 px-6 text-center">
-                                                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${essayCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500 dark:text-gray-400'}`}>
-                                                    {topicFilter
-                                                        ? `${student.filteredCount} / ${student.submittedCount}`
-                                                        : student.submittedCount
-                                                    }
-                                                </span>
+                                                {topicFilter ? (
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        <span className={`px-2.5 py-1 rounded-full text-sm font-bold ${student.filteredCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500'}`}>
+                                                            {student.filteredCount}
+                                                        </span>
+                                                        <span className="text-slate-400 text-xs">/ {student.submittedCount}</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${student.submittedCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500 dark:text-gray-400'}`}>
+                                                        {student.submittedCount}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="py-4 px-6 text-center">
                                                 <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= student.requiredReviews ? 'bg-green-500/20 text-green-400' :
