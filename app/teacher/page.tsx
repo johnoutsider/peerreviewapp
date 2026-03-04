@@ -138,7 +138,9 @@ export default function TeacherDashboard() {
         fetchData()
     }, [router])
 
-    const groups = [...new Set(students.map(s => s.groupName).filter(Boolean))]
+    const groups = Array.from(new Set(
+        students.map(s => s.groupName).filter((g): g is string => typeof g === 'string' && g.trim() !== '')
+    ))
 
     // Compute filtered list and per-student essay counts
     const filtered = students
@@ -187,8 +189,8 @@ export default function TeacherDashboard() {
                         <button
                             onClick={() => setGroupFilter('')}
                             className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${!groupFilter
-                                    ? 'bg-teal-500 text-white border-teal-500'
-                                    : 'bg-white text-slate-500 border-slate-200 hover:border-teal-400 hover:text-teal-600'
+                                ? 'bg-teal-500 text-white border-teal-500'
+                                : 'bg-white text-slate-500 border-slate-200 hover:border-teal-400 hover:text-teal-600'
                                 }`}
                         >All</button>
                         {groups.map(g => (
@@ -196,8 +198,8 @@ export default function TeacherDashboard() {
                                 key={g}
                                 onClick={() => setGroupFilter(g)}
                                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${groupFilter === g
-                                        ? 'bg-teal-500 text-white border-teal-500'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:border-teal-400 hover:text-teal-600'
+                                    ? 'bg-teal-500 text-white border-teal-500'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-teal-400 hover:text-teal-600'
                                     }`}
                             >{g}</button>
                         ))}
@@ -295,10 +297,10 @@ export default function TeacherDashboard() {
                                         </td>
                                         <td className="py-3.5 px-5 text-center">
                                             <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${student.reviewsGiven >= student.requiredReviews
-                                                    ? 'bg-green-50 text-green-600'
-                                                    : student.reviewsGiven > 0
-                                                        ? 'bg-amber-50 text-amber-600'
-                                                        : 'text-slate-300'
+                                                ? 'bg-green-50 text-green-600'
+                                                : student.reviewsGiven > 0
+                                                    ? 'bg-amber-50 text-amber-600'
+                                                    : 'text-slate-300'
                                                 }`}>
                                                 {student.reviewsGiven} / {student.requiredReviews}
                                             </span>
@@ -306,8 +308,8 @@ export default function TeacherDashboard() {
                                         <td className="py-3.5 px-5 text-center">
                                             {student.avgBand != null ? (
                                                 <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${student.avgBand >= 7 ? 'bg-green-50 text-green-600'
-                                                        : student.avgBand >= 5.5 ? 'bg-amber-50 text-amber-600'
-                                                            : 'bg-red-50 text-red-500'
+                                                    : student.avgBand >= 5.5 ? 'bg-amber-50 text-amber-600'
+                                                        : 'bg-red-50 text-red-500'
                                                     }`}>{student.avgBand}</span>
                                             ) : <span className="text-slate-300">—</span>}
                                         </td>
