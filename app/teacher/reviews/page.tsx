@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, getDocs, query, where } from 'firebase/firestore'
-import Header from '@/components/Header'
+import TeacherLayout from '@/components/TeacherLayout'
 import { isNewRubric, getScore100 } from '@/lib/score-calculator'
 
 interface ReviewRow {
@@ -161,55 +161,49 @@ export default function TeacherReviewActivity() {
     const crossGroup = filtered.filter(r => r.reviewerGroup !== r.essayAuthorGroup).length
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
-            <main className="container mx-auto px-4 py-8">
+        <TeacherLayout title="Reviews">
+            <div className="p-6">
                 {/* Header */}
-                <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                        <button onClick={() => router.push('/teacher')} className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-sm flex items-center gap-1 mb-3 transition-colors">
-                            ← Teacher Dashboard
-                        </button>
-                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-1">👥 Review Activity</h1>
-                        <p className="text-slate-500 dark:text-gray-400">See exactly who is reviewing whose work — and how students responded</p>
-                    </div>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-slate-800 mb-0.5">Review Activity</h1>
+                    <p className="text-slate-400 text-sm">See who is reviewing whose work — and how students responded</p>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                     {[
-                        { label: 'Total Reviews', value: filtered.length, color: 'blue' },
-                        { label: 'Unique Reviewers', value: new Set(filtered.map(r => r.reviewerId)).size, color: 'purple' },
-                        { label: 'Same-Group Reviews', value: sameGroup, color: 'green' },
-                        { label: 'Cross-Group Reviews', value: crossGroup, color: 'yellow' },
-                    ].map(({ label, value, color }) => (
-                        <div key={label} className={`bg-${color}-500/10 border border-${color}-500/30 rounded-xl p-4 text-center`}>
-                            <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
-                            <div className={`text-${color}-300 text-sm mt-1`}>{label}</div>
+                        { label: 'Total Reviews', value: filtered.length, accent: '#3b82f6' },
+                        { label: 'Unique Reviewers', value: new Set(filtered.map(r => r.reviewerId)).size, accent: '#8b5cf6' },
+                        { label: 'Same-Group', value: sameGroup, accent: '#10b981' },
+                        { label: 'Cross-Group', value: crossGroup, accent: '#f59e0b' },
+                    ].map(({ label, value, accent }) => (
+                        <div key={label} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100" style={{ borderLeft: `4px solid ${accent}` }}>
+                            <div className="text-2xl font-bold" style={{ color: accent }}>{value}</div>
+                            <div className="text-slate-500 text-xs mt-1">{label}</div>
                         </div>
                     ))}
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="flex flex-col sm:flex-row gap-3 mb-5">
                     <input
                         type="text"
-                        placeholder="🔍 Search reviews…"
+                        placeholder="Search reviews…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full sm:flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/20 text-slate-900 dark:text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full sm:flex-1 bg-white border border-slate-200 text-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-teal-500 transition-colors"
                     />
                     {groups.length > 0 && (
                         <select
                             value={groupFilter}
                             onChange={e => setGroupFilter(e.target.value)}
-                            className="flex-1 sm:flex-none bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/20 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                            className="flex-1 sm:flex-none bg-white border border-slate-200 text-slate-700 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-teal-500"
                         >
                             <option value="">All Groups</option>
                             {groups.map(g => <option key={g} value={g}>{g}</option>)}
@@ -218,25 +212,25 @@ export default function TeacherReviewActivity() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-50 dark:bg-slate-900/60">
-                                <tr>
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-100">
                                     {[['reviewer', 'Reviewer'], ['', '→'], ['author', 'Essay Author'], ['essay', 'Essay'], ['topic', 'Topic'], ['band', 'Score'], ['date', 'Date']].map(([col, label]) => (
                                         <th
                                             key={col || 'arrow'}
                                             onClick={col ? () => toggleSort(col) : undefined}
-                                            className={`py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm whitespace-nowrap select-none
-                                                ${col ? 'cursor-pointer hover:text-blue-400 transition-colors' : 'text-slate-500 dark:text-gray-400 font-normal text-xs px-3'}`}
+                                            className={`py-3 px-5 text-slate-400 font-semibold text-xs uppercase tracking-wide whitespace-nowrap select-none
+                                                ${col ? 'cursor-pointer hover:text-teal-500 transition-colors' : 'text-slate-300 font-normal px-3'}`}
                                         >
                                             {label}{col ? <span className="text-slate-400 text-xs ml-0.5">{sortArrow(col)}</span> : null}
                                         </th>
                                     ))}
-                                    <th className="py-4 px-5 text-slate-600 dark:text-gray-300 font-semibold text-sm">Actions</th>
+                                    <th className="py-3 px-5 text-slate-400 font-semibold text-xs uppercase tracking-wide">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                            <tbody className="divide-y divide-slate-50">
                                 {filtered.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="py-12 text-center text-gray-500">
@@ -251,23 +245,23 @@ export default function TeacherReviewActivity() {
                                         <>
                                             <tr
                                                 key={row.reviewId}
-                                                className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50 dark:bg-slate-900/30' : ''}`}
+                                                className={`hover:bg-slate-50 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50' : ''}`}
                                                 onClick={() => setExpandedId(isExpanded ? null : row.reviewId)}
                                             >
                                                 {/* Reviewer */}
                                                 <td className="py-3.5 px-5">
                                                     <button
                                                         onClick={e => { e.stopPropagation(); router.push(`/teacher/${row.reviewerId}`) }}
-                                                        className="text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 font-medium text-sm text-left transition-colors"
+                                                        className="text-teal-600 hover:text-teal-700 font-medium text-sm text-left transition-colors"
                                                     >
                                                         {row.reviewerName}
                                                     </button>
                                                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                                         {row.reviewerGroup && (
-                                                            <span className="text-xs text-purple-600 dark:text-purple-400">{row.reviewerGroup}</span>
+                                                            <span className="text-xs text-violet-600">{row.reviewerGroup}</span>
                                                         )}
                                                         {row.submittedAt && (
-                                                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                                                            <span className="text-xs text-slate-400">
                                                                 {row.submittedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                                                             </span>
                                                         )}
@@ -279,24 +273,24 @@ export default function TeacherReviewActivity() {
                                                 <td className="py-3.5 px-5">
                                                     <button
                                                         onClick={e => { e.stopPropagation(); router.push(`/teacher/${row.essayAuthorId}`) }}
-                                                        className="text-green-600 dark:text-green-300 hover:text-green-700 dark:hover:text-green-200 font-medium text-sm text-left transition-colors"
+                                                        className="text-green-600 hover:text-green-700 font-medium text-sm text-left transition-colors"
                                                     >
                                                         {row.essayAuthorName}
                                                     </button>
                                                     {row.essayAuthorGroup && (
-                                                        <div className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">{row.essayAuthorGroup}</div>
+                                                        <div className="text-xs text-violet-600 mt-0.5">{row.essayAuthorGroup}</div>
                                                     )}
                                                 </td>
                                                 {/* Essay */}
                                                 <td className="py-3.5 px-5">
                                                     <button
                                                         onClick={e => { e.stopPropagation(); router.push(`/feedback/${row.essayId}`) }}
-                                                        className="text-slate-700 dark:text-gray-200 hover:text-slate-900 dark:hover:text-white text-sm text-left line-clamp-1 transition-colors max-w-[180px]"
+                                                        className="text-slate-700 hover:text-slate-900 text-sm text-left line-clamp-1 transition-colors max-w-[180px]"
                                                     >
                                                         {row.essayTitle}
                                                     </button>
                                                     {row.essaySubmittedAt && (
-                                                        <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                                        <div className="text-xs text-slate-400 mt-0.5">
                                                             Submitted {row.essaySubmittedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                         </div>
                                                     )}
@@ -304,7 +298,7 @@ export default function TeacherReviewActivity() {
                                                 {/* Topic */}
                                                 <td className="py-3.5 px-5">
                                                     {row.topicName ? (
-                                                        <span className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full text-xs">
+                                                        <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full text-xs">
                                                             {row.topicName}
                                                         </span>
                                                     ) : <span className="text-slate-400 text-sm">—</span>}
@@ -313,19 +307,19 @@ export default function TeacherReviewActivity() {
                                                 <td className="py-3.5 px-5 text-center">
                                                     {row.isNewRubric ? (
                                                         row.score100 != null ? (
-                                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-bold ${row.score100 >= 80 ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                                                                    : row.score100 >= 65 ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                                                                        : row.score100 >= 50 ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
-                                                                            : 'bg-red-500/20 text-red-700 dark:text-red-400'
+                                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-bold ${row.score100 >= 80 ? 'bg-green-50 text-green-700'
+                                                                : row.score100 >= 65 ? 'bg-blue-50 text-blue-700'
+                                                                    : row.score100 >= 50 ? 'bg-amber-50 text-amber-700'
+                                                                        : 'bg-red-50 text-red-700'
                                                                 }`}>
                                                                 {row.score100}/100
                                                             </span>
                                                         ) : <span className="text-slate-400 text-sm">—</span>
                                                     ) : (
                                                         row.overallBand != null ? (
-                                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-bold ${row.overallBand >= 7 ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                                                                    : row.overallBand >= 5.5 ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
-                                                                        : 'bg-red-500/20 text-red-700 dark:text-red-400'
+                                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-bold ${row.overallBand >= 7 ? 'bg-green-50 text-green-700'
+                                                                : row.overallBand >= 5.5 ? 'bg-yellow-50 text-yellow-700'
+                                                                    : 'bg-red-50 text-red-700'
                                                                 }`}>
                                                                 Band {row.overallBand}
                                                             </span>
@@ -336,10 +330,10 @@ export default function TeacherReviewActivity() {
                                                 <td className="py-3.5 px-5 whitespace-nowrap">
                                                     {row.submittedAt ? (
                                                         <>
-                                                            <div className="text-slate-700 dark:text-gray-200 text-sm">
+                                                            <div className="text-slate-700 text-sm">
                                                                 {row.submittedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                             </div>
-                                                            <div className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">
+                                                            <div className="text-slate-400 text-xs mt-0.5">
                                                                 {row.submittedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </div>
                                                         </>
@@ -350,7 +344,7 @@ export default function TeacherReviewActivity() {
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={e => { e.stopPropagation(); router.push(`/feedback/${row.essayId}`) }}
-                                                            className="text-xs bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 px-2.5 py-1 rounded-full hover:bg-purple-500/20 transition-colors"
+                                                            className="text-xs bg-violet-50 text-violet-700 border border-violet-100 px-2.5 py-1 rounded-full hover:bg-violet-100 transition-colors"
                                                         >
                                                             View Essay →
                                                         </button>
@@ -364,27 +358,27 @@ export default function TeacherReviewActivity() {
 
                                             {/* Expandable detail row */}
                                             {isExpanded && (
-                                                <tr key={`${row.reviewId}-detail`} className="bg-slate-50 dark:bg-slate-900/20">
-                                                    <td colSpan={8} className="px-6 py-4 border-t border-slate-100 dark:border-white/10">
+                                                <tr key={`${row.reviewId}-detail`} className="bg-slate-50">
+                                                    <td colSpan={8} className="px-6 py-4 border-t border-slate-100">
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
 
                                                             {/* Reviewer's comment */}
                                                             <div>
-                                                                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                                                                     💬 Reviewer's Feedback
                                                                 </p>
                                                                 {row.feedback ? (
-                                                                    <p className="text-sm text-slate-700 dark:text-gray-200 leading-relaxed bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 border-l-4 border-l-blue-500">
+                                                                    <p className="text-sm text-slate-700 leading-relaxed bg-white border border-slate-100 rounded-lg px-4 py-3 border-l-4 border-l-teal-400">
                                                                         {row.feedback}
                                                                     </p>
                                                                 ) : (
-                                                                    <p className="text-sm text-slate-400 dark:text-slate-500 italic">No written comment.</p>
+                                                                    <p className="text-sm text-slate-400 italic">No written comment.</p>
                                                                 )}
                                                             </div>
 
                                                             {/* Student's reaction */}
                                                             <div>
-                                                                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                                                                     🎓 {row.essayAuthorName.split(' ')[0]}'s Reaction
                                                                 </p>
 
@@ -392,25 +386,25 @@ export default function TeacherReviewActivity() {
                                                                 <div className="mb-2 flex items-center gap-2">
                                                                     <div className="flex gap-0.5">
                                                                         {[1, 2, 3, 4, 5].map(star => (
-                                                                            <span key={star} className={`text-lg ${row.studentRating && star <= row.studentRating ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600'}`}>★</span>
+                                                                            <span key={star} className={`text-lg ${row.studentRating && star <= row.studentRating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
                                                                         ))}
                                                                     </div>
                                                                     {row.studentRating ? (
-                                                                        <span className="text-xs text-slate-600 dark:text-gray-300 font-medium">
+                                                                        <span className="text-xs text-slate-600 font-medium">
                                                                             {STAR_LABELS[row.studentRating]}
                                                                         </span>
                                                                     ) : (
-                                                                        <span className="text-xs text-slate-400 dark:text-slate-500 italic">Not yet rated</span>
+                                                                        <span className="text-xs text-slate-400 italic">Not yet rated</span>
                                                                     )}
                                                                 </div>
 
                                                                 {/* Written response */}
                                                                 {row.studentResponse?.trim() ? (
-                                                                    <p className="text-sm text-slate-700 dark:text-gray-200 leading-relaxed bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 border-l-4 border-l-green-500">
+                                                                    <p className="text-sm text-slate-700 leading-relaxed bg-white border border-slate-100 rounded-lg px-4 py-3 border-l-4 border-l-green-400">
                                                                         {row.studentResponse}
                                                                     </p>
                                                                 ) : (
-                                                                    <p className="text-sm text-slate-400 dark:text-slate-500 italic">No written response yet.</p>
+                                                                    <p className="text-sm text-slate-400 italic">No written response yet.</p>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -424,12 +418,12 @@ export default function TeacherReviewActivity() {
                         </table>
                     </div>
                     {filtered.length > 0 && (
-                        <div className="px-5 py-3 border-t border-slate-200 dark:border-white/10 text-xs text-slate-400 dark:text-gray-500">
+                        <div className="px-5 py-3 border-t border-slate-100 text-xs text-slate-400">
                             Showing {filtered.length} of {rows.length} reviews · Click any row to see feedback details
                         </div>
                     )}
                 </div>
-            </main>
-        </div>
+            </div>
+        </TeacherLayout>
     )
 }

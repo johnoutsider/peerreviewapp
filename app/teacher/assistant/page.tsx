@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import Header from '@/components/Header'
+import TeacherLayout from '@/components/TeacherLayout'
 import { collection, getDocs, query, where, addDoc, updateDoc, doc, serverTimestamp, orderBy } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 
@@ -233,54 +233,54 @@ export default function TeacherAssistant() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-            </div>
+            <TeacherLayout title="AI Assistant">
+                <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500" />
+                </div>
+            </TeacherLayout>
         )
     }
 
     if (!isTeacher) return null
 
     return (
-        <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
-            <Header />
+        <TeacherLayout title="AI Assistant">
+            <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
 
-            <main className="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10">
-                {/* Sidebar Area */}
+                {/* ── Chat History Sidebar ── */}
                 <div className={`
-                    absolute md:static top-0 left-0 h-full w-72 shrink-0
-                    bg-slate-50 dark:bg-slate-900 z-30 transition-transform duration-300
-                    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'}
-                    flex flex-col border-r border-slate-700 shadow-2xl md:shadow-none
+                    absolute md:static inset-y-0 left-0 z-20 flex flex-col w-64 shrink-0
+                    bg-white border-r border-slate-100 transition-transform duration-300
+                    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:flex hidden'}
                 `}>
-                    <div className="p-4 border-b border-slate-700">
+                    <div className="p-3 border-b border-slate-100">
                         <button
                             onClick={startNewChat}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-3 flex items-center justify-center gap-2 transition-colors font-semibold"
+                            className="w-full bg-teal-500 hover:bg-teal-600 text-white rounded-lg py-2.5 flex items-center justify-center gap-2 transition-colors font-semibold text-sm"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
                             New Chat
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-3">
-                        <div className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 px-2">Chat History</div>
+                    <div className="flex-1 overflow-y-auto p-2">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-2">Chat History</div>
                         {chatSessions.length === 0 ? (
-                            <div className="text-sm text-slate-500 dark:text-gray-400 pl-2 italic">No past sessions found.</div>
+                            <div className="text-sm text-slate-400 pl-2 italic">No past sessions.</div>
                         ) : (
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 {chatSessions.map(session => (
                                     <button
                                         key={session.id}
                                         onClick={() => loadChat(session)}
-                                        className={`w-full text-left p-3 rounded-lg text-sm transition-all truncate flex items-center gap-3 ${activeChatId === session.id
-                                            ? 'bg-slate-100 dark:bg-slate-900/50 text-slate-900 dark:text-white font-medium shadow-sm'
-                                            : 'text-slate-400 hover:bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10 hover:text-slate-200'
+                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${activeChatId === session.id
+                                            ? 'bg-teal-50 text-teal-700 font-medium'
+                                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                                             }`}
                                     >
-                                        <svg className="w-4 h-4 shrink-0 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg className="w-3.5 h-3.5 shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                         </svg>
                                         {session.title}
@@ -291,60 +291,56 @@ export default function TeacherAssistant() {
                     </div>
                 </div>
 
-                {/* Main Chat Layout Container */}
-                <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10 relative">
+                {/* ── Main Chat Area ── */}
+                <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
 
-                    {/* Header bar */}
-                    <div className="h-16 border-b border-slate-700 flex items-center justify-between px-4 lg:px-6 shrink-0 bg-slate-50 dark:bg-slate-900/40">
-                        <div className="flex items-center gap-4">
+                    {/* Inner header bar */}
+                    <div className="h-14 border-b border-slate-100 bg-white flex items-center justify-between px-4 shrink-0">
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className="text-slate-400 hover:text-slate-900 dark:text-white transition-colors"
+                                className="text-slate-400 hover:text-slate-700 transition-colors md:hidden"
                             >
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
-                            <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-                                AI Assistant
-                            </h1>
+                            <span className="text-slate-700 font-semibold text-sm">AI Assistant</span>
                         </div>
                         {loadingData ? (
-                            <div className="text-xs text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium border border-amber-500/20">
-                                <div className="w-3 h-3 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
-                                Syncing database...
+                            <div className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full flex items-center gap-1.5 border border-amber-100">
+                                <div className="w-2.5 h-2.5 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+                                Syncing data…
                             </div>
                         ) : (
-                            <div className="text-xs text-emerald-400 bg-emerald-400/10 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium border border-emerald-500/20">
-                                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                Data Connected
+                            <div className="text-xs text-teal-600 bg-teal-50 px-3 py-1 rounded-full flex items-center gap-1.5 border border-teal-100">
+                                <div className="w-2 h-2 rounded-full bg-teal-500" />
+                                Connected
                             </div>
                         )}
                     </div>
 
-                    {/* Scrolling Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
-                        <div className="max-w-4xl mx-auto space-y-6 pb-4">
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-4">
+                        <div className="max-w-3xl mx-auto space-y-4 pb-4">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[90%] md:max-w-[75%] rounded-2xl p-5 shadow-sm ${msg.role === 'user'
-                                        ? 'bg-blue-600 text-white rounded-br-sm'
-                                        : 'bg-slate-100 dark:bg-slate-900/50 text-slate-100 rounded-bl-sm border border-slate-600'
+                                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user'
+                                        ? 'bg-teal-500 text-white rounded-br-sm'
+                                        : 'bg-white text-slate-700 rounded-bl-sm border border-slate-100 shadow-sm'
                                         }`}>
-                                        <div className="prose prose-invert max-w-none text-[15px] leading-relaxed">
-                                            {msg.content.split('\n').map((line, i) => (
-                                                <p key={i} className="mb-2 last:mb-0 min-h-[1em]">{line}</p>
-                                            ))}
-                                        </div>
+                                        {msg.content.split('\n').map((line, i) => (
+                                            <p key={i} className="mb-1 last:mb-0 min-h-[1em]">{line}</p>
+                                        ))}
                                     </div>
                                 </div>
                             ))}
                             {sending && (
                                 <div className="flex justify-start">
-                                    <div className="bg-slate-100 dark:bg-slate-900/50 text-slate-200 border border-slate-600 rounded-2xl rounded-bl-sm p-5 flex gap-2 items-center shadow-sm">
-                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                    <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center shadow-sm">
+                                        <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" />
+                                        <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                                        <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                                     </div>
                                 </div>
                             )}
@@ -352,39 +348,39 @@ export default function TeacherAssistant() {
                         </div>
                     </div>
 
-                    {/* Static Input Area Fixed at Bottom */}
-                    <div className="p-4 bg-slate-50 dark:bg-slate-900 shrink-0 border-t border-slate-700">
-                        <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative flex items-center">
+                    {/* Input */}
+                    <div className="p-4 bg-white border-t border-slate-100 shrink-0">
+                        <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto relative flex items-center">
                             <input
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder={loadingData ? "Syncing data, please wait..." : "Ask your assistant..."}
+                                placeholder={loadingData ? 'Syncing data, please wait…' : 'Ask your assistant…'}
                                 disabled={sending || loadingData}
-                                className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10 border border-slate-600 hover:border-slate-500 rounded-2xl pl-6 pr-16 py-4 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-all text-[15px] shadow-inner font-medium"
+                                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl pl-4 pr-14 py-3 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 transition-all text-sm"
                             />
                             <button
                                 type="submit"
                                 disabled={!input.trim() || sending || loadingData}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-500 w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-40 disabled:hover:bg-blue-600"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-teal-500 text-white hover:bg-teal-600 w-9 h-9 rounded-lg flex items-center justify-center transition-all disabled:opacity-40"
                             >
                                 {sending ? (
-                                    <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                                    <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                                 ) : (
-                                    <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                     </svg>
                                 )}
                             </button>
                         </form>
-                        <p className="text-center text-xs text-slate-500 dark:text-gray-400 mt-3 font-medium">
-                            AI may make mistakes. Verify important information securely from the dashboard.
+                        <p className="text-center text-xs text-slate-400 mt-2">
+                            AI may make mistakes. Verify important information from the dashboard.
                         </p>
                     </div>
 
                 </div>
-
-            </main>
-        </div>
+            </div>
+        </TeacherLayout>
     )
 }
+

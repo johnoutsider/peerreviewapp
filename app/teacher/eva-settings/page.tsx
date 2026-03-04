@@ -8,7 +8,7 @@ import {
     doc, getDoc, setDoc
 } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
-import Header from '@/components/Header'
+import TeacherLayout from '@/components/TeacherLayout'
 import Alert from '@/components/Alert'
 
 const EVA_SETTINGS_DOC = doc  // re-exported below via usage
@@ -83,62 +83,52 @@ export default function EvaSettings() {
     }
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
-            <main className="container mx-auto px-4 py-8 max-w-2xl">
+        <TeacherLayout title="EVA Settings">
+            <div className="p-6 max-w-2xl mx-auto">
 
                 {/* Page header */}
-                <div className="mb-8">
-                    <button
-                        onClick={() => router.push('/teacher')}
-                        className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white text-sm flex items-center gap-1 mb-3 transition-colors"
-                    >
-                        ← Teacher Dashboard
-                    </button>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center font-extrabold text-white text-sm">
+                <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-1">
+                        <div className="w-9 h-9 rounded-lg bg-teal-500 flex items-center justify-center font-extrabold text-white text-xs shrink-0">
                             EVA
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">EVA Access Control</h1>
-                            <p className="text-slate-500 dark:text-gray-400 text-sm mt-0.5">
-                                Choose which student groups can use the AI Essay Assistant
-                            </p>
-                        </div>
+                        <h1 className="text-2xl font-bold text-slate-800">EVA Access Control</h1>
                     </div>
+                    <p className="text-slate-400 text-sm ml-12">Choose which student groups can use the AI Essay Assistant</p>
                 </div>
 
                 {success && <Alert type="success" message={success} />}
                 {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+                {/* Main card */}
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
 
                     {/* Toolbar */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10">
+                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
                         <div>
-                            <span className="text-slate-900 dark:text-white font-semibold">Student Groups</span>
-                            <span className="ml-2 text-slate-400 dark:text-slate-500 text-sm">
-                                {allowedGroups.size} / {groups.length} groups enabled
+                            <span className="text-slate-700 font-semibold text-sm">Student Groups</span>
+                            <span className="ml-2 text-slate-400 text-xs">
+                                {allowedGroups.size} / {groups.length} enabled
                             </span>
                         </div>
                         <div className="flex gap-2">
                             <button
                                 type="button"
                                 onClick={enableAll}
-                                className="text-xs px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 font-medium transition-colors"
+                                className="text-xs px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 font-medium transition-colors"
                             >
                                 Enable All
                             </button>
                             <button
                                 type="button"
                                 onClick={disableAll}
-                                className="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 font-medium transition-colors"
+                                className="text-xs px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 font-medium transition-colors"
                             >
                                 Disable All
                             </button>
@@ -147,22 +137,22 @@ export default function EvaSettings() {
 
                     {/* Group list */}
                     {groups.length === 0 ? (
-                        <div className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                        <div className="px-6 py-12 text-center text-slate-400">
                             <div className="text-4xl mb-3">👥</div>
-                            <p>No student groups found. Students need to set their group in their profile first.</p>
+                            <p className="text-sm">No student groups found. Students need to set their group in their profile first.</p>
                         </div>
                     ) : (
-                        <ul className="divide-y divide-slate-100 dark:divide-white/5">
+                        <ul className="divide-y divide-slate-50">
                             {groups.map(group => {
                                 const enabled = allowedGroups.has(group)
                                 return (
-                                    <li key={group} className="flex items-center justify-between px-6 py-4">
+                                    <li key={group} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors">
                                         <div className="flex items-center gap-3">
-                                            <span className={`w-2 h-2 rounded-full ${enabled ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                                            <span className="text-slate-900 dark:text-white font-medium">{group}</span>
-                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${enabled
-                                                ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'
-                                                : 'bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10'
+                                            <span className={`w-2 h-2 rounded-full shrink-0 ${enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
+                                            <span className="text-slate-800 font-semibold text-sm">{group}</span>
+                                            <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${enabled
+                                                ? 'bg-green-50 text-green-700 border border-green-100'
+                                                : 'bg-slate-100 text-slate-500 border border-slate-200'
                                                 }`}>
                                                 {enabled ? 'EVA Enabled' : 'No Access'}
                                             </span>
@@ -172,12 +162,12 @@ export default function EvaSettings() {
                                         <button
                                             type="button"
                                             onClick={() => toggle(group)}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none
-                                                ${enabled ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${enabled ? 'bg-teal-500' : 'bg-slate-200'
+                                                }`}
                                         >
                                             <span
-                                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform
-                                                    ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
                                             />
                                         </button>
                                     </li>
@@ -187,12 +177,12 @@ export default function EvaSettings() {
                     )}
 
                     {/* Save button */}
-                    <div className="px-6 py-4 border-t border-slate-200 dark:border-white/10 flex justify-end">
+                    <div className="px-5 py-4 border-t border-slate-100 flex justify-end">
                         <button
                             type="button"
                             onClick={save}
                             disabled={saving}
-                            className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                            className="bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm"
                         >
                             {saving ? (
                                 <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving…</>
@@ -201,10 +191,10 @@ export default function EvaSettings() {
                     </div>
                 </div>
 
-                <p className="text-xs text-slate-400 dark:text-slate-500 text-center mt-4">
+                <p className="text-xs text-slate-400 text-center mt-4">
                     Changes take effect immediately. Students in disabled groups will see the editor without EVA.
                 </p>
-            </main>
-        </div>
+            </div>
+        </TeacherLayout>
     )
 }

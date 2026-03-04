@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
-import { collection, getDocs, query, where } from 'firebase/firestore'
 
+// The teacher's browser already has the full student list (with telegramChatId) loaded.
+// We receive the target chatIds directly from the client — no server-side Firestore needed.
 export async function POST(req: Request) {
     try {
         const botToken = process.env.TELEGRAM_BOT_TOKEN
@@ -13,53 +13,32 @@ export async function POST(req: Request) {
         const {
             title,
             message,
-            recipientUids,   // string[] | null — null means all students
-            groupName,       // string | null — if set, filter by group
+            chatIds,   // string[] — the Telegram chat IDs to send to (filtered by client)
         } = body
 
         if (!message?.trim()) {
             return NextResponse.json({ error: 'message is required' }, { status: 400 })
         }
 
-        // Build Firestore query for students
-        let studentsQuery
-        if (groupName) {
-            studentsQuery = query(
-                collection(db, 'users'),
-                where('role', '==', 'student'),
-                where('groupName', '==', groupName)
-            )
-        } else {
-            studentsQuery = query(
-                collection(db, 'users'),
-                where('role', '==', 'student')
-            )
+        if (!Array.isArray(chatIds) || chatIds.length === 0) {
+            return NextResponse.json({ status: 'done', sent: 0, skipped: 0, total: 0 })
         }
-
-        const snap = await getDocs(studentsQuery)
-        const allStudents = snap.docs.map(d => ({ uid: d.id, ...(d.data() as any) }))
-
-        // Filter to specific uids if provided
-        const targets = recipientUids
-            ? allStudents.filter(s => recipientUids.includes(s.uid))
-            : allStudents
-
-        // Only send to those with Telegram linked
-        const connected = targets.filter(s => s.telegramChatId)
-        const skipped = targets.length - connected.length
 
         // Build the Telegram message text
         const text = [
             `📚 *Peer Feedback App*`,
             ``,
-            title ? `📌 *${title}*` : null,
+            title ? `📌 *${escapeMarkdown(title)}*` : null,
             ``,
             message,
         ].filter(line => line !== null).join('\n')
 
-        // Send concurrently (with a small delay between to respect Telegram rate limits)
+        // Send to each chatId, respecting Telegram rate limits
         let sent = 0
-        for (const student of connected) {
+        const skipped = 0
+
+        for (const chatId of chatIds) {
+            if (!chatId) continue
             try {
                 const res = await fetch(
                     `https://api.telegram.org/bot${botToken}/sendMessage`,
@@ -67,16 +46,20 @@ export async function POST(req: Request) {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            chat_id: student.telegramChatId,
+                            chat_id: chatId,
                             text,
                             parse_mode: 'Markdown',
                         }),
                     }
                 )
-                if (res.ok) sent++
-                else console.error(`Failed to send to ${student.uid}:`, await res.text())
+                if (res.ok) {
+                    sent++
+                } else {
+                    const errBody = await res.text()
+                    console.error(`Failed to send to chatId ${chatId}:`, errBody)
+                }
             } catch (err) {
-                console.error(`Error sending to ${student.uid}:`, err)
+                console.error(`Error sending to chatId ${chatId}:`, err)
             }
         }
 
@@ -84,10 +67,15 @@ export async function POST(req: Request) {
             status: 'done',
             sent,
             skipped,
-            total: targets.length,
+            total: chatIds.length,
         })
     } catch (error) {
         console.error('Broadcast error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
+}
+
+// Escape special Markdown characters in user-provided text to prevent parse errors
+function escapeMarkdown(text: string): string {
+    return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&')
 }

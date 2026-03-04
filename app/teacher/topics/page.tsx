@@ -16,7 +16,7 @@ import {
     writeBatch,
     Timestamp,
 } from 'firebase/firestore'
-import Header from '@/components/Header'
+import TeacherLayout from '@/components/TeacherLayout'
 import Alert from '@/components/Alert'
 
 interface Topic {
@@ -210,44 +210,33 @@ export default function ManageTopics() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
-
-            <main className="container mx-auto px-4 py-8 max-w-3xl">
+        <TeacherLayout title="Topics">
+            <div className="p-6 max-w-3xl mx-auto">
                 {/* Header */}
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <button
-                            onClick={() => router.push('/teacher')}
-                            className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-sm flex items-center gap-1 mb-2 transition-colors"
-                        >
-                            ← Teacher Dashboard
-                        </button>
-                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white">Manage Topics</h1>
-                        <p className="text-slate-500 dark:text-gray-400 mt-1">Create topics, set deadlines, and drag to reorder</p>
-                    </div>
-                    <div className="text-5xl">🏷️</div>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-slate-800 mb-0.5">Manage Topics</h1>
+                    <p className="text-slate-400 text-sm">Create topics, set deadlines, and drag to reorder</p>
                 </div>
 
                 {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
                 {success && <Alert type="success" message={success} />}
 
                 {/* Add Topic Form */}
-                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Add New Topic</h2>
+                <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm mb-6">
+                    <h2 className="text-base font-semibold text-slate-700 mb-3">Add New Topic</h2>
                     <form onSubmit={handleAdd} className="flex gap-3">
                         <input
                             type="text"
                             value={newTopic}
                             onChange={e => setNewTopic(e.target.value)}
                             placeholder="e.g. Environment & Climate, Technology, Health…"
-                            className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                            className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-4 py-2.5 focus:outline-none focus:border-teal-500 transition-colors text-sm"
                             maxLength={80}
                         />
                         <button
                             type="submit"
                             disabled={adding || !newTopic.trim()}
-                            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-5 py-2.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm"
                         >
                             {adding ? 'Adding…' : '+ Add Topic'}
                         </button>
@@ -255,17 +244,17 @@ export default function ManageTopics() {
                 </div>
 
                 {/* Topics List */}
-                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between">
-                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">All Topics</h2>
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                        <h2 className="text-base font-semibold text-slate-700">All Topics</h2>
                         <div className="flex items-center gap-3">
                             {reordering && (
-                                <span className="text-xs text-blue-400 flex items-center gap-1.5">
-                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-400" />
+                                <span className="text-xs text-teal-500 flex items-center gap-1.5">
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-teal-500" />
                                     Saving order…
                                 </span>
                             )}
-                            <span className="text-sm text-slate-500 dark:text-gray-400">{topics.length} topic{topics.length !== 1 ? 's' : ''}</span>
+                            <span className="text-sm text-slate-400">{topics.length} topic{topics.length !== 1 ? 's' : ''}</span>
                         </div>
                     </div>
 
@@ -279,7 +268,7 @@ export default function ManageTopics() {
                             <p>No topics yet. Add your first one above!</p>
                         </div>
                     ) : (
-                        <ul className="divide-y divide-slate-100 dark:divide-white/10">
+                        <ul className="divide-y divide-slate-50">
                             {topics.map((topic, index) => {
                                 const ed = editing[topic.id] || { essayDeadline: '', reviewDeadline: '', saving: false }
                                 const essayD = ed.essayDeadline ? new Date(ed.essayDeadline) : null
@@ -297,7 +286,7 @@ export default function ManageTopics() {
                                 return (
                                     <li
                                         key={topic.id}
-                                        className="px-6 py-5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                                        className="px-6 py-5 hover:bg-slate-50 transition-colors"
                                     >
                                         {/* Row 1: drag handle + name + rename + delete */}
                                         {(() => {
@@ -310,13 +299,13 @@ export default function ManageTopics() {
                                                             <button
                                                                 onClick={() => movetopic(index, 'up')}
                                                                 disabled={index === 0 || reordering}
-                                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xs"
+                                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xs"
                                                                 title="Move up"
                                                             >▲</button>
                                                             <button
                                                                 onClick={() => movetopic(index, 'down')}
                                                                 disabled={index === topics.length - 1 || reordering}
-                                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xs"
+                                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xs"
                                                                 title="Move down"
                                                             >▼</button>
                                                         </div>
@@ -328,7 +317,7 @@ export default function ManageTopics() {
                                                                     value={rn.value}
                                                                     onChange={e => setRenaming(prev => ({ ...prev, [topic.id]: { ...prev[topic.id], value: e.target.value } }))}
                                                                     onKeyDown={e => { if (e.key === 'Enter') handleRenameTopic(topic.id); if (e.key === 'Escape') cancelRename(topic.id) }}
-                                                                    className="flex-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border border-blue-500 rounded-lg px-3 py-1.5 text-base font-semibold focus:outline-none"
+                                                                    className="flex-1 bg-white text-slate-800 border border-teal-500 rounded-lg px-3 py-1.5 text-base font-semibold focus:outline-none"
                                                                     maxLength={80}
                                                                 />
                                                                 <button
@@ -340,14 +329,14 @@ export default function ManageTopics() {
                                                                 </button>
                                                                 <button
                                                                     onClick={() => cancelRename(topic.id)}
-                                                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                                                    className="text-slate-400 hover:text-slate-600 text-sm px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
                                                                 >
                                                                     ✕
                                                                 </button>
                                                             </div>
                                                         ) : (
                                                             <>
-                                                                <span className="text-slate-900 dark:text-white font-semibold text-lg truncate">{topic.name}</span>
+                                                                <span className="text-slate-800 font-semibold text-base truncate">{topic.name}</span>
                                                                 <button
                                                                     onClick={() => startRename(topic)}
                                                                     title="Edit topic name"
@@ -371,9 +360,9 @@ export default function ManageTopics() {
                                         })()}
 
                                         {/* Row 2: deadline pickers */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-7">
-                                            <div className="bg-slate-100 dark:bg-slate-900/50/40 rounded-lg p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                                                <label className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-8">
+                                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                                                <label className="block text-xs text-slate-400 mb-1.5 font-semibold uppercase tracking-wide">
                                                     📝 Essay Submission Deadline
                                                 </label>
                                                 {deadlinePill(essayD, 'essay', 'blue')}
@@ -381,11 +370,11 @@ export default function ManageTopics() {
                                                     type="datetime-local"
                                                     value={ed.essayDeadline}
                                                     onChange={e => setField(topic.id, 'essayDeadline', e.target.value)}
-                                                    className="mt-2 w-full bg-slate-600/50 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                                    className="mt-2 w-full bg-white text-slate-700 border border-slate-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-teal-500"
                                                 />
                                             </div>
-                                            <div className="bg-slate-100 dark:bg-slate-900/50/40 rounded-lg p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                                                <label className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5 font-medium uppercase tracking-wide">
+                                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                                                <label className="block text-xs text-slate-400 mb-1.5 font-semibold uppercase tracking-wide">
                                                     👥 Peer Review Deadline
                                                 </label>
                                                 {deadlinePill(reviewD, 'review', 'purple')}
@@ -393,7 +382,7 @@ export default function ManageTopics() {
                                                     type="datetime-local"
                                                     value={ed.reviewDeadline}
                                                     onChange={e => setField(topic.id, 'reviewDeadline', e.target.value)}
-                                                    className="mt-2 w-full bg-slate-600/50 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                                    className="mt-2 w-full bg-white text-slate-700 border border-slate-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-teal-500"
                                                 />
                                             </div>
                                         </div>
@@ -403,7 +392,7 @@ export default function ManageTopics() {
                                             <button
                                                 onClick={() => handleSaveDeadlines(topic.id)}
                                                 disabled={ed.saving}
-                                                className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                                                className="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
                                             >
                                                 {ed.saving
                                                     ? <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300" />Saving…</>
@@ -417,10 +406,10 @@ export default function ManageTopics() {
                     )}
                 </div>
 
-                <p className="text-gray-500 text-sm mt-4 text-center">
+                <p className="text-slate-400 text-xs mt-4 text-center">
                     💡 Drag topics to reorder · Deleting a topic won't affect essays already submitted under it
                 </p>
-            </main>
-        </div>
+            </div>
+        </TeacherLayout>
     )
 }

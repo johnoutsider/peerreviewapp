@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore'
-import Header from '@/components/Header'
+import TeacherLayout from '@/components/TeacherLayout'
 import { calculateFinalScores } from '@/lib/score-calculator'
 
 interface StudentData {
@@ -165,219 +165,168 @@ export default function TeacherDashboard() {
     const topicStudentCount = topicFilter ? filtered.length : 0
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-        </div>
+        <TeacherLayout title="Dashboard">
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500" />
+            </div>
+        </TeacherLayout>
     )
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
-            <main className="container mx-auto px-4 py-8">
-                <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-1">Teacher Dashboard</h1>
-                        <p className="text-slate-500 dark:text-gray-400">Monitor student progress and peer review activity</p>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                        {groups.length > 0 && (
-                            <select
-                                value={groupFilter}
-                                onChange={e => setGroupFilter(e.target.value)}
-                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                            >
-                                <option value="">All Groups</option>
-                                {groups.map(g => <option key={g} value={g}>{g}</option>)}
-                            </select>
-                        )}
-                        <button
-                            onClick={() => router.push('/teacher/reviews')}
-                            className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                        >
-                            👥 Review Activity
-                        </button>
-                        <button
-                            onClick={() => router.push('/teacher/messages')}
-                            className="flex items-center gap-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                        >
-                            ✉️ Messages
-                        </button>
-                        <button
-                            onClick={() => router.push('/teacher/topics')}
-                            className="flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                        >
-                            🏷️ Topics
-                        </button>
-                        <button
-                            onClick={() => router.push('/teacher/assistant')}
-                            className="flex items-center gap-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                        >
-                            🤖 AI Assistant
-                        </button>
-                        <button
-                            onClick={() => router.push('/teacher/eva-settings')}
-                            className="flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                        >
-                            EVA Settings
-                        </button>
-                    </div>
+        <TeacherLayout title="Dashboard">
+            <div className="p-6 max-w-screen-xl mx-auto">
+                {/* Page header */}
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-slate-800 mb-0.5">Teacher Dashboard</h1>
+                    <p className="text-slate-400 text-sm">Monitor student progress and peer review activity</p>
                 </div>
+                {/* Group filter pill */}
+                {groups.length > 0 && (
+                    <div className="mb-6 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Group:</span>
+                        <button
+                            onClick={() => setGroupFilter('')}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${!groupFilter
+                                    ? 'bg-teal-500 text-white border-teal-500'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-teal-400 hover:text-teal-600'
+                                }`}
+                        >All</button>
+                        {groups.map(g => (
+                            <button
+                                key={g}
+                                onClick={() => setGroupFilter(g)}
+                                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${groupFilter === g
+                                        ? 'bg-teal-500 text-white border-teal-500'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-teal-400 hover:text-teal-600'
+                                    }`}
+                            >{g}</button>
+                        ))}
+                    </div>
+                )}
 
-                {/* Stats row — always global totals */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                {/* Stats row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {[
-                        { label: 'Total Students', value: students.length, color: 'blue' },
-                        { label: 'Groups', value: groups.length || '—', color: 'purple' },
-                        { label: 'Essays Submitted', value: totalEssaysAll, color: 'green' },
-                        { label: 'Reviews Given', value: totalReviewsAll, color: 'yellow' },
-                    ].map(({ label, value, color }) => (
-                        <div key={label} className={`bg-${color}-500/10 border border-${color}-500/30 rounded-xl p-4 text-center`}>
-                            <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
-                            <div className={`text-${color}-300 text-sm mt-1`}>{label}</div>
+                        { label: 'Total Students', value: students.length, accent: '#3b82f6' },
+                        { label: 'Groups', value: groups.length || '—', accent: '#8b5cf6' },
+                        { label: 'Essays Submitted', value: totalEssaysAll, accent: '#10b981' },
+                        { label: 'Reviews Given', value: totalReviewsAll, accent: '#f59e0b' },
+                    ].map(({ label, value, accent }) => (
+                        <div key={label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100" style={{ borderLeft: `4px solid ${accent}` }}>
+                            <div className="text-3xl font-bold text-slate-800" style={{ color: accent }}>{value}</div>
+                            <div className="text-slate-500 text-sm mt-1">{label}</div>
                         </div>
                     ))}
                 </div>
 
                 {/* Topic filter summary banner */}
-                {topicFilter ? (
-                    <div className="mb-6 px-5 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center gap-3 flex-wrap">
-                        <span className="text-blue-400 font-semibold text-sm">🏷️ {topicMap[topicFilter]}</span>
-                        <span className="text-slate-400 text-sm">—</span>
-                        <span className="text-slate-700 dark:text-gray-200 text-sm">
-                            <span className="font-bold text-white">{topicEssayCount}</span> essay{topicEssayCount !== 1 ? 's' : ''} submitted
-                        </span>
-                        <span className="text-slate-500">·</span>
-                        <span className="text-slate-700 dark:text-gray-200 text-sm">
-                            by <span className="font-bold text-white">{topicStudentCount}</span> student{topicStudentCount !== 1 ? 's' : ''}
-                        </span>
-                        <button
-                            onClick={() => setTopicFilter('')}
-                            className="ml-auto text-xs text-slate-400 hover:text-slate-200 transition-colors"
-                        >
-                            ✕ Clear filter
-                        </button>
+                {topicFilter && (
+                    <div className="mb-4 px-4 py-3 rounded-lg bg-teal-50 border border-teal-200 flex items-center gap-3 flex-wrap">
+                        <span className="text-teal-700 font-semibold text-sm">🏷️ {topicMap[topicFilter]}</span>
+                        <span className="text-teal-600 text-sm">{topicEssayCount} essay{topicEssayCount !== 1 ? 's' : ''} · {topicStudentCount} student{topicStudentCount !== 1 ? 's' : ''}</span>
+                        <button onClick={() => setTopicFilter('')} className="ml-auto text-xs text-teal-500 hover:text-teal-700 transition-colors">✕ Clear</button>
                     </div>
-                ) : (
-                    <div className="mb-6" />
                 )}
 
-                {/* Student table with topic filter */}
-                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
-                    {/* Table header with topic filter */}
-                    <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between gap-4 flex-wrap">
-                        <div className="flex items-center gap-3">
-                            <span className="text-slate-700 dark:text-gray-200 font-semibold text-sm">Filter by topic:</span>
-                            <select
-                                value={topicFilter}
-                                onChange={e => setTopicFilter(e.target.value)}
-                                className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                            >
-                                <option value="">All Topics</option>
-                                {topics.map(t => (
-                                    <option key={t.id} value={t.id}>🏷️ {t.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                {/* Student table */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    {/* Table toolbar */}
+                    <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-3 flex-wrap">
+                        <span className="text-slate-500 text-sm font-medium">Filter by topic:</span>
+                        <select
+                            value={topicFilter}
+                            onChange={e => setTopicFilter(e.target.value)}
+                            className="bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-teal-500 transition-colors"
+                        >
+                            <option value="">All Topics</option>
+                            {topics.map(t => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                        </select>
                         {topicFilter && (
-                            <span className="text-xs text-blue-400 font-medium">
-                                Showing {filtered.length} student{filtered.length !== 1 ? 's' : ''} who submitted for &quot;{topicMap[topicFilter]}&quot;
+                            <span className="text-xs text-teal-600 font-medium">
+                                {filtered.length} student{filtered.length !== 1 ? 's' : ''} · &quot;{topicMap[topicFilter]}&quot;
                             </span>
                         )}
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-100 dark:bg-slate-900/50">
-                                <tr>
-                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold w-12">#</th>
-                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Student</th>
-                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Group</th>
-                                    <th className="py-4 px-6 text-slate-600 dark:text-gray-300 font-semibold">Email</th>
-                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">
-                                        Essays
-                                        {topicFilter && (
-                                            <span className="ml-1 text-xs text-blue-400 font-normal">/ Total</span>
-                                        )}
-                                    </th>
-                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Reviews Given</th>
-                                    <th className="py-4 px-6 text-center text-slate-600 dark:text-gray-300 font-semibold">Avg Band</th>
-                                    <th className="py-4 px-6 text-right text-slate-600 dark:text-gray-300 font-semibold">Actions</th>
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    <th className="py-3 px-5 text-slate-400 font-semibold text-xs uppercase tracking-wide w-12">#</th>
+                                    <th className="py-3 px-5 text-slate-400 font-semibold text-xs uppercase tracking-wide">Student</th>
+                                    <th className="py-3 px-5 text-slate-400 font-semibold text-xs uppercase tracking-wide">Group</th>
+                                    <th className="py-3 px-5 text-slate-400 font-semibold text-xs uppercase tracking-wide">Email</th>
+                                    <th className="py-3 px-5 text-center text-slate-400 font-semibold text-xs uppercase tracking-wide">Essays</th>
+                                    <th className="py-3 px-5 text-center text-slate-400 font-semibold text-xs uppercase tracking-wide">Reviews</th>
+                                    <th className="py-3 px-5 text-center text-slate-400 font-semibold text-xs uppercase tracking-wide">Avg Band</th>
+                                    <th className="py-3 px-5 text-right text-slate-400 font-semibold text-xs uppercase tracking-wide">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/10">
-                                {filtered.map((student, index) => {
-                                    const essayCount = topicFilter ? student.filteredCount : student.submittedCount
-                                    return (
-                                        <tr key={student.uid} className="hover:bg-white dark:bg-slate-800/5 transition-colors">
-                                            <td className="py-4 px-6 text-slate-400 dark:text-gray-500 text-sm font-medium">{index + 1}</td>
-                                            <td className="py-4 px-6">
-                                                <div className="text-slate-900 dark:text-white font-medium">{student.displayName || student.name}</div>
-                                                {student.displayName && student.displayName !== student.name && (
-                                                    <div className="text-gray-500 text-xs">{student.name}</div>
-                                                )}
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                {student.groupName ? (
-                                                    <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full text-xs font-medium">
-                                                        {student.groupName}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-600 text-sm">—</span>
-                                                )}
-                                            </td>
-                                            <td className="py-4 px-6 text-slate-500 dark:text-gray-400 text-sm">{student.email}</td>
-                                            <td className="py-4 px-6 text-center">
-                                                {topicFilter ? (
-                                                    <span className="inline-flex items-center gap-1.5">
-                                                        <span className={`px-2.5 py-1 rounded-full text-sm font-bold ${student.filteredCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500'}`}>
-                                                            {student.filteredCount}
-                                                        </span>
-                                                        <span className="text-slate-400 text-xs">/ {student.submittedCount}</span>
-                                                    </span>
-                                                ) : (
-                                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${student.submittedCount > 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-slate-500 dark:text-gray-400'}`}>
-                                                        {student.submittedCount}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="py-4 px-6 text-center">
-                                                <span className={`inline-block px-3 py-1 rounded-full text-sm ${student.reviewsGiven >= student.requiredReviews ? 'bg-green-500/20 text-green-400' :
-                                                    student.reviewsGiven > 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        'bg-gray-700 text-slate-500 dark:text-gray-400'
-                                                    }`}>
-                                                    {student.reviewsGiven} / {student.requiredReviews}
+                            <tbody className="divide-y divide-slate-50">
+                                {filtered.map((student, index) => (
+                                    <tr key={student.uid} className="hover:bg-slate-50 transition-colors">
+                                        <td className="py-3.5 px-5 text-slate-300 text-sm">{index + 1}</td>
+                                        <td className="py-3.5 px-5">
+                                            <div className="text-slate-800 font-medium text-sm">{student.displayName || student.name}</div>
+                                            {student.displayName && student.displayName !== student.name && (
+                                                <div className="text-slate-400 text-xs">{student.name}</div>
+                                            )}
+                                        </td>
+                                        <td className="py-3.5 px-5">
+                                            {student.groupName ? (
+                                                <span className="bg-violet-50 text-violet-600 border border-violet-100 px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                                    {student.groupName}
                                                 </span>
-                                            </td>
-                                            <td className="py-4 px-6 text-center">
-                                                {student.avgBand != null ? (
-                                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${student.avgBand >= 7 ? 'bg-green-500/20 text-green-400' :
-                                                        student.avgBand >= 5.5 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            'bg-red-500/20 text-red-400'
-                                                        }`}>
-                                                        {student.avgBand}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-600 text-sm">—</span>
-                                                )}
-                                            </td>
-                                            <td className="py-4 px-6 text-right">
-                                                <button
-                                                    className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                                                    onClick={() => router.push(`/teacher/${student.uid}`)}
-                                                >
-                                                    View Details →
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
+                                            ) : <span className="text-slate-300">—</span>}
+                                        </td>
+                                        <td className="py-3.5 px-5 text-slate-400 text-sm">{student.email}</td>
+                                        <td className="py-3.5 px-5 text-center">
+                                            {topicFilter ? (
+                                                <span className="text-sm">
+                                                    <span className={`font-bold ${student.filteredCount > 0 ? 'text-teal-600' : 'text-slate-300'}`}>{student.filteredCount}</span>
+                                                    <span className="text-slate-300 text-xs"> / {student.submittedCount}</span>
+                                                </span>
+                                            ) : (
+                                                <span className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-semibold ${student.submittedCount > 0 ? 'bg-teal-50 text-teal-600' : 'text-slate-300'
+                                                    }`}>{student.submittedCount}</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3.5 px-5 text-center">
+                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${student.reviewsGiven >= student.requiredReviews
+                                                    ? 'bg-green-50 text-green-600'
+                                                    : student.reviewsGiven > 0
+                                                        ? 'bg-amber-50 text-amber-600'
+                                                        : 'text-slate-300'
+                                                }`}>
+                                                {student.reviewsGiven} / {student.requiredReviews}
+                                            </span>
+                                        </td>
+                                        <td className="py-3.5 px-5 text-center">
+                                            {student.avgBand != null ? (
+                                                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${student.avgBand >= 7 ? 'bg-green-50 text-green-600'
+                                                        : student.avgBand >= 5.5 ? 'bg-amber-50 text-amber-600'
+                                                            : 'bg-red-50 text-red-500'
+                                                    }`}>{student.avgBand}</span>
+                                            ) : <span className="text-slate-300">—</span>}
+                                        </td>
+                                        <td className="py-3.5 px-5 text-right">
+                                            <button
+                                                className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors"
+                                                onClick={() => router.push(`/teacher/${student.uid}`)}
+                                            >
+                                                View →
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan={8} className="py-8 text-center text-gray-500">
+                                        <td colSpan={8} className="py-10 text-center text-slate-400 text-sm">
                                             {topicFilter
-                                                ? `No students have submitted essays for "${topicMap[topicFilter]}" yet.`
-                                                : 'No students found.'
-                                            }
+                                                ? `No students submitted for "${topicMap[topicFilter]}" yet.`
+                                                : 'No students found.'}
                                         </td>
                                     </tr>
                                 )}
@@ -385,7 +334,7 @@ export default function TeacherDashboard() {
                         </table>
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </TeacherLayout>
     )
 }

@@ -13,11 +13,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ status: 'ignored', reason: 'no_telegram_linked' })
         }
 
-        const titleText = essayTitle ? `"${essayTitle}"` : 'your essay'
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://essaypeerreviewapp.web.app'
+        const title = essayTitle ? `"${essayTitle}"` : 'your essay'
         const message =
-            `📝 *New Peer Review!*\n\n` +
-            `Your essay ${titleText} has just been reviewed by a peer.\n\n` +
-            `Open the app to read your feedback and see your updated scores. 🎉`
+            `🎉 *Your essay has been reviewed!*\n\n` +
+            `One of your peers has completed a review of ${title}.\n\n` +
+            `Head over to the app to read the full feedback, see your scores, and find out what you did well and what you can improve. Your progress is waiting for you! 📈\n\n` +
+            `👉 Visit: ${appUrl}`
+
 
         await sendTelegramMessage(chatId, message)
         return NextResponse.json({ status: 'success' })
