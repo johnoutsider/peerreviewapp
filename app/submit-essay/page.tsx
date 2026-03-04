@@ -119,7 +119,13 @@ export default function SubmitEssay() {
             const detectRes = await fetch('/api/ai-detect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ essay_content: content }),
+                body: JSON.stringify({
+                    essay_content: content,
+                    studentId: auth.currentUser.uid,
+                    studentName: auth.currentUser.displayName || 'Student',
+                    essayTitle: title.trim(),
+                    topicName,
+                }),
             })
             const detectData = await detectRes.json()
 
