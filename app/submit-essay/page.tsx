@@ -1,6 +1,5 @@
 'use client'
-
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore'
@@ -34,6 +33,7 @@ export default function SubmitEssay() {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
     const [aiDetectorState, setAiDetectorState] = useState<'checking' | 'rejected' | null>(null)
+    const forceSubmitRef = useRef(false)
     const [evaOpen, setEvaOpen] = useState(false)
 
     // Timer (optional)
@@ -114,33 +114,41 @@ export default function SubmitEssay() {
         setLoading(true)
 
         // ── Step 0: AI-content detection ──────────────────────────────────
-        try {
-            setAiDetectorState('checking')
-            const detectRes = await fetch('/api/ai-detect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    essay_content: content,
-                    studentId: auth.currentUser.uid,
-                    studentName: auth.currentUser.displayName || 'Student',
-                    essayTitle: title.trim(),
-                    topicName,
-                }),
-            })
-            const detectData = await detectRes.json()
+        const isBypassing = forceSubmitRef.current
 
-            if (detectData.verdict === 'ai') {
-                // Block submission — show rejection modal
-                setAiDetectorState('rejected')
-                setLoading(false)
-                return
+        if (!isBypassing) {
+            try {
+                setAiDetectorState('checking')
+                const detectRes = await fetch('/api/ai-detect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        essay_content: content,
+                        studentId: auth.currentUser.uid,
+                        studentName: auth.currentUser.displayName || 'Student',
+                        essayTitle: title.trim(),
+                        topicName,
+                    }),
+                })
+                const detectData = await detectRes.json()
+
+                if (detectData.verdict === 'ai') {
+                    // Block submission — show rejection modal
+                    setAiDetectorState('rejected')
+                    setLoading(false)
+                    return
+                }
+
+                // Human content — close the checking modal and proceed
+                setAiDetectorState(null)
+            } catch (detectErr) {
+                // If detection fails, log it but allow submission to continue
+                console.warn('AI detection error (allowing submission):', detectErr)
+                setAiDetectorState(null)
             }
-
-            // Human content — close the checking modal and proceed
-            setAiDetectorState(null)
-        } catch (detectErr) {
-            // If detection fails, log it but allow submission to continue
-            console.warn('AI detection error (allowing submission):', detectErr)
+        } else {
+            // Unset the ref so it doesn't persistently bypass on future edits (though they are redirecting anyway)
+            forceSubmitRef.current = false
             setAiDetectorState(null)
         }
         // ─────────────────────────────────────────────────────────────────
@@ -155,7 +163,8 @@ export default function SubmitEssay() {
             }
 
             // Step 1: Create essay document
-            const essayRef = await addDoc(collection(db, 'essays'), {
+
+            const essayDocData = {
                 studentId: auth.currentUser.uid,
                 studentName: auth.currentUser.displayName || 'Student',
                 title,
@@ -163,13 +172,16 @@ export default function SubmitEssay() {
                 topicId,
                 topicName,
                 submittedAt: serverTimestamp(),
-                status: 'under_review',
+                status: isBypassing ? 'pending_teacher_approval' : 'under_review',
                 peerReviewIds: [],
                 // Timer data (null / 0 if timer wasn't used)
                 timerUsed: timerResult.durationMinutes !== null,
                 timerDurationMinutes: timerResult.durationMinutes,
                 timerElapsedSeconds: timerResult.elapsedSeconds,
-            })
+                requiresTeacherApproval: isBypassing // Flag indicating this passed via AI rejection override
+            }
+
+            const essayRef = await addDoc(collection(db, 'essays'), essayDocData)
 
             // Step 2: AI assessment — currently disabled
             // Uncomment the block below to re-enable AI feedback on submission
@@ -200,8 +212,10 @@ export default function SubmitEssay() {
             }
             */
 
-            // Step 3: Assign peer reviewers
-            await assignPeerReviewers(essayRef.id, auth.currentUser.uid, userProfile.classId)
+            // Step 3: Assign peer reviewers ONLY if not pending teacher approval
+            if (!isBypassing) {
+                await assignPeerReviewers(essayRef.id, auth.currentUser.uid, userProfile.classId)
+            }
 
             setSuccess('Essay submitted successfully! Redirecting...')
 
@@ -226,6 +240,12 @@ export default function SubmitEssay() {
             <AiDetectorModal
                 state={aiDetectorState}
                 onDismiss={() => setAiDetectorState(null)}
+                onSubmitForApproval={(e?: React.FormEvent) => {
+                    // Prevent default form submission if passed from a button inside a form, though modal buttons aren't
+                    if (e) e.preventDefault()
+                    forceSubmitRef.current = true
+                    handleSubmit(e as any)
+                }}
             />
             <Header />
 

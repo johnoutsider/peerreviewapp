@@ -4,9 +4,10 @@ interface AiDetectorModalProps {
     /** 'checking' = spinner, 'rejected' = AI-content message, null = hidden */
     state: 'checking' | 'rejected' | null
     onDismiss: () => void
+    onSubmitForApproval?: () => void
 }
 
-export default function AiDetectorModal({ state, onDismiss }: AiDetectorModalProps) {
+export default function AiDetectorModal({ state, onDismiss, onSubmitForApproval }: AiDetectorModalProps) {
     if (!state) return null
 
     return (
@@ -53,13 +54,24 @@ export default function AiDetectorModal({ state, onDismiss }: AiDetectorModalPro
                             You&apos;ve got this — we believe in you! 💪
                         </p>
 
-                        {/* Dismiss button */}
-                        <button
-                            onClick={onDismiss}
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-md hover:shadow-blue-500/30"
-                        >
-                            Got it — I&apos;ll rewrite it myself ✍️
-                        </button>
+                        {/* Actions */}
+                        <div className="w-full flex flex-col gap-3">
+                            <button
+                                onClick={onDismiss}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-md hover:shadow-blue-500/30"
+                            >
+                                Rewrite my essay ✍️
+                            </button>
+
+                            {onSubmitForApproval && (
+                                <button
+                                    onClick={onSubmitForApproval}
+                                    className="w-full bg-transparent border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                >
+                                    Submit for Teacher Approval 👩‍🏫
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

@@ -70,6 +70,7 @@ const STAR_LABELS = ['', 'Not Helpful', 'Slightly Helpful', 'Helpful', 'Very Hel
 interface ReviewData {
     id: string
     reviewerName: string
+    reviewerIndex?: number
     completedAt: any
     scores: Record<string, any>
     feedback: string
@@ -86,6 +87,7 @@ interface EssayData {
     submittedAt: any
     reviews: ReviewData[]
     wordCount: number
+    status?: string
 }
 
 // ─── Star Rating ──────────────────────────────────────────────────────────────
@@ -171,10 +173,10 @@ function ReviewCard({
             <div className="px-4 py-3 flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 dark:border-white/10">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-700 dark:text-blue-300 shrink-0">
-                        {(review.reviewerName || 'P').charAt(0).toUpperCase()}
+                        {review.reviewerIndex}
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{review.reviewerName || 'Peer Reviewer'}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">Reviewer {review.reviewerIndex}</p>
                         <p className="text-xs text-slate-400 dark:text-slate-500">{dateStr}</p>
                     </div>
                 </div>
@@ -273,11 +275,12 @@ function ReviewCard({
 
 // ─── Essay Detail View ────────────────────────────────────────────────────────
 function EssayDetail({
-    essay, onBack, onSaveReview,
+    essay, onBack, onSaveReview, onDeleteClick,
 }: {
     essay: EssayData
     onBack: () => void
     onSaveReview: (essayId: string, reviewId: string, updates: any) => Promise<void>
+    onDeleteClick: (essayId: string) => void
 }) {
     const allScores = essay.reviews.map(r => totalScore(r.scores))
     const avgScore = avg(allScores)
@@ -286,9 +289,19 @@ function EssayDetail({
 
     return (
         <div className="max-w-3xl mx-auto px-4 pb-12">
-            <button onClick={onBack} className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-sm pt-5 pb-4 hover:underline">
-                ← Back to My Essays
-            </button>
+            <div className="flex items-center justify-between pt-5 pb-4">
+                <button onClick={onBack} className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-sm hover:underline">
+                    ← Back to My Essays
+                </button>
+                {reviewCount === 0 && essay.status !== 'pending_teacher_approval' && (
+                    <button
+                        onClick={() => onDeleteClick(essay.id)}
+                        className="flex items-center gap-1.5 text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors border border-red-100 dark:border-red-500/20"
+                    >
+                        🗑️ Delete Essay
+                    </button>
+                )}
+            </div>
 
             {/* Essay header */}
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-5 mb-5 shadow-sm">
@@ -338,8 +351,28 @@ function EssayDetail({
                 )}
             </div>
 
+            {/* Essay Content */}
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-5 mb-5 shadow-sm">
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Your Essay</p>
+                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 text-slate-700 dark:text-gray-200 whitespace-pre-wrap text-sm leading-relaxed border border-slate-100 dark:border-white/5">
+                    {essay.content}
+                </div>
+            </div>
+
             {/* Reviews */}
-            {reviewCount === 0 ? (
+            {essay.status === 'pending_teacher_approval' ? (
+                <div className="text-center py-10 text-amber-600 dark:text-amber-500">
+                    <p className="text-4xl mb-3">⏳</p>
+                    <p className="text-sm font-bold mb-1">Pending Teacher Approval</p>
+                    <p className="text-xs max-w-sm mx-auto">This essay was flagged by our AI detection system and requires teacher review before it can be assigned to peers.</p>
+                </div>
+            ) : essay.status === 'rejected' ? (
+                <div className="text-center py-10 text-red-600 dark:text-red-500">
+                    <p className="text-4xl mb-3">❌</p>
+                    <p className="text-sm font-bold mb-1">Essay Rejected</p>
+                    <p className="text-xs max-w-sm mx-auto">This essay was rejected by your teacher. Please check your messages for details.</p>
+                </div>
+            ) : reviewCount === 0 ? (
                 <div className="text-center py-10 text-slate-400 dark:text-slate-500">
                     <p className="text-4xl mb-3">⏳</p>
                     <p className="text-sm">No peer reviews yet. Check back soon!</p>
@@ -347,10 +380,10 @@ function EssayDetail({
             ) : (
                 <>
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">{reviewCount} Peer Review{reviewCount !== 1 ? 's' : ''} Received</p>
-                    {essay.reviews.map(review => (
+                    {essay.reviews.map((review, idx) => (
                         <ReviewCard
                             key={review.id}
-                            review={review}
+                            review={{ ...review, reviewerIndex: essay.reviews.length - idx }}
                             onSave={(updates) => onSaveReview(essay.id, review.id, updates)}
                         />
                     ))}
@@ -415,37 +448,57 @@ function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => vo
                     </div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    {reviewCount > 0 ? (
-                        <>
-                            <div className="flex items-baseline gap-0.5">
-                                <span className={`text-2xl font-black ${scoreColor(avgPct)}`}>{avgScore}</span>
-                                <span className="text-xs text-slate-400 dark:text-slate-500">/{MAX_TOTAL}</span>
-                            </div>
-                            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${scoreColor(avgPct)}`}
-                                style={{ background: scoreColorHex(avgPct) + '18' }}>
-                                {scoreBadge(avgPct)}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        {essay.status === 'pending_teacher_approval' ? (
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-full text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50">
+                                ⏳ Pending Approval
                             </span>
-                        </>
-                    ) : (
-                        <span className="text-xs text-slate-400 dark:text-slate-500 italic">No reviews yet</span>
-                    )}
+                        ) : essay.status === 'rejected' ? (
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-full text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50">
+                                ❌ Rejected
+                            </span>
+                        ) : reviewCount > 0 ? (
+                            <>
+                                <div className="flex items-baseline gap-0.5">
+                                    <span className={`text-2xl font-black ${scoreColor(avgPct)}`}>{avgScore}</span>
+                                    <span className="text-xs text-slate-400 dark:text-slate-500">/{MAX_TOTAL}</span>
+                                </div>
+                                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${scoreColor(avgPct)}`}
+                                    style={{ background: scoreColorHex(avgPct) + '18' }}>
+                                    {scoreBadge(avgPct)}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-xs text-slate-400 dark:text-slate-500 italic">No reviews yet</span>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* Progress row */}
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex items-center gap-4 flex-wrap">
-                {[
-                    { dot: reviewCount > 0, label: `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` },
-                    { dot: ratedCount === reviewCount && reviewCount > 0, partial: ratedCount > 0, label: `${ratedCount}/${reviewCount} rated` },
-                    { dot: respondedCount === reviewCount && reviewCount > 0, partial: respondedCount > 0, label: `${respondedCount}/${reviewCount} responded` },
-                ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full inline-block ${item.dot ? 'bg-green-500' : item.partial ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <span className="text-xs text-slate-600 dark:text-gray-300">{item.label}</span>
-                    </div>
-                ))}
-                <span className="ml-auto text-xs font-semibold text-blue-600 dark:text-blue-400">View Reviews →</span>
-            </div>
+            {essay.status === 'pending_teacher_approval' ? (
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Awaiting manual teacher review due to AI detection.</p>
+                </div>
+            ) : essay.status === 'rejected' ? (
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
+                    <p className="text-xs text-red-600 dark:text-red-400 font-medium">This essay was rejected. Click to view full text.</p>
+                </div>
+            ) : (
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex items-center gap-4 flex-wrap">
+                    {[
+                        { dot: reviewCount > 0, label: `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` },
+                        { dot: ratedCount === reviewCount && reviewCount > 0, partial: ratedCount > 0, label: `${ratedCount}/${reviewCount} rated` },
+                        { dot: respondedCount === reviewCount && reviewCount > 0, partial: respondedCount > 0, label: `${respondedCount}/${reviewCount} responded` },
+                    ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full inline-block ${item.dot ? 'bg-green-500' : item.partial ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                            <span className="text-xs text-slate-600 dark:text-gray-300">{item.label}</span>
+                        </div>
+                    ))}
+                    <span className="ml-auto text-xs font-semibold text-blue-600 dark:text-blue-400">View Reviews →</span>
+                </div>
+            )}
         </div>
     )
 }
@@ -493,6 +546,7 @@ export default function MyEssaysPage() {
                             topicName: essay.topicName ?? '',
                             topicId: essay.topicId,
                             submittedAt: essay.submittedAt,
+                            status: essay.status,
                             wordCount: wc,
                             reviews,
                         }
@@ -568,6 +622,7 @@ export default function MyEssaysPage() {
                     essay={selectedEssay}
                     onBack={() => setSelectedId(null)}
                     onSaveReview={handleSaveReview}
+                    onDeleteClick={setConfirmDeleteId}
                 />
             ) : (
                 <main className="max-w-3xl mx-auto px-4 py-8">

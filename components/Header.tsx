@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { useEffect, useState } from 'react'
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore'
+import { collection, query, getDocs, orderBy } from 'firebase/firestore'
 import { useTheme } from 'next-themes'
 
 export default function Header() {
@@ -36,22 +36,35 @@ export default function Header() {
     // Close mobile menu on route change
     useEffect(() => { setMenuOpen(false) }, [pathname])
 
-    // Live unread count for students
+    // Poll unread count for students without holding a permanent live stream.
     useEffect(() => {
         if (!user?.uid || userProfile?.role === 'teacher') return
-        const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'))
-        const unsub = onSnapshot(q, snap => {
-            const count = snap.docs.filter(d => {
-                const data = d.data()
-                // Only count messages the student is a recipient of
-                const recipients: string[] | null = data.recipients ?? null
-                if (recipients && !recipients.includes(user.uid)) return false
-                // Count as unread if UID not in readBy
-                return !((data.readBy as string[] || []).includes(user.uid))
-            }).length
-            setUnreadCount(count)
-        })
-        return () => unsub()
+        let active = true
+
+        const fetchUnreadCount = async () => {
+            try {
+                const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'))
+                const snap = await getDocs(q)
+                const count = snap.docs.filter(d => {
+                    const data = d.data()
+                    const recipients: string[] | null = data.recipients ?? null
+                    if (recipients && !recipients.includes(user.uid)) return false
+                    return !((data.readBy as string[] || []).includes(user.uid))
+                }).length
+                if (active) {
+                    setUnreadCount(count)
+                }
+            } catch (err) {
+                console.error('Failed to fetch unread count:', err)
+            }
+        }
+
+        fetchUnreadCount()
+        const timer = setInterval(fetchUnreadCount, 30000)
+        return () => {
+            active = false
+            clearInterval(timer)
+        }
     }, [user, userProfile])
 
     const handleSignOut = async () => {
@@ -198,3 +211,4 @@ export default function Header() {
         </header >
     )
 }
+

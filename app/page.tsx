@@ -11,6 +11,10 @@ export default function Home() {
     const [showConfigWarning, setShowConfigWarning] = useState(false)
 
     useEffect(() => {
+        let active = true
+        let authReady = false
+        let timeoutId: ReturnType<typeof setTimeout> | null = null
+
         // Check if Firebase is configured
         if (!isFirebaseConfigured()) {
             setShowConfigWarning(true)
@@ -18,24 +22,57 @@ export default function Home() {
             return
         }
 
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // User is signed in, check role and redirect
-                const { getUserProfile } = await import('@/lib/auth')
-                const profile = await getUserProfile(user.uid)
-
-                if (profile?.role === 'teacher') {
-                    router.push('/teacher')
-                } else {
-                    router.push('/dashboard')
-                }
-            } else {
-                // User is not signed in
+        // Prevent a stalled auth/profile check from blocking first paint forever.
+        timeoutId = setTimeout(() => {
+            if (active && !authReady) {
                 setLoading(false)
             }
+        }, 2500)
+
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            authReady = true
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+
+            if (!active) return
+
+            if (!user) {
+                setLoading(false)
+                return
+            }
+
+            ; (async () => {
+                try {
+                    const { getUserProfile } = await import('@/lib/auth')
+
+                    const profilePromise = getUserProfile(user.uid)
+                    const role = await Promise.race([
+                        profilePromise.then(profile => profile?.role ?? 'student'),
+                        new Promise<'student'>(resolve => setTimeout(() => resolve('student'), 1200)),
+                    ])
+
+                    if (!active) return
+
+                    if (role === 'teacher') {
+                        router.replace('/teacher')
+                    } else {
+                        router.replace('/dashboard')
+                    }
+                } catch {
+                    if (!active) return
+                    router.replace('/dashboard')
+                }
+            })()
         })
 
-        return () => unsubscribe()
+        return () => {
+            active = false
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+            unsubscribe()
+        }
     }, [router])
 
     if (loading) {
@@ -53,7 +90,7 @@ export default function Home() {
                     {/* Configuration Warning */}
                     {showConfigWarning && (
                         <div className="bg-yellow-500/20 border-2 border-yellow-500 rounded-xl p-6 mb-8">
-                            <h3 className="text-xl font-bold text-yellow-400 mb-2">⚙️ Configuration Required</h3>
+                            <h3 className="text-xl font-bold text-yellow-400 mb-2">Configuration Required</h3>
                             <p className="text-yellow-200 mb-4">
                                 Firebase is not configured yet. Please set up your environment variables to enable authentication and database features.
                             </p>
@@ -86,17 +123,17 @@ export default function Home() {
                     {/* Features */}
                     <div className="grid md:grid-cols-3 gap-6 mb-12">
                         <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm relative z-10">
-                            <div className="text-4xl mb-4">✍️</div>
+                            <div className="text-4xl mb-4">{'\u270D\uFE0F'}</div>
                             <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Submit Essays</h3>
                             <p className="text-slate-600 dark:text-gray-300">Upload your essays and receive comprehensive feedback</p>
                         </div>
                         <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm relative z-10">
-                            <div className="text-4xl mb-4">🤝</div>
+                            <div className="text-4xl mb-4">{'\uD83E\uDD1D'}</div>
                             <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Peer Review</h3>
                             <p className="text-slate-600 dark:text-gray-300">Review classmates&apos; essays using standardized criteria</p>
                         </div>
                         <div className="bg-white dark:bg-slate-800/10 backdrop-blur-lg rounded-xl p-6 border border-slate-300 dark:border-white/20">
-                            <div className="text-4xl mb-4">🤖</div>
+                            <div className="text-4xl mb-4">{'\uD83E\uDD16'}</div>
                             <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">AI Feedback</h3>
                             <p className="text-slate-600 dark:text-gray-300">Get instant AI-powered analysis and suggestions</p>
                         </div>
@@ -125,3 +162,4 @@ export default function Home() {
         </main>
     )
 }
+

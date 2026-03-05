@@ -404,7 +404,7 @@ export default function Feedback() {
                                         <th className="py-3 px-4 text-slate-600 dark:text-gray-300">Aspect</th>
                                         <th className="py-3 px-4 text-center text-slate-500 dark:text-gray-400 text-xs">Max</th>
                                         {peerReviews.map((r, i) => (
-                                            <th key={i} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">Peer {i + 1}</th>
+                                            <th key={i} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">Reviewer {i + 1}</th>
                                         ))}
                                         {peerReviews.length > 1 && <th className="py-3 px-4 text-center text-slate-600 dark:text-gray-300 font-bold">Avg</th>}
                                     </tr>
@@ -454,7 +454,7 @@ export default function Feedback() {
                                         <th className="py-3 px-4 text-slate-600 dark:text-gray-300">Criterion</th>
                                         {reviews.map((review, idx) => (
                                             <th key={idx} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">
-                                                {review.reviewerRole === 'ai' ? '🤖 AI' : review.reviewerRole === 'teacher' ? 'Teacher' : `Peer ${idx + 1}`}
+                                                {review.reviewerRole === 'ai' ? '🤖 AI' : review.reviewerRole === 'teacher' ? 'Teacher' : `Reviewer ${idx + 1}`}
                                             </th>
                                         ))}
                                         {finalScores && <th className="py-3 px-4 text-center text-slate-600 dark:text-gray-300 font-bold">Final</th>}
@@ -606,11 +606,11 @@ export default function Feedback() {
                                 >
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className={`text-xl font-semibold ${isTeacherReview ? 'text-purple-400' : 'text-slate-900 dark:text-white'}`}>
-                                            {isTeacherReview ? '🎓 Teacher Feedback' : `Peer Review ${idx + 1}`}
+                                            {isTeacherReview ? '🎓 Teacher Feedback' : `Reviewer ${idx + 1}`}
                                         </h3>
                                         {isTeacher && !isTeacherReview && review.reviewerName && (
                                             <span className="text-slate-500 dark:text-gray-400 text-sm italic bg-slate-100 dark:bg-slate-900/50 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10">
-                                                Reviewer: {review.reviewerName}
+                                                Reviewer Name: {review.reviewerName}
                                             </span>
                                         )}
                                     </div>
