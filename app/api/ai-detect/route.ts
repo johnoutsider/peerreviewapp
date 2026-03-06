@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { adminDb } from '@/lib/firebase-admin'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -44,19 +43,21 @@ export async function POST(req: NextRequest) {
         // Log AI detections to Firestore (only when AI content is suspected)
         if (isAi && studentId) {
             try {
-                await addDoc(collection(db, 'ai_detection_logs'), {
+                await adminDb.collection('ai_detection_logs').add({
                     studentId,
                     studentName: studentName || 'Unknown',
                     essayTitle: essayTitle || 'Untitled',
                     topicName: topicName || 'Unknown Topic',
                     verdict,
-                    detectedAt: serverTimestamp(),
+                    detectedAt: new Date(),
                     // Store a short excerpt (first 200 chars) for context
                     excerpt: essay_content.trim().slice(0, 200),
+                    // Store the full essay text for teacher review
+                    fullText: essay_content.trim(),
                 })
             } catch (logErr) {
                 // Non-critical: don't fail the request if logging fails
-                console.error('Failed to save AI detection log:', logErr)
+                console.error('Failed to save AI detection log using admin SDK:', logErr)
             }
         }
 

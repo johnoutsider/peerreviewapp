@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import TeacherLayout from '@/components/TeacherLayout'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore'
+import { collection, query, where, getDocs, updateDoc, doc, or } from 'firebase/firestore'
 
 interface PendingEssay {
     id: string
@@ -14,11 +14,16 @@ interface PendingEssay {
     studentId: string
     content: string
     submittedAt: any
+    status: string
+    approvedBy?: string
+    rejectedBy?: string
+    rejectionReason?: string
 }
 
 export default function TeacherApprovalsPage() {
     const router = useRouter()
     const [essays, setEssays] = useState<PendingEssay[]>([])
+    const [archivedEssays, setArchivedEssays] = useState<PendingEssay[]>([])
     const [loading, setLoading] = useState(true)
 
     // Modal state
@@ -31,13 +36,25 @@ export default function TeacherApprovalsPage() {
     useEffect(() => {
         const loadPending = async () => {
             try {
-                const q = query(collection(db, 'essays'), where('status', '==', 'pending_teacher_approval'))
-                const snap = await getDocs(q)
-                const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as PendingEssay))
+                // Fetch essays that are either pending approval OR were previously flagged and resolved (have requiresTeacherApproval flag or were approved/rejected by teacher)
+                // We'll just fetch all essays and filter client side since the volume is low and we need complex OR conditions
+                const snap = await getDocs(collection(db, 'essays'))
+                let allFlags = snap.docs.map(d => ({ id: d.id, ...d.data() } as PendingEssay))
+                    .filter(e =>
+                        e.status === 'pending_teacher_approval' ||
+                        (e.approvedBy) ||
+                        (e.rejectedBy) ||
+                        (e.status === 'rejected' && e.rejectionReason) // strict safety checks for archived
+                    )
 
                 // Sort by newest first
-                data.sort((a, b) => (b.submittedAt?.toMillis?.() ?? 0) - (a.submittedAt?.toMillis?.() ?? 0))
-                setEssays(data)
+                allFlags.sort((a, b) => (b.submittedAt?.toMillis?.() ?? 0) - (a.submittedAt?.toMillis?.() ?? 0))
+
+                const pending = allFlags.filter(e => e.status === 'pending_teacher_approval')
+                const archived = allFlags.filter(e => e.status !== 'pending_teacher_approval')
+
+                setEssays(pending)
+                setArchivedEssays(archived)
             } catch (err) {
                 console.error("Failed to load approvals:", err)
             } finally {
@@ -62,8 +79,9 @@ export default function TeacherApprovalsPage() {
 
             if (!res.ok) throw new Error("Approval failed")
 
-            // Remove from list
+            // Move to archive
             setEssays(prev => prev.filter(e => e.id !== selectedEssay.id))
+            setArchivedEssays(prev => [{ ...selectedEssay, status: 'under_review', approvedBy: auth.currentUser!.uid }, ...prev])
             setSelectedEssay(null)
         } catch (err) {
             console.error(err)
@@ -89,8 +107,9 @@ export default function TeacherApprovalsPage() {
 
             if (!res.ok) throw new Error("Rejection failed")
 
-            // Remove from list
+            // Move to archive
             setEssays(prev => prev.filter(e => e.id !== selectedEssay.id))
+            setArchivedEssays(prev => [{ ...selectedEssay, status: 'rejected', rejectedBy: auth.currentUser!.uid, rejectionReason: rejectReason }, ...prev])
             setSelectedEssay(null)
             setRejectReason('')
         } catch (err) {
@@ -169,6 +188,69 @@ export default function TeacherApprovalsPage() {
                     </div>
                 )}
 
+                {/* ARCHIVE SECTION */}
+                {!loading && archivedEssays.length > 0 && (
+                    <div className="mt-12">
+                        <div className="mb-4">
+                            <h2 className="text-xl font-bold text-slate-900 mb-1">
+                                Processed Archive
+                            </h2>
+                            <p className="text-slate-500 text-sm">
+                                Essays that you have already approved or rejected
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-75">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm whitespace-nowrap">
+                                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-semibold">
+                                        <tr>
+                                            <th className="px-6 py-4">Student</th>
+                                            <th className="px-6 py-4">Essay Title</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Submitted</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {archivedEssays.map(essay => (
+                                            <tr key={essay.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4 font-medium text-slate-900">
+                                                    {essay.studentName}
+                                                </td>
+                                                <td className="px-6 py-4 max-w-[200px] truncate text-slate-700">
+                                                    {essay.title}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {essay.status === 'rejected' ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-600 font-semibold text-xs rounded-full">
+                                                            ✕ Rejected
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-600 font-semibold text-xs rounded-full">
+                                                            ✓ Approved
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500">
+                                                    {essay.submittedAt?.toDate ? essay.submittedAt.toDate().toLocaleDateString() : 'Unknown'}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <button
+                                                        onClick={() => setSelectedEssay(essay)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors"
+                                                    >
+                                                        View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* MODAL / DETAILED VIEW */}
                 {selectedEssay && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm">
@@ -198,17 +280,26 @@ export default function TeacherApprovalsPage() {
                                 </div>
                             </div>
 
-                            {/* Rejection input area */}
-                            <div className="px-6 pt-4 border-t border-slate-200 bg-white">
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Reject Reason (Required if rejecting)</label>
-                                <textarea
-                                    value={rejectReason}
-                                    onChange={e => setRejectReason(e.target.value)}
-                                    placeholder="Explain why this essay is being rejected (e.g., Please rewrite in your own words...)"
-                                    className="w-full text-sm border-slate-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500"
-                                    rows={2}
-                                />
-                            </div>
+                            {/* Rejection input area (only if pending) */}
+                            {selectedEssay.status === 'pending_teacher_approval' ? (
+                                <div className="px-6 pt-4 border-t border-slate-200 bg-white">
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Reject Reason (Required if rejecting)</label>
+                                    <textarea
+                                        value={rejectReason}
+                                        onChange={e => setRejectReason(e.target.value)}
+                                        placeholder="Explain why this essay is being rejected (e.g., Please rewrite in your own words...)"
+                                        className="w-full text-sm border-slate-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500"
+                                        rows={2}
+                                    />
+                                </div>
+                            ) : selectedEssay.status === 'rejected' && selectedEssay.rejectionReason && (
+                                <div className="px-6 pt-4 border-t border-slate-200 bg-white">
+                                    <div className="bg-red-50 border border-red-100 rounded-lg p-4">
+                                        <h3 className="text-sm font-bold text-red-700 mb-1">Rejection Reason:</h3>
+                                        <p className="text-sm text-red-600">{selectedEssay.rejectionReason}</p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Actions / Footer */}
                             <div className="p-6 bg-white rounded-b-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -216,25 +307,27 @@ export default function TeacherApprovalsPage() {
                                     onClick={() => { setSelectedEssay(null); setRejectReason(''); }}
                                     className="px-4 py-2 font-semibold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors order-3 sm:order-1"
                                 >
-                                    Cancel
+                                    {selectedEssay.status === 'pending_teacher_approval' ? 'Cancel' : 'Close'}
                                 </button>
 
-                                <div className="flex gap-3 w-full sm:w-auto order-1 sm:order-2">
-                                    <button
-                                        onClick={handleReject}
-                                        disabled={rejecting || approving || !rejectReason.trim()}
-                                        className="flex-1 sm:flex-none px-6 py-2.5 bg-red-100 text-red-700 font-bold rounded-xl hover:bg-red-200 transition-colors disabled:opacity-50"
-                                    >
-                                        {rejecting ? 'Rejecting...' : 'Reject Essay'}
-                                    </button>
-                                    <button
-                                        onClick={handleApprove}
-                                        disabled={rejecting || approving}
-                                        className="flex-1 sm:flex-none px-6 py-2.5 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 shadow-md shadow-green-500/20 transition-all disabled:opacity-50"
-                                    >
-                                        {approving ? 'Approving...' : 'Approve & Assign'}
-                                    </button>
-                                </div>
+                                {selectedEssay.status === 'pending_teacher_approval' && (
+                                    <div className="flex gap-3 w-full sm:w-auto order-1 sm:order-2">
+                                        <button
+                                            onClick={handleReject}
+                                            disabled={rejecting || approving || !rejectReason.trim()}
+                                            className="flex-1 sm:flex-none px-6 py-2.5 bg-red-100 text-red-700 font-bold rounded-xl hover:bg-red-200 transition-colors disabled:opacity-50"
+                                        >
+                                            {rejecting ? 'Rejecting...' : 'Reject Essay'}
+                                        </button>
+                                        <button
+                                            onClick={handleApprove}
+                                            disabled={rejecting || approving}
+                                            className="flex-1 sm:flex-none px-6 py-2.5 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 shadow-md shadow-green-500/20 transition-all disabled:opacity-50"
+                                        >
+                                            {approving ? 'Approving...' : 'Approve & Assign'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

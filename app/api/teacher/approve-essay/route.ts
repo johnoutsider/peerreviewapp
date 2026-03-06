@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase-admin'
+import { sendTelegramBroadcast } from '@/lib/telegram'
 
 export async function POST(req: Request) {
     try {
@@ -71,17 +72,10 @@ export async function POST(req: Request) {
         if (telDoc.exists) {
             const chatId = telDoc.data()?.chatId
             if (chatId) {
-                const messageText = `✅ *Essay Approved*\n\nYour essay "${essayData.title}" was reviewed and *APPROVED* by your teacher!\n\nIt is now entering the peer review stage.`
+                const messageText = `✅ *Essay Approved*\n\nYour essay was reviewed and *APPROVED* by your teacher!\n\nIt is now entering the peer review stage.`
 
                 try {
-                    await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/telegram/broadcast`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chatIds: [chatId],
-                            message: messageText,
-                        })
-                    })
+                    await sendTelegramBroadcast([chatId], null, messageText)
                 } catch (tErr) {
                     console.error("Failed to trigger telegram ping:", tErr)
                 }

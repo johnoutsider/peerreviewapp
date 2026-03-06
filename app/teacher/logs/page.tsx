@@ -16,6 +16,7 @@ interface AILog {
     verdict: string
     detectedAt: any
     excerpt: string
+    fullText?: string
 }
 
 export default function AIDetectionLogs() {
@@ -162,18 +163,18 @@ export default function AIDetectionLogs() {
                                                     onClick={() => setExpanded(expanded === log.id ? null : log.id)}
                                                     className="text-teal-600 hover:text-teal-800 text-xs font-medium"
                                                 >
-                                                    {expanded === log.id ? 'Hide' : 'View excerpt'}
+                                                    {expanded === log.id ? 'Hide' : 'View content'}
                                                 </button>
                                             </td>
                                         </tr>
                                         {expanded === log.id && (
                                             <tr key={`${log.id}-expanded`} className="bg-red-50">
                                                 <td colSpan={6} className="px-5 py-4">
-                                                    <p className="text-xs font-bold text-red-400 uppercase tracking-widest mb-2">⚠️ Flagged Excerpt (first 200 characters)</p>
-                                                    <p className="text-sm text-slate-700 leading-relaxed italic bg-white rounded-lg p-3 border border-red-100">
-                                                        "{log.excerpt || 'No excerpt saved.'}"
-                                                    </p>
-                                                    <p className="text-xs text-slate-400 mt-2">
+                                                    <p className="text-xs font-bold text-red-400 uppercase tracking-widest mb-2">⚠️ Flagged Content</p>
+                                                    <div className="text-sm text-slate-700 leading-relaxed bg-white rounded-xl shadow-sm p-4 border border-red-100 whitespace-pre-wrap font-serif overflow-y-auto max-h-[400px]">
+                                                        {log.fullText || (log.excerpt ? `"${log.excerpt}..."\n\n(Full text was not saved for this older entry)` : 'No text saved.')}
+                                                    </div>
+                                                    <p className="text-xs text-slate-400 mt-3">
                                                         Student ID: <span className="font-mono">{log.studentId}</span>
                                                     </p>
                                                 </td>

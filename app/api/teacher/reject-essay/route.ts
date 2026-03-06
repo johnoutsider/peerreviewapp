@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase-admin'
+import { sendTelegramBroadcast } from '@/lib/telegram'
 
 export async function POST(req: Request) {
     try {
@@ -47,17 +48,11 @@ export async function POST(req: Request) {
         if (telDoc.exists) {
             const chatId = telDoc.data()?.chatId
             if (chatId) {
-                const messageText = `❌ *Essay Not Approved*\n\nYour essay "${essayData.title}" was reviewed by your teacher and was NOT approved.\n\n*Reason:* ${reason}\n\nPlease revisit the site to rewrite your essay.`
+                // To avoid Telegram Markdown parse errors on dynamic content, we'll keep formatting simple.
+                const messageText = `❌ *Essay Not Approved*\n\nYour essay was reviewed by your teacher and was NOT approved.\n\nReason: ${reason}\n\nPlease revisit the site to rewrite your essay.`
 
                 try {
-                    await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/telegram/broadcast`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chatIds: [chatId],
-                            message: messageText,
-                        })
-                    })
+                    await sendTelegramBroadcast([chatId], null, messageText)
                 } catch (tErr) {
                     console.error("Failed to trigger telegram ping:", tErr)
                 }
