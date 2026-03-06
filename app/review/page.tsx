@@ -152,9 +152,9 @@ export default function Review() {
                 setActionSuccess('Essay found! Redirecting to review...')
                 router.push(`/review/${claimedId}`)
             } else {
-                const topicLabel = searchTopicId
-                    ? `the "${topics.find(t => t.id === searchTopicId)?.name}" topic`
-                    : 'any topic'
+                const topicLabel = selectedTopicId
+                    ? `the "${topics.find(t => t.id === selectedTopicId)?.name}" topic`
+                    : 'this topic'
                 setActionError(`No essays available for ${topicLabel} right now. Peer review is a community process—as soon as more classmates submit and need reviews, you will be able to find one here. Please try again in 30 minutes!`)
             }
         } catch (error) {
