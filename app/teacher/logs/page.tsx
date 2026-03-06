@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, query, orderBy, getDocs } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
 
 interface AILog {
@@ -35,7 +35,7 @@ export default function AIDetectionLogs() {
 
             try {
                 const snap = await getDocs(
-                    query(collection(db, 'ai_detection_logs'), orderBy('detectedAt', 'desc'))
+                    query(collection(db, 'ai_detection_logs'), orderBy('detectedAt', 'desc'), limit(20))
                 )
                 setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as AILog)))
             } catch (e) {

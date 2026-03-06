@@ -35,10 +35,15 @@ export default function StudentDetails() {
             const essayList = essaysSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]
             essayList.sort((a, b) => (b.submittedAt?.toMillis() || 0) - (a.submittedAt?.toMillis() || 0))
 
-            // Attach review count + avg band
-            const reviewsSnap = await getDocs(collection(db, 'reviews'))
+            const essayIds = essayList.map(e => e.id)
+            const reviewsSnapDocs: any[] = []
+            for (let i = 0; i < essayIds.length; i += 10) {
+                const chunk = essayIds.slice(i, i + 10)
+                const snap = await getDocs(query(collection(db, 'reviews'), where('essayId', 'in', chunk)))
+                reviewsSnapDocs.push(...snap.docs)
+            }
             const enriched = essayList.map(essay => {
-                const received = reviewsSnap.docs
+                const received = reviewsSnapDocs
                     .filter(r => r.data().essayId === essay.id)
                     .map(r => r.data())
                 const bands = received.map(r => r.overallBand).filter(Boolean)
@@ -88,8 +93,16 @@ export default function StudentDetails() {
 
             const batch = writeBatch(db)
 
-            const allReviewsSnap = await getDocs(collection(db, 'reviews'))
-            allReviewsSnap.docs.forEach(r => {
+            const allReviewsSnapDocs: any[] = []
+            for (let i = 0; i < essayIds.length; i += 10) {
+                const chunk = essayIds.slice(i, i + 10)
+                const snap = await getDocs(query(collection(db, 'reviews'), where('essayId', 'in', chunk)))
+                allReviewsSnapDocs.push(...snap.docs)
+            }
+            const snapWritten = await getDocs(query(collection(db, 'reviews'), where('reviewerId', '==', studentId)))
+            allReviewsSnapDocs.push(...snapWritten.docs)
+
+            allReviewsSnapDocs.forEach(r => {
                 const data = r.data()
                 if (essayIds.includes(data.essayId) || data.reviewerId === studentId) {
                     batch.delete(r.ref)

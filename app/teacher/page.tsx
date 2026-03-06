@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, onSnapshot, limit } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
 import { calculateFinalScores } from '@/lib/score-calculator'
 
@@ -52,11 +52,34 @@ export default function TeacherDashboard() {
             if (!auth.currentUser) { router.push('/'); return }
 
             try {
-                const [studentsSnap, essaysSnap, reviewsSnap] = await Promise.all([
-                    getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
-                    getDocs(collection(db, 'essays')),
-                    getDocs(collection(db, 'reviews')),
-                ])
+                const studentsSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'student'), limit(20)))
+                const studentIds = studentsSnap.docs.map(d => d.id)
+
+                const essaysSnapDocs: any[] = []
+                for (let i = 0; i < studentIds.length; i += 10) {
+                    const chunk = studentIds.slice(i, i + 10)
+                    const snap = await getDocs(query(collection(db, 'essays'), where('studentId', 'in', chunk)))
+                    essaysSnapDocs.push(...snap.docs)
+                }
+
+                const reviewsSnapDocs: any[] = []
+                // Fetch reviews written by them
+                for (let i = 0; i < studentIds.length; i += 10) {
+                    const chunk = studentIds.slice(i, i + 10)
+                    const snap = await getDocs(query(collection(db, 'reviews'), where('reviewerId', 'in', chunk)))
+                    reviewsSnapDocs.push(...snap.docs)
+                }
+                // Fetch reviews received on their essays
+                const essayIds = essaysSnapDocs.map(e => e.id)
+                for (let i = 0; i < essayIds.length; i += 10) {
+                    const chunk = essayIds.slice(i, i + 10)
+                    const snap = await getDocs(query(collection(db, 'reviews'), where('essayId', 'in', chunk)))
+                    reviewsSnapDocs.push(...snap.docs)
+                }
+
+                // Polyfill for the previous map/filter code which expected QueryDocumentSnapshot arrays
+                const essaysSnap = { docs: essaysSnapDocs }
+                const reviewsSnap = { docs: reviewsSnapDocs }
 
                 const studentStats = await Promise.all(studentsSnap.docs.map(async (sDoc) => {
                     const s = sDoc.data() as any

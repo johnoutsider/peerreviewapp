@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, Timestamp, limit } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
 import EssayCard from '@/components/EssayCard'
 import Alert from '@/components/Alert'
@@ -79,7 +79,8 @@ export default function Review() {
                 // Get essays assigned to this reviewer
                 let essaysQuery = query(
                     collection(db, 'essays'),
-                    where('peerReviewIds', 'array-contains', auth.currentUser.uid)
+                    where('peerReviewIds', 'array-contains', auth.currentUser.uid),
+                    limit(20)
                 )
                 let essaysSnapshot = await getDocs(essaysQuery)
 

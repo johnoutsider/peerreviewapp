@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import {
     collection, query, where, getDocs, deleteDoc,
-    doc, updateDoc, serverTimestamp,
+    doc, updateDoc, serverTimestamp, limit, orderBy
 } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
 
@@ -519,7 +519,7 @@ export default function MyEssaysPage() {
             try {
                 // Fetch essays
                 const essaySnap = await getDocs(
-                    query(collection(db, 'essays'), where('studentId', '==', auth.currentUser!.uid))
+                    query(collection(db, 'essays'), where('studentId', '==', auth.currentUser!.uid), orderBy('submittedAt', 'desc'), limit(20))
                 )
                 const rawEssays = essaySnap.docs.map(d => ({ id: d.id, ...d.data() as any }))
                 rawEssays.sort((a, b) => (b.submittedAt?.toMillis?.() ?? 0) - (a.submittedAt?.toMillis?.() ?? 0))

@@ -60,13 +60,17 @@ export default function Progress() {
                 }
 
                 const essays = essaysSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
-
-                // 2. Fetch all reviews for these essays
                 const essayIds = essays.map(e => e.id)
-                // Firestore 'in' query supports max 10 items. We instead fetch reviews per essay or all where reviewer isn't them, but easier is to just fetch reviews that match these essayIds in chunks, but we can also just fetch all reviews where reviewerName != null and filter.
-                // Better: fetch all reviews, then filter in memory (assuming manageable size for a student)
-                const reviewsSnap = await getDocs(collection(db, 'reviews'))
-                const allReviews = reviewsSnap.docs.map(d => ({ id: d.id, ...d.data() as any }))
+
+                // 2. Fetch reviews for these essays in chunks (Firestore 'in' limits to 10)
+                const allReviews: any[] = []
+                for (let i = 0; i < essayIds.length; i += 10) {
+                    const chunk = essayIds.slice(i, i + 10)
+                    const chunkSnap = await getDocs(
+                        query(collection(db, 'reviews'), where('essayId', 'in', chunk))
+                    )
+                    allReviews.push(...chunkSnap.docs.map(d => ({ id: d.id, ...d.data() as any })))
+                }
 
                 // 3. Process each essay
                 const processed: EssayProgress[] = []

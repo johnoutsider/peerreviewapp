@@ -75,11 +75,17 @@ export default function StudentProgressForTeacher() {
                 }
 
                 const essays = essaysSnap.docs.map(d => ({ id: d.id, ...d.data() as any }))
+                const essayIds = essays.map(e => e.id)
 
-                // 2. Fetch all reviews
-                // To avoid individual queries, we'll fetch all reviews and filter. (Suitable for small/medium DB scale)
-                const reviewsSnap = await getDocs(collection(db, 'reviews'))
-                const allReviews = reviewsSnap.docs.map(d => ({ id: d.id, ...d.data() as any }))
+                // 2. Fetch reviews for these essays in chunks (Firestore 'in' limits to 10)
+                const allReviews: any[] = []
+                for (let i = 0; i < essayIds.length; i += 10) {
+                    const chunk = essayIds.slice(i, i + 10)
+                    const chunkSnap = await getDocs(
+                        query(collection(db, 'reviews'), where('essayId', 'in', chunk))
+                    )
+                    allReviews.push(...chunkSnap.docs.map(d => ({ id: d.id, ...d.data() as any })))
+                }
 
                 // 3. Process each essay
                 const processed: EssayProgress[] = []

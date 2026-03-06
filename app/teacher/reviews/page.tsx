@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
 import { isNewRubric, getScore100 } from '@/lib/score-calculator'
 
@@ -55,7 +55,7 @@ export default function TeacherReviewActivity() {
                 const [usersSnap, essaysSnap, reviewsSnap] = await Promise.all([
                     getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
                     getDocs(collection(db, 'essays')),
-                    getDocs(collection(db, 'reviews')),
+                    getDocs(query(collection(db, 'reviews'), orderBy('completedAt', 'desc'), limit(50))),
                 ])
 
                 const usersMap = new Map(usersSnap.docs.map(d => [d.id, d.data() as any]))
