@@ -18,19 +18,19 @@ export default function DeadlineBanner({ label, deadline, emoji = '📅' }: Dead
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const expired = diff <= 0
 
-    let bg = 'bg-green-500/10 border-green-500/30 text-green-300'
+    let bg = 'bg-green-100 border-green-200 text-green-800'
     let urgency = ''
     if (expired) {
-        bg = 'bg-red-500/10 border-red-500/30 text-red-400'
+        bg = 'bg-red-100 border-red-200 text-red-800'
         urgency = 'Deadline passed'
     } else if (days === 0) {
-        bg = 'bg-red-500/15 border-red-500/40 text-red-300'
+        bg = 'bg-red-100 border-red-200 text-red-800'
         urgency = `⚠️ Due in ${hours}h`
     } else if (days <= 2) {
-        bg = 'bg-orange-500/10 border-orange-500/30 text-orange-300'
+        bg = 'bg-orange-100 border-orange-200 text-orange-800'
         urgency = `${days}d ${hours}h left`
     } else if (days <= 5) {
-        bg = 'bg-yellow-500/10 border-yellow-500/30 text-yellow-300'
+        bg = 'bg-yellow-100 border-yellow-200 text-yellow-800'
         urgency = `${days} days left`
     } else {
         urgency = `${days} days left`
@@ -43,7 +43,7 @@ export default function DeadlineBanner({ label, deadline, emoji = '📅' }: Dead
                 {' at '}
                 {deadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
-            <span className={`ml-4 whitespace-nowrap font-bold ${expired ? 'text-red-400' : ''}`}>
+            <span className={`ml-4 whitespace-nowrap font-bold ${expired ? 'text-red-700' : ''}`}>
                 {expired ? '🔒 Closed' : `⏳ ${urgency}`}
             </span>
         </div>

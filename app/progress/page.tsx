@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs } from 'firebase/firestore'
-import Header from '@/components/Header'
+import StudentLayout from '@/components/StudentLayout'
 import { calculateFinalScores, isNewRubric, getScore100 } from '@/lib/score-calculator'
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -174,35 +174,34 @@ export default function Progress() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 ">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
+        <StudentLayout title="Progress">
 
             <main className="container mx-auto px-4 py-8 max-w-6xl">
                 <div className="mb-8 flex items-start justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">📈 Your Writing Progress</h1>
-                        <p className="text-slate-500 dark:text-gray-400">Track your IELTS scores across all reviewed essays</p>
+                        <h1 className="text-4xl font-bold text-slate-900  mb-2">📈 Your Writing Progress</h1>
+                        <p className="text-slate-500 ">Track your IELTS scores across all reviewed essays</p>
                     </div>
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white transition-colors"
+                        className="text-slate-500  hover:text-slate-900  transition-colors"
                     >
                         &larr; Back
                     </button>
                 </div>
 
                 {progressData.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-2xl p-12 border border-slate-200 dark:border-white/10 shadow-sm text-center">
+                    <div className="bg-white  backdrop-blur-sm rounded-2xl p-12 border border-slate-200  shadow-sm text-center">
                         <div className="text-6xl mb-4">🌱</div>
-                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Data Yet</h3>
-                        <p className="text-slate-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                        <h3 className="text-2xl font-bold text-slate-900  mb-2">No Data Yet</h3>
+                        <p className="text-slate-500  mb-6 max-w-md mx-auto">
                             Progress tracking will appear here once your submitted essays receive peer or AI reviews.
                         </p>
                         <button
@@ -217,27 +216,27 @@ export default function Progress() {
 
                         {/* Top Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-blue-50 border-blue-200 dark:bg-blue-900/40 backdrop-blur-sm border dark:border-blue-500/30 rounded-xl p-5">
-                                <div className="text-blue-700 dark:text-blue-300 text-sm mb-1 font-medium">Average Score</div>
-                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.averageBand}<span className="text-base font-normal text-blue-400">/100</span></div>
+                            <div className="bg-blue-50 border-blue-200  backdrop-blur-sm border  rounded-xl p-5">
+                                <div className="text-blue-700  text-sm mb-1 font-medium">Average Score</div>
+                                <div className="text-3xl font-bold text-slate-900 ">{stats.averageBand}<span className="text-base font-normal text-blue-400">/100</span></div>
                             </div>
-                            <div className="bg-purple-50 border-purple-200 dark:bg-purple-900/40 backdrop-blur-sm border dark:border-purple-500/30 rounded-xl p-5">
-                                <div className="text-purple-700 dark:text-purple-300 text-sm mb-1 font-medium">Reviewed Essays</div>
-                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalReviewed}</div>
+                            <div className="bg-purple-50 border-purple-200  backdrop-blur-sm border  rounded-xl p-5">
+                                <div className="text-purple-700  text-sm mb-1 font-medium">Reviewed Essays</div>
+                                <div className="text-3xl font-bold text-slate-900 ">{stats.totalReviewed}</div>
                             </div>
-                            <div className="bg-green-50 border-green-200 dark:bg-green-900/40 backdrop-blur-sm border dark:border-green-500/30 rounded-xl p-5">
-                                <div className="text-green-700 dark:text-green-300 text-sm mb-1 font-medium">Strongest Skill</div>
-                                <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.strongestSkill.name}>
+                            <div className="bg-green-50 border-green-200  backdrop-blur-sm border  rounded-xl p-5">
+                                <div className="text-green-700  text-sm mb-1 font-medium">Strongest Skill</div>
+                                <div className="text-xl font-bold text-slate-900  leading-tight truncate" title={stats.strongestSkill.name}>
                                     {stats.strongestSkill.name}
                                 </div>
-                                <div className="text-sm text-green-600 dark:text-gray-400 mt-1">Avg: {stats.strongestSkill.score}</div>
+                                <div className="text-sm text-green-600  mt-1">Avg: {stats.strongestSkill.score}</div>
                             </div>
-                            <div className="bg-orange-50 border-orange-200 dark:bg-orange-900/40 backdrop-blur-sm border dark:border-orange-500/30 rounded-xl p-5">
-                                <div className="text-orange-700 dark:text-orange-300 text-sm mb-1 font-medium">Needs Focus</div>
-                                <div className="text-xl font-bold text-slate-900 dark:text-white leading-tight truncate" title={stats.weakestSkill.name}>
+                            <div className="bg-orange-50 border-orange-200  backdrop-blur-sm border  rounded-xl p-5">
+                                <div className="text-orange-700  text-sm mb-1 font-medium">Needs Focus</div>
+                                <div className="text-xl font-bold text-slate-900  leading-tight truncate" title={stats.weakestSkill.name}>
                                     {stats.weakestSkill.name}
                                 </div>
-                                <div className="text-sm text-orange-600 dark:text-gray-400 mt-1">Avg: {stats.weakestSkill.score}</div>
+                                <div className="text-sm text-orange-600  mt-1">Avg: {stats.weakestSkill.score}</div>
                             </div>
                         </div>
 
@@ -245,8 +244,8 @@ export default function Progress() {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                             {/* Line Chart: Overall Trend */}
-                            <div className="lg:col-span-2 bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Score Trend</h3>
+                            <div className="lg:col-span-2 bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm h-[400px] flex flex-col">
+                                <h3 className="text-lg font-semibold text-slate-900  mb-4">Score Trend</h3>
                                 <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart
@@ -293,8 +292,8 @@ export default function Progress() {
                             </div>
 
                             {/* Radar Chart: Skill Profile */}
-                            <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Skill Profile</h3>
+                            <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm h-[400px] flex flex-col">
+                                <h3 className="text-lg font-semibold text-slate-900  mb-4">Skill Profile</h3>
                                 <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={averageCriteria}>
@@ -311,34 +310,34 @@ export default function Progress() {
                         </div>
 
                         {/* Recent Essays History List */}
-                        <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm">
-                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Assessed Essays History</h3>
+                        <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm">
+                            <h3 className="text-xl font-semibold text-slate-900  mb-6">Assessed Essays History</h3>
                             <div className="space-y-4">
                                 {[...progressData].reverse().map(essay => (
                                     <div
                                         key={essay.essayId}
                                         onClick={() => router.push(`/feedback/${essay.essayId}`)}
-                                        className="bg-slate-50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-white/10 transition-colors rounded-lg p-4 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                                        className="bg-slate-50  hover:bg-white :bg-slate-800 border border-slate-200  transition-colors rounded-lg p-4 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
                                     >
                                         <div className="flex-1">
-                                            <h4 className="text-slate-900 dark:text-white font-medium mb-1 line-clamp-1">{essay.title}</h4>
+                                            <h4 className="text-slate-900  font-medium mb-1 line-clamp-1">{essay.title}</h4>
                                             <div className="flex items-center gap-2 text-xs">
-                                                <span className="bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-500/30">
+                                                <span className="bg-purple-100 text-purple-700   px-2 py-0.5 rounded-full border border-purple-200 ">
                                                     {essay.topicName}
                                                 </span>
                                                 <span className="text-gray-500">{essay.date.toLocaleDateString()}</span>
                                             </div>
                                         </div>
-                                        <div className="text-right pl-4 sm:border-l border-slate-200 dark:border-white/10 text-center sm:text-right w-[90px]">
+                                        <div className="text-right pl-4 sm:border-l border-slate-200  text-center sm:text-right w-[90px]">
                                             {essay.isNew ? (
                                                 <>
                                                     <div className="text-xs text-gray-500 uppercase font-semibold mb-0.5">Score</div>
-                                                    <div className="text-xl font-bold text-blue-700 dark:text-white bg-blue-100 dark:bg-blue-500/20 px-2 rounded">{essay.score100}<span className="text-xs font-normal">/100</span></div>
+                                                    <div className="text-xl font-bold text-blue-700  bg-blue-100  px-2 rounded">{essay.score100}<span className="text-xs font-normal">/100</span></div>
                                                 </>
                                             ) : (
                                                 <>
                                                     <div className="text-xs text-gray-500 uppercase font-semibold mb-0.5">Band</div>
-                                                    <div className="text-xl font-bold text-blue-700 dark:text-white bg-blue-100 dark:bg-blue-500/20 px-2 rounded">{essay.overallBand}</div>
+                                                    <div className="text-xl font-bold text-blue-700  bg-blue-100  px-2 rounded">{essay.overallBand}</div>
                                                 </>
                                             )}
                                         </div>
@@ -350,6 +349,6 @@ export default function Progress() {
                     </div>
                 )}
             </main>
-        </div>
+        </StudentLayout>
     )
 }

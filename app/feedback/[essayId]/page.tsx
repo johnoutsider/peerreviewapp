@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore'
-import Header from '@/components/Header'
+import StudentLayout from '@/components/StudentLayout'
 import ScoreChart from '@/components/ScoreChart'
 import { calculateFinalScores, getScoreColor, getScoreLabel, isNewRubric, getScore100, getScore100Label, getScore100Color } from '@/lib/score-calculator'
 
@@ -206,7 +206,7 @@ export default function Feedback() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 ">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
         )
@@ -214,9 +214,9 @@ export default function Feedback() {
 
     if (notFound) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50  flex items-center justify-center">
                 <div className="text-center">
-                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Essay Not Found</h1>
+                    <h1 className="text-4xl font-bold text-slate-900  mb-4">Essay Not Found</h1>
                     <button onClick={() => router.push('/my-essays')} className="text-blue-400 hover:text-blue-300">
                         &larr; Back to My Essays
                     </button>
@@ -227,11 +227,11 @@ export default function Feedback() {
 
     if (accessDenied) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50  flex items-center justify-center">
                 <div className="text-center">
                     <div className="text-6xl mb-4">🚫</div>
-                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Access Denied</h1>
-                    <p className="text-slate-500 dark:text-gray-400 mb-6">You only have permission to view your own essays.</p>
+                    <h1 className="text-4xl font-bold text-slate-900  mb-4">Access Denied</h1>
+                    <p className="text-slate-500  mb-6">You only have permission to view your own essays.</p>
                     <button onClick={() => router.push('/my-essays')} className="text-blue-400 hover:text-blue-300">
                         &larr; Back to My Essays
                     </button>
@@ -248,26 +248,25 @@ export default function Feedback() {
         const progressPct = Math.min(100, Math.round((sameTopicReviewsDone / TARGET) * 100))
 
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-                <Header />
+            <StudentLayout title="Results Locked">
                 <main className="container mx-auto px-4 py-16 max-w-xl text-center">
-                    <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm p-10">
+                    <div className="bg-white  backdrop-blur-sm rounded-2xl border border-slate-200  shadow-sm p-10">
                         <div className="text-7xl mb-6">🔒</div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Results Locked</h1>
-                        <p className="text-slate-600 dark:text-gray-300 mb-2 text-lg">
+                        <h1 className="text-3xl font-bold text-slate-900  mb-3">Results Locked</h1>
+                        <p className="text-slate-600  mb-2 text-lg">
                             To see your essay feedback you need to{' '}
                             <span className="text-yellow-400 font-semibold">review 2 of your classmates&apos; essays first</span>.
                         </p>
                         {essay?.topicName && (
-                            <p className="text-slate-500 dark:text-gray-400 mb-6 text-sm">
+                            <p className="text-slate-500  mb-6 text-sm">
                                 You must review essays from the <span className="text-blue-300 font-medium">{essay.topicName}</span> topic.
                             </p>
                         )}
                         {/* Progress bar */}
-                        <div className="w-full bg-slate-100 dark:bg-slate-900/50/60 rounded-full h-3 mb-2">
+                        <div className="w-full bg-slate-100  rounded-full h-3 mb-2">
                             <div className="bg-yellow-400 h-3 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
                         </div>
-                        <p className="text-sm text-slate-500 dark:text-gray-400 mb-8">
+                        <p className="text-sm text-slate-500  mb-8">
                             {sameTopicReviewsDone} / {TARGET} same-topic reviews completed
                         </p>
                         <button
@@ -278,13 +277,13 @@ export default function Feedback() {
                         </button>
                         <button
                             onClick={() => router.push('/my-essays')}
-                            className="mt-4 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white text-sm transition-colors"
+                            className="mt-4 text-slate-500  hover:text-slate-900  text-sm transition-colors"
                         >
                             ← Back to My Essays
                         </button>
                     </div>
                 </main>
-            </div>
+            </StudentLayout>
         )
     }
 
@@ -315,14 +314,13 @@ export default function Feedback() {
 
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
+        <StudentLayout title="Feedback">
 
             <main className="container mx-auto px-4 py-8 max-w-6xl">
                 <div className="mb-8 flex items-start justify-between gap-4">
                     <div>
-                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">{essay.title}</h1>
-                        <p className="text-slate-500 dark:text-gray-400">Comprehensive Feedback &amp; Assessment</p>
+                        <h1 className="text-4xl font-bold text-slate-900  mb-2">{essay.title}</h1>
+                        <p className="text-slate-500 ">Comprehensive Feedback &amp; Assessment</p>
                     </div>
                     {!isTeacher && essay.studentId === auth.currentUser?.uid && reviews.length === 0 && (
                         <button
@@ -337,22 +335,22 @@ export default function Feedback() {
                 {/* AI assessments are created during submission; on-demand AI buttons removed. */}
 
                 {/* Essay Content - Always visible */}
-                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
+                <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm mb-8">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Your Essay</h2>
+                        <h2 className="text-2xl font-semibold text-slate-900 ">Your Essay</h2>
                         <div className="flex items-center gap-2">
                             {essay.topicName && (
                                 <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-medium">
                                     🏷️ {essay.topicName}
                                 </span>
                             )}
-                            <span className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-white/10 shadow-sm px-3 py-1 rounded-full text-sm font-medium">
+                            <span className="bg-white  border border-slate-200  text-slate-600  border border-slate-200  shadow-sm px-3 py-1 rounded-full text-sm font-medium">
                                 📝 {essay.content?.trim().split(/\s+/).filter((w: string) => w).length ?? 0} words
                             </span>
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-4">
-                        <p className="text-slate-600 dark:text-gray-300 whitespace-pre-wrap">{essay.content}</p>
+                    <div className="bg-slate-100  rounded-lg p-4">
+                        <p className="text-slate-600  whitespace-pre-wrap">{essay.content}</p>
                     </div>
                 </div>
 
@@ -360,25 +358,25 @@ export default function Feedback() {
                 {usingNewRubric ? (
                     /* New 5-category rubric → /100 */
                     <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 mb-8 text-center">
-                        <div className="text-slate-600 dark:text-gray-300 text-lg mb-2">Overall Score</div>
+                        <div className="text-slate-600  text-lg mb-2">Overall Score</div>
                         <div className={`text-7xl font-bold mb-2 ${getScore100Color(avgScore100)}`}>{avgScore100}</div>
-                        <div className="text-slate-500 dark:text-gray-400 text-base mb-1">out of 100</div>
-                        <div className="text-2xl font-semibold text-slate-900 dark:text-white mb-3">
+                        <div className="text-slate-500  text-base mb-1">out of 100</div>
+                        <div className="text-2xl font-semibold text-slate-900  mb-3">
                             {getScore100Label(avgScore100)}
                         </div>
-                        <div className="text-sm text-slate-500 dark:text-gray-400">
+                        <div className="text-sm text-slate-500 ">
                             Average of {peerReviews.length} peer review{peerReviews.length !== 1 ? 's' : ''}
                         </div>
                     </div>
                 ) : finalScores ? (
                     /* Legacy IELTS rubric → band 0-9 */
                     <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 mb-8 text-center">
-                        <div className="text-slate-600 dark:text-gray-300 text-lg mb-2">Overall Band Score</div>
-                        <div className="text-7xl font-bold text-slate-900 dark:text-white mb-2">{finalScores.overallBand}</div>
-                        <div className="text-2xl font-semibold text-slate-900 dark:text-white">
+                        <div className="text-slate-600  text-lg mb-2">Overall Band Score</div>
+                        <div className="text-7xl font-bold text-slate-900  mb-2">{finalScores.overallBand}</div>
+                        <div className="text-2xl font-semibold text-slate-900 ">
                             {getScoreLabel(finalScores.overallBand)}
                         </div>
-                        <div className="mt-4 text-sm text-slate-500 dark:text-gray-400">
+                        <div className="mt-4 text-sm text-slate-500 ">
                             Based on {peerReviews.length} peer review{peerReviews.length !== 1 ? 's' : ''}
                         </div>
                     </div>
@@ -392,21 +390,21 @@ export default function Feedback() {
                 )}
 
                 {/* Score Breakdown — adapts to rubric format */}
-                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
-                    <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">Score Breakdown</h2>
+                <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm mb-8">
+                    <h2 className="text-2xl font-semibold text-slate-900  mb-4">Score Breakdown</h2>
 
                     {usingNewRubric ? (
                         /* New rubric: show 5 aspects with max scores and per-review columns */
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-slate-200 dark:border-white/10">
-                                        <th className="py-3 px-4 text-slate-600 dark:text-gray-300">Aspect</th>
-                                        <th className="py-3 px-4 text-center text-slate-500 dark:text-gray-400 text-xs">Max</th>
+                                    <tr className="border-b border-slate-200 ">
+                                        <th className="py-3 px-4 text-slate-600 ">Aspect</th>
+                                        <th className="py-3 px-4 text-center text-slate-500  text-xs">Max</th>
                                         {peerReviews.map((r, i) => (
-                                            <th key={i} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">Reviewer {i + 1}</th>
+                                            <th key={i} className="py-3 px-4 text-center text-slate-600 ">Reviewer {i + 1}</th>
                                         ))}
-                                        {peerReviews.length > 1 && <th className="py-3 px-4 text-center text-slate-600 dark:text-gray-300 font-bold">Avg</th>}
+                                        {peerReviews.length > 1 && <th className="py-3 px-4 text-center text-slate-600  font-bold">Avg</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -419,24 +417,24 @@ export default function Feedback() {
                                         })
                                         const avgVal = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
                                         return (
-                                            <tr key={key} className="border-b border-slate-100 dark:border-white/5">
-                                                <td className="py-3 px-4 text-slate-900 dark:text-white font-medium">{label}</td>
+                                            <tr key={key} className="border-b border-slate-100 ">
+                                                <td className="py-3 px-4 text-slate-900  font-medium">{label}</td>
                                                 <td className="py-3 px-4 text-center text-slate-400 text-sm">/{max}</td>
                                                 {vals.map((v, i) => (
-                                                    <td key={i} className="py-3 px-4 text-center font-bold text-slate-900 dark:text-white">{v}</td>
+                                                    <td key={i} className="py-3 px-4 text-center font-bold text-slate-900 ">{v}</td>
                                                 ))}
                                                 {peerReviews.length > 1 && (
-                                                    <td className="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400">{avgVal}</td>
+                                                    <td className="py-3 px-4 text-center font-bold text-blue-600 ">{avgVal}</td>
                                                 )}
                                             </tr>
                                         )
                                     })}
                                     {/* Total row */}
-                                    <tr className="border-t-2 border-slate-200 dark:border-white/20 bg-slate-50 dark:bg-slate-900/30">
-                                        <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">Total</td>
+                                    <tr className="border-t-2 border-slate-200  bg-slate-50 ">
+                                        <td className="py-3 px-4 font-bold text-slate-900 ">Total</td>
                                         <td className="py-3 px-4 text-center text-slate-400 text-sm">/100</td>
                                         {peerReviews.map((r, i) => (
-                                            <td key={i} className="py-3 px-4 text-center font-extrabold text-slate-900 dark:text-white">{getScore100(r.scores ?? {})}</td>
+                                            <td key={i} className="py-3 px-4 text-center font-extrabold text-slate-900 ">{getScore100(r.scores ?? {})}</td>
                                         ))}
                                         {peerReviews.length > 1 && (
                                             <td className={`py-3 px-4 text-center font-extrabold text-xl ${getScore100Color(avgScore100)}`}>{avgScore100}</td>
@@ -450,27 +448,27 @@ export default function Feedback() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-slate-200 dark:border-white/10 shadow-sm">
-                                        <th className="py-3 px-4 text-slate-600 dark:text-gray-300">Criterion</th>
+                                    <tr className="border-b border-slate-200  shadow-sm">
+                                        <th className="py-3 px-4 text-slate-600 ">Criterion</th>
                                         {reviews.map((review, idx) => (
-                                            <th key={idx} className="py-3 px-4 text-center text-slate-600 dark:text-gray-300">
+                                            <th key={idx} className="py-3 px-4 text-center text-slate-600 ">
                                                 {review.reviewerRole === 'ai' ? '🤖 AI' : review.reviewerRole === 'teacher' ? 'Teacher' : `Reviewer ${idx + 1}`}
                                             </th>
                                         ))}
-                                        {finalScores && <th className="py-3 px-4 text-center text-slate-600 dark:text-gray-300 font-bold">Final</th>}
+                                        {finalScores && <th className="py-3 px-4 text-center text-slate-600  font-bold">Final</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {criteria.map(({ key, label }) => (
-                                        <tr key={key} className="border-b border-slate-200 dark:border-white/10 shadow-sm">
-                                            <td className="py-3 px-4 text-slate-900 dark:text-white">{label}</td>
+                                        <tr key={key} className="border-b border-slate-200  shadow-sm">
+                                            <td className="py-3 px-4 text-slate-900 ">{label}</td>
                                             {reviews.map((review, idx) => (
-                                                <td key={idx} className="py-3 px-4 text-center text-slate-900 dark:text-white font-bold">
+                                                <td key={idx} className="py-3 px-4 text-center text-slate-900  font-bold">
                                                     {review.scores?.[key] || 'N/A'}
                                                 </td>
                                             ))}
                                             {finalScores && (
-                                                <td className="py-3 px-4 text-center font-bold text-slate-900 dark:text-white">
+                                                <td className="py-3 px-4 text-center font-bold text-slate-900 ">
                                                     {finalScores.finalScores[key]}
                                                 </td>
                                             )}
@@ -487,7 +485,7 @@ export default function Feedback() {
                 {/* Peer Reviews - Always visible if they exist */}
                 {reviews.length > 0 && (
                     <div className="space-y-6">
-                        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Peer Reviews</h2>
+                        <h2 className="text-2xl font-semibold text-slate-900 ">Peer Reviews</h2>
                         {reviews.map((review, idx) => {
                             const isAI = review.reviewerRole === 'ai'
                             const isTeacherReview = review.reviewerRole === 'teacher'
@@ -517,18 +515,18 @@ export default function Feedback() {
                                                     <h3 className="text-2xl font-bold text-cyan-400 flex items-center gap-3">
                                                         🤖 AI Assessment
                                                     </h3>
-                                                    <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Official assessment descriptor rubric</p>
+                                                    <p className="text-slate-500  text-sm mt-1">Official assessment descriptor rubric</p>
                                                 </div>
                                                 <div className="text-center">
-                                                    <div className="text-sm text-slate-500 dark:text-gray-400 mb-1">Overall Band</div>
-                                                    <div className="text-5xl font-bold text-slate-900 dark:text-white">
+                                                    <div className="text-sm text-slate-500  mb-1">Overall Band</div>
+                                                    <div className="text-5xl font-bold text-slate-900 ">
                                                         {review.overallBand}
                                                     </div>
                                                 </div>
                                             </div>
                                             {review.feedback && (
-                                                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-4 border border-slate-200 dark:border-white/10">
-                                                    <p className="text-slate-600 dark:text-gray-300 italic">{review.feedback}</p>
+                                                <div className="bg-slate-50  rounded-lg p-4 border border-slate-200 ">
+                                                    <p className="text-slate-600  italic">{review.feedback}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -545,25 +543,25 @@ export default function Feedback() {
                                                             <h4 className={`font-bold text-lg ${colors.text} flex items-center gap-2`}>
                                                                 {icon} {label}
                                                             </h4>
-                                                            <div className="text-3xl font-bold text-slate-900 dark:text-white">{dim.band}</div>
+                                                            <div className="text-3xl font-bold text-slate-900 ">{dim.band}</div>
                                                         </div>
                                                         <div className="mb-2">
                                                             <span className="text-green-400 text-sm font-semibold">✅ Good: </span>
-                                                            <span className="text-slate-600 dark:text-gray-300 text-sm">{dim.good}</span>
+                                                            <span className="text-slate-600  text-sm">{dim.good}</span>
                                                         </div>
                                                         <div className="mb-3">
                                                             <span className="text-amber-400 text-sm font-semibold">🎯 Focus: </span>
-                                                            <span className="text-slate-600 dark:text-gray-300 text-sm">{dim.focus}</span>
+                                                            <span className="text-slate-600  text-sm">{dim.focus}</span>
                                                         </div>
                                                         {dim.descriptors && dim.descriptors.length > 0 && (
-                                                            <div className="space-y-2 mt-3 pt-3 border-t border-slate-200 dark:border-white/10 shadow-sm">
+                                                            <div className="space-y-2 mt-3 pt-3 border-t border-slate-200  shadow-sm">
                                                                 <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Band Descriptors</div>
                                                                 {dim.descriptors.map((desc: any, di: number) => (
                                                                     <div key={di} className="flex gap-2 items-start">
                                                                         <span className={`text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${colors.badge}`}>
                                                                             Band {desc.band}
                                                                         </span>
-                                                                        <span className="text-slate-500 dark:text-gray-400 text-xs leading-relaxed">{desc.text}</span>
+                                                                        <span className="text-slate-500  text-xs leading-relaxed">{desc.text}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -585,7 +583,7 @@ export default function Feedback() {
                                                             <span className="bg-amber-500/20 text-amber-300 text-sm font-bold rounded-full w-7 h-7 flex items-center justify-center shrink-0">
                                                                 {ai + 1}
                                                             </span>
-                                                            <span className="text-slate-600 dark:text-gray-300">{action}</span>
+                                                            <span className="text-slate-600 ">{action}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -601,15 +599,15 @@ export default function Feedback() {
                                     key={review.id}
                                     className={`backdrop-blur-sm rounded-xl p-6 border ${isTeacherReview
                                         ? 'border-purple-500/50 bg-purple-900/10'
-                                        : 'border-slate-200 dark:border-white/10 shadow-sm bg-white dark:bg-slate-800'
+                                        : 'border-slate-200  shadow-sm bg-white '
                                         }`}
                                 >
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className={`text-xl font-semibold ${isTeacherReview ? 'text-purple-400' : 'text-slate-900 dark:text-white'}`}>
+                                        <h3 className={`text-xl font-semibold ${isTeacherReview ? 'text-purple-400' : 'text-slate-900 '}`}>
                                             {isTeacherReview ? '🎓 Teacher Feedback' : `Reviewer ${idx + 1}`}
                                         </h3>
                                         {isTeacher && !isTeacherReview && review.reviewerName && (
-                                            <span className="text-slate-500 dark:text-gray-400 text-sm italic bg-slate-100 dark:bg-slate-900/50 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10">
+                                            <span className="text-slate-500  text-sm italic bg-slate-100  px-3 py-1 rounded-full border border-slate-200 ">
                                                 Reviewer Name: {review.reviewerName}
                                             </span>
                                         )}
@@ -617,29 +615,29 @@ export default function Feedback() {
 
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                                         {criteria.map(({ key, label }) => (
-                                            <div key={key} className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-3 text-center">
-                                                <div className="text-sm text-slate-500 dark:text-gray-400 mb-1">{label}</div>
-                                                <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                                            <div key={key} className="bg-slate-100  rounded-lg p-3 text-center">
+                                                <div className="text-sm text-slate-500  mb-1">{label}</div>
+                                                <div className="text-2xl font-bold text-slate-900 ">
                                                     {review.scores[key]}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
 
-                                    <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-4">
-                                        <div className="text-sm text-slate-500 dark:text-gray-400 mb-2">Feedback:</div>
-                                        <p className="text-slate-600 dark:text-gray-300 whitespace-pre-wrap">{review.feedback}</p>
+                                    <div className="bg-slate-100  rounded-lg p-4">
+                                        <div className="text-sm text-slate-500  mb-2">Feedback:</div>
+                                        <p className="text-slate-600  whitespace-pre-wrap">{review.feedback}</p>
                                     </div>
 
                                     {/* ── Helpfulness rating + student response ── */}
                                     {!isTeacher && !isAI && !isTeacherReview && studentResponses[review.id] && (
-                                        <div className="mt-4 border-t border-slate-200 dark:border-white/10 pt-4 space-y-4">
+                                        <div className="mt-4 border-t border-slate-200  pt-4 space-y-4">
                                             {/* Rating */}
                                             <div>
-                                                <p className="text-sm font-semibold text-slate-700 dark:text-gray-200 mb-1">
+                                                <p className="text-sm font-semibold text-slate-700  mb-1">
                                                     Is this reviewer&apos;s feedback helpful?
                                                 </p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">1 = very unhelpful; 5 = very helpful</p>
+                                                <p className="text-xs text-slate-500  mb-2">1 = very unhelpful; 5 = very helpful</p>
                                                 <div className="flex gap-2">
                                                     {[1, 2, 3, 4, 5].map(n => (
                                                         <button
@@ -648,7 +646,7 @@ export default function Feedback() {
                                                             onClick={() => setStudentResponses(prev => ({ ...prev, [review.id]: { ...prev[review.id], rating: n, saved: false } }))}
                                                             className={`w-9 h-9 rounded-lg border text-sm font-bold transition-all ${studentResponses[review.id].rating === n
                                                                 ? 'bg-blue-500 border-blue-500 text-white'
-                                                                : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-white/20 text-slate-700 dark:text-white hover:border-blue-400'
+                                                                : 'bg-white  border-slate-300  text-slate-700  hover:border-blue-400'
                                                                 }`}
                                                         >
                                                             {n}
@@ -659,7 +657,7 @@ export default function Feedback() {
 
                                             {/* Written response */}
                                             <div>
-                                                <p className="text-sm font-semibold text-slate-700 dark:text-gray-200 mb-1">
+                                                <p className="text-sm font-semibold text-slate-700  mb-1">
                                                     Your response to the reviewer&apos;s feedback:
                                                 </p>
                                                 <textarea
@@ -667,7 +665,7 @@ export default function Feedback() {
                                                     value={studentResponses[review.id].response}
                                                     onChange={e => setStudentResponses(prev => ({ ...prev, [review.id]: { ...prev[review.id], response: e.target.value, saved: false } }))}
                                                     placeholder="Clarify the changes you've made in response to the reviewer's feedback. If you have any disagreements with their comments, provide a clear and logical justification."
-                                                    className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 resize-none transition-colors"
+                                                    className="w-full bg-slate-50  border border-slate-200  text-slate-800  rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 resize-none transition-colors"
                                                 />
                                             </div>
 
@@ -689,14 +687,14 @@ export default function Feedback() {
 
                                     {/* ── Teacher sees the student's rating + response ── */}
                                     {isTeacher && !isAI && !isTeacherReview && (
-                                        <div className="mt-4 border-t border-slate-200 dark:border-white/10 pt-4 space-y-3">
-                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                        <div className="mt-4 border-t border-slate-200  pt-4 space-y-3">
+                                            <p className="text-xs font-semibold text-slate-500  uppercase tracking-wide">
                                                 💬 Student&apos;s Response to this Review
                                             </p>
 
                                             {/* Helpfulness rating */}
                                             <div className="flex items-center gap-2">
-                                                <span className="text-sm text-slate-600 dark:text-gray-300 font-medium">Helpfulness:</span>
+                                                <span className="text-sm text-slate-600  font-medium">Helpfulness:</span>
                                                 {review.studentRating ? (
                                                     <div className="flex items-center gap-1">
                                                         {[1, 2, 3, 4, 5].map(n => (
@@ -704,13 +702,13 @@ export default function Feedback() {
                                                                 key={n}
                                                                 className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold border ${n <= review.studentRating
                                                                     ? 'bg-blue-500 border-blue-500 text-white'
-                                                                    : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-white/10 text-slate-400'
+                                                                    : 'bg-slate-100  border-slate-200  text-slate-400'
                                                                     }`}
                                                             >
                                                                 {n}
                                                             </span>
                                                         ))}
-                                                        <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">{review.studentRating}/5</span>
+                                                        <span className="text-xs text-slate-500  ml-1">{review.studentRating}/5</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-sm text-slate-400 italic">Not rated yet</span>
@@ -719,7 +717,7 @@ export default function Feedback() {
 
                                             {/* Written reply */}
                                             {review.studentResponse ? (
-                                                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 text-sm text-slate-700 dark:text-gray-300 whitespace-pre-wrap border border-slate-200 dark:border-white/10 shadow-sm">
+                                                <div className="bg-slate-50  rounded-lg p-3 text-sm text-slate-700  whitespace-pre-wrap border border-slate-200  shadow-sm">
                                                     {review.studentResponse}
                                                 </div>
                                             ) : (
@@ -736,12 +734,12 @@ export default function Feedback() {
                 {/* Teacher Grading Form */}
                 {isTeacher && (
                     <div className="bg-purple-900/20 backdrop-blur-sm rounded-xl p-8 border border-purple-500/30 mt-8">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">✏️ Teacher Feedback</h2>
+                        <h2 className="text-2xl font-bold text-slate-900  mb-6">✏️ Teacher Feedback</h2>
                         <form onSubmit={handleTeacherSubmit}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 {criteria.map(({ key, label }) => (
                                     <div key={key}>
-                                        <label className="block text-slate-600 dark:text-gray-300 mb-2 text-sm">{label} (0-9)</label>
+                                        <label className="block text-slate-600  mb-2 text-sm">{label} (0-9)</label>
                                         <input
                                             type="number"
                                             min="0"
@@ -752,7 +750,7 @@ export default function Feedback() {
                                                 ...prev,
                                                 [key]: parseFloat(e.target.value)
                                             }))}
-                                            className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 shadow-sm rounded-lg p-3 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
+                                            className="w-full bg-slate-100  border border-slate-200  shadow-sm rounded-lg p-3 text-slate-900  focus:outline-none focus:border-purple-500"
                                             required
                                         />
                                     </div>
@@ -760,11 +758,11 @@ export default function Feedback() {
                             </div>
 
                             <div className="mb-6">
-                                <label className="block text-slate-600 dark:text-gray-300 mb-2">Overall Comments</label>
+                                <label className="block text-slate-600  mb-2">Overall Comments</label>
                                 <textarea
                                     value={teacherReview}
                                     onChange={(e) => setTeacherReview(e.target.value)}
-                                    className="w-full h-32 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 shadow-sm rounded-lg p-4 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
+                                    className="w-full h-32 bg-slate-100  border border-slate-200  shadow-sm rounded-lg p-4 text-slate-900  focus:outline-none focus:border-purple-500"
                                     placeholder="Provide detailed feedback for the student..."
                                     required
                                 />
@@ -781,6 +779,6 @@ export default function Feedback() {
                     </div>
                 )}
             </main>
-        </div>
+        </StudentLayout>
     )
 }

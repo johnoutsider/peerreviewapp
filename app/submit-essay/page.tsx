@@ -5,7 +5,7 @@ import { auth, db } from '@/lib/firebase'
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import { assignPeerReviewers } from '@/lib/peer-assignment'
-import Header from '@/components/Header'
+import StudentLayout from '@/components/StudentLayout'
 import Alert from '@/components/Alert'
 import DeadlineBanner from '@/components/DeadlineBanner'
 import EssayEditor from '@/components/EssayEditor'
@@ -235,7 +235,7 @@ export default function SubmitEssay() {
     const wordCount = content.trim().split(/\s+/).filter(w => w).length
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <StudentLayout title="Submit Essay">
             {/* AI Detector Modal — shown while checking or when rejected */}
             <AiDetectorModal
                 state={aiDetectorState}
@@ -247,16 +247,15 @@ export default function SubmitEssay() {
                     handleSubmit(e as any)
                 }}
             />
-            <Header />
 
             <main className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="mb-6">
-                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">Submit Essay</h1>
-                    <p className="text-slate-500 dark:text-gray-400">Your essay will be reviewed by 3 peers</p>
+                    <h1 className="text-4xl font-bold text-slate-900  mb-2">Submit Essay</h1>
+                    <p className="text-slate-500 ">Your essay will be reviewed by 3 peers</p>
                 </div>
 
                 {/* Essay form — centered, full width */}
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="bg-white  rounded-xl p-6 sm:p-8 border border-slate-200  shadow-sm">
                     {/* Alerts */}
                     {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
                     {success && <Alert type="success" message={success} />}
@@ -264,16 +263,16 @@ export default function SubmitEssay() {
                     <form onSubmit={handleSubmit}>
                         {/* Topic Dropdown */}
                         <div className="mb-6">
-                            <label className="block text-slate-900 dark:text-white font-semibold mb-2">
+                            <label className="block text-slate-900  font-semibold mb-2">
                                 Essay Topic <span className="text-red-400">*</span>
                             </label>
                             {loadingTopics ? (
-                                <div className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 text-slate-500 dark:text-gray-400 flex items-center gap-2">
+                                <div className="w-full bg-white  border border-slate-300  rounded-lg px-4 py-3 text-slate-500  flex items-center gap-2">
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
                                     Loading topics…
                                 </div>
                             ) : topics.length === 0 ? (
-                                <div className="w-full bg-white dark:bg-slate-800 border border-yellow-500/40 rounded-lg px-4 py-3 text-yellow-400 text-sm">
+                                <div className="w-full bg-white  border border-yellow-500/40 rounded-lg px-4 py-3 text-yellow-400 text-sm">
                                     ⚠️ No topics available yet. Ask your teacher to add topics first.
                                 </div>
                             ) : (
@@ -281,7 +280,7 @@ export default function SubmitEssay() {
                                     <select
                                         value={topicId}
                                         onChange={handleTopicChange}
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/20 text-slate-900 dark:text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors mb-3"
+                                        className="w-full bg-white  border border-slate-300  text-slate-900  rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors mb-3"
                                         required
                                     >
                                         <option value="" disabled>Select a topic…</option>
@@ -310,13 +309,13 @@ export default function SubmitEssay() {
                         </div>
 
                         <div className="mb-6">
-                            <label className="block text-slate-900 dark:text-white font-semibold mb-2">Essay Title</label>
+                            <label className="block text-slate-900  font-semibold mb-2">Essay Title</label>
                             <input
                                 type="text"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="e.g., The Impact of Technology on Education"
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/20 text-slate-900 dark:text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                                className="w-full bg-white  border border-slate-300  text-slate-900  rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                                 required
                             />
                         </div>
@@ -325,7 +324,7 @@ export default function SubmitEssay() {
                         <EssayTimer onUpdate={handleTimerUpdate} />
 
                         <div className="mb-6">
-                            <label className="block text-slate-900 dark:text-white font-semibold mb-2">Essay Content</label>
+                            <label className="block text-slate-900  font-semibold mb-2">Essay Content</label>
                             <EssayEditor
                                 value={content}
                                 onChange={setContent}
@@ -335,7 +334,7 @@ export default function SubmitEssay() {
 
                         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
                             <h3 className="text-blue-400 font-semibold mb-2">📌 What happens next?</h3>
-                            <ul className="text-slate-600 dark:text-gray-300 text-sm space-y-1">
+                            <ul className="text-slate-600  text-sm space-y-1">
                                 <li>✓ You&apos;ll receive instant AI feedback and scoring (within 10 seconds!)</li>
                                 <li>✓ Your essay will be assigned to 3 classmates for peer review</li>
                                 <li>✓ You&apos;ll receive comprehensive feedback within a few days</li>
@@ -400,6 +399,6 @@ export default function SubmitEssay() {
                     </button>
                 </>
             )}
-        </div>
+        </StudentLayout>
     )
 }

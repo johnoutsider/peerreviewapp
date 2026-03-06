@@ -34,7 +34,7 @@ function ToolbarBtn({
             className={`px-2.5 py-1.5 rounded text-sm font-medium transition-colors select-none
                 ${active
                     ? 'bg-blue-500 text-white'
-                    : 'text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    : 'text-slate-600  hover:bg-slate-200 '
                 }`}
         >
             {children}
@@ -141,11 +141,11 @@ export default function EssayEditor({
                         : 'text-blue-400'
 
     return (
-        <div className={`flex flex-col rounded-xl border ${disabled ? 'border-yellow-500/30 opacity-60' : 'border-slate-200 dark:border-white/10'} overflow-hidden bg-white dark:bg-slate-800 shadow-sm`}>
+        <div className={`flex flex-col rounded-xl border ${disabled ? 'border-yellow-500/30 opacity-60' : 'border-slate-200 '} overflow-hidden bg-white  shadow-sm`}>
 
             {/* ── Toolbar ── */}
             {!disabled && (
-                <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40">
+                <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-slate-200  bg-slate-50 ">
 
                     {/* Text style group */}
                     <ToolbarBtn title="Bold (Ctrl+B)" onClick={() => exec('bold')} active={activeFormats.bold}>
@@ -158,20 +158,20 @@ export default function EssayEditor({
                         <span style={{ textDecoration: 'underline' }}>U</span>
                     </ToolbarBtn>
 
-                    <div className="w-px h-5 bg-slate-300 dark:bg-white/20 mx-1" />
+                    <div className="w-px h-5 bg-slate-300  mx-1" />
 
                     {/* Paragraph alignment */}
                     <ToolbarBtn title="Align Left" onClick={() => exec('justifyLeft')}>⬅</ToolbarBtn>
                     <ToolbarBtn title="Align Center" onClick={() => exec('justifyCenter')}>⬛</ToolbarBtn>
                     <ToolbarBtn title="Align Right" onClick={() => exec('justifyRight')}>➡</ToolbarBtn>
 
-                    <div className="w-px h-5 bg-slate-300 dark:bg-white/20 mx-1" />
+                    <div className="w-px h-5 bg-slate-300  mx-1" />
 
                     {/* Indentation */}
                     <ToolbarBtn title="Indent (Tab)" onClick={() => exec('indent')}>⇥ Indent</ToolbarBtn>
                     <ToolbarBtn title="Outdent" onClick={() => exec('outdent')}>⇤ Outdent</ToolbarBtn>
 
-                    <div className="w-px h-5 bg-slate-300 dark:bg-white/20 mx-1" />
+                    <div className="w-px h-5 bg-slate-300  mx-1" />
 
                     {/* Separator line */}
                     <ToolbarBtn title="Insert separator line" onClick={insertHorizontalRule}>— Line</ToolbarBtn>
@@ -180,7 +180,7 @@ export default function EssayEditor({
                     <ToolbarBtn title="Remove all formatting" onClick={clearFormatting}>✕ Clear</ToolbarBtn>
 
                     {/* Right-aligned info badge */}
-                    <span className="ml-auto text-xs text-slate-400 dark:text-slate-500 bg-amber-500/10 border border-amber-500/30 px-2 py-1 rounded-full select-none">
+                    <span className="ml-auto text-xs text-slate-400  bg-amber-500/10 border border-amber-500/30 px-2 py-1 rounded-full select-none">
                         🚫 Spell-check disabled
                     </span>
                 </div>
@@ -191,7 +191,7 @@ export default function EssayEditor({
                 {/* Placeholder */}
                 {!value && (
                     <div
-                        className="absolute top-5 left-6 right-6 text-slate-400 dark:text-slate-500 pointer-events-none select-none text-lg"
+                        className="absolute top-5 left-6 right-6 text-slate-400  pointer-events-none select-none text-lg"
                         aria-hidden
                     >
                         {placeholder}
@@ -217,12 +217,12 @@ export default function EssayEditor({
                     data-lt-active="false"             // LanguageTool
 
                     style={{ minHeight, outline: 'none' }}
-                    className={`w-full px-6 py-5 text-slate-900 dark:text-gray-100 text-lg leading-relaxed focus:outline-none font-['Georgia',serif] ${disabled ? 'cursor-not-allowed' : ''}`}
+                    className={`w-full px-6 py-5 text-slate-900  text-lg leading-relaxed focus:outline-none font-['Georgia',serif] ${disabled ? 'cursor-not-allowed' : ''}`}
                 />
             </div>
 
             {/* ── Status Bar ── */}
-            <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 text-xs">
+            <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200  bg-slate-50  text-xs">
                 <div className="flex items-center gap-4">
                     <span className={`font-semibold ${wordCountColour}`}>
                         📝 {words} words

@@ -110,11 +110,11 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
 
     if (!enabled) {
         return (
-            <div className="mb-6 flex items-center gap-3 p-4 rounded-xl border border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/30">
+            <div className="mb-6 flex items-center gap-3 p-4 rounded-xl border border-dashed border-slate-300  bg-slate-50 ">
                 <span className="text-2xl">⏱️</span>
                 <div className="flex-1">
-                    <p className="text-slate-700 dark:text-gray-300 font-medium text-sm">Essay Timer <span className="text-slate-400 font-normal">(optional)</span></p>
-                    <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">Practice writing under timed conditions</p>
+                    <p className="text-slate-700  font-medium text-sm">Essay Timer <span className="text-slate-400 font-normal">(optional)</span></p>
+                    <p className="text-slate-400  text-xs mt-0.5">Practice writing under timed conditions</p>
                 </div>
                 <button
                     type="button"
@@ -132,13 +132,13 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
             ${finished
                 ? 'border-red-500/40 bg-red-500/5'
                 : running
-                    ? 'border-green-500/30 bg-green-500/5 dark:bg-green-500/5'
-                    : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800'
+                    ? 'border-green-500/30 bg-green-500/5 '
+                    : 'border-slate-200  bg-white '
             }`}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40">
-                <span className="text-sm font-semibold text-slate-700 dark:text-gray-300 flex items-center gap-2">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200  bg-slate-50 ">
+                <span className="text-sm font-semibold text-slate-700  flex items-center gap-2">
                     ⏱️ Essay Timer
                     {running && <span className="inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />}
                 </span>
@@ -146,7 +146,7 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
                     <button
                         type="button"
                         onClick={() => { setEnabled(false); reset() }}
-                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition-colors"
+                        className="text-xs text-slate-400 hover:text-slate-600  transition-colors"
                     >
                         Remove
                     </button>
@@ -158,7 +158,7 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
                 <div className="relative flex items-center justify-center shrink-0">
                     <svg width="96" height="96" viewBox="0 0 96 96" className="-rotate-90">
                         {/* Track */}
-                        <circle cx="48" cy="48" r={radius} fill="none" strokeWidth="6" className="stroke-slate-200 dark:stroke-white/10" />
+                        <circle cx="48" cy="48" r={radius} fill="none" strokeWidth="6" className="stroke-slate-200 " />
                         {/* Progress */}
                         <circle
                             cx="48" cy="48" r={radius}
@@ -187,7 +187,7 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
                                     className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors
                                         ${durationMin === m
                                             ? 'bg-blue-500 text-white border-blue-500'
-                                            : 'border-slate-300 dark:border-white/20 text-slate-600 dark:text-gray-300 hover:border-blue-400'
+                                            : 'border-slate-300  text-slate-600  hover:border-blue-400'
                                         }`}
                                 >
                                     {m} min
@@ -197,7 +197,7 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
                     )}
 
                     {started && (
-                        <p className="text-xs text-slate-500 dark:text-gray-400 mb-2">
+                        <p className="text-xs text-slate-500  mb-2">
                             {finished
                                 ? '⏰ Time is up! You can still finish and submit.'
                                 : `Elapsed: ${fmt(elapsed)}`}
@@ -222,7 +222,7 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
                             <button
                                 type="button"
                                 onClick={reset}
-                                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 border border-slate-300 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 border border-slate-300  hover:bg-slate-100  transition-colors"
                             >
                                 ↺ Reset
                             </button>
@@ -238,7 +238,7 @@ export default function EssayTimer({ onUpdate }: EssayTimerProps) {
 
             {/* Elapsed bar */}
             {started && (
-                <div className="h-1 bg-slate-100 dark:bg-white/5">
+                <div className="h-1 bg-slate-100 ">
                     <div
                         className={`h-1 transition-all duration-1000 ${urgency === 'red' ? 'bg-red-500' : urgency === 'orange' ? 'bg-orange-400' : 'bg-green-500'}`}
                         style={{ width: `${(1 - pct) * 100}%` }}

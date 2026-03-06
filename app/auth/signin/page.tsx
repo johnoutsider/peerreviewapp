@@ -12,7 +12,11 @@ export default function SignIn() {
         setLoading(true)
         const user = await signInWithGoogle()
         if (user) {
-            router.push('/dashboard')
+            if (user.role === 'teacher') {
+                router.push('/teacher')
+            } else {
+                router.push('/dashboard')
+            }
         } else {
             alert('Sign in failed. Please try again.')
             setLoading(false)

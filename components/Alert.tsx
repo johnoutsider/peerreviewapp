@@ -30,7 +30,7 @@ export default function Alert({ type, message, onClose }: AlertProps) {
             {onClose && (
                 <button
                     onClick={onClose}
-                    className="text-slate-900 dark:text-white/50 hover:text-slate-900 dark:text-white transition-colors"
+                    className="text-slate-900  hover:text-slate-900  transition-colors"
                 >
                     ✕
                 </button>

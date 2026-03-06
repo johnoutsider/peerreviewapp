@@ -7,6 +7,7 @@ interface EssayCardProps {
     status: 'submitted' | 'under_review' | 'completed'
     overallScore?: number
     reviewCount?: number
+    topicName?: string
     onClick?: () => void
     onEdit?: (e: React.MouseEvent) => void
     onDelete?: (e: React.MouseEvent) => void
@@ -21,14 +22,15 @@ export default function EssayCard({
     status,
     overallScore,
     reviewCount = 0,
+    topicName,
     onClick,
     onEdit,
     onDelete,
 }: EssayCardProps) {
     const statusColors = {
-        submitted: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-        under_review: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-        completed: 'bg-green-500/20 text-green-400 border-green-500/30',
+        submitted: 'bg-blue-100 text-blue-700 border-blue-200',
+        under_review: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        completed: 'bg-green-100 text-green-700 border-green-200',
     }
 
     const statusLabels = {
@@ -38,10 +40,10 @@ export default function EssayCard({
     }
 
     const getScoreColor = (score: number) => {
-        if (score >= 7.0) return 'text-white border-green-500/30 bg-green-500/20'
-        if (score >= 6.0) return 'text-white border-blue-500/30 bg-blue-500/20'
-        if (score >= 5.0) return 'text-white border-yellow-500/30 bg-yellow-500/20'
-        return 'text-white border-red-500/30 bg-red-500/20'
+        if (score >= 7.0) return 'text-green-800 border-green-200 bg-green-100'
+        if (score >= 6.0) return 'text-blue-800 border-blue-200 bg-blue-100'
+        if (score >= 5.0) return 'text-yellow-800 border-yellow-200 bg-yellow-100'
+        return 'text-red-800 border-red-200 bg-red-100'
     }
 
     const isLocked = reviewCount > 0
@@ -49,15 +51,23 @@ export default function EssayCard({
     return (
         <div
             onClick={onClick}
-            className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-white/10 shadow-sm hover:border-blue-500/50 transition-all cursor-pointer group"
+            className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm hover:border-blue-500/50 transition-all cursor-pointer group"
         >
-            <div className="flex justify-between items-start mb-3">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white group-hover:text-blue-400 transition-colors">
-                    {title}
-                </h3>
+            <div className="flex justify-between items-start mb-3 gap-6">
+                <div className="flex-1 min-w-0">
+                    {topicName && (
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] items-center inline-flex">🏷️</span>
+                            {topicName}
+                        </p>
+                    )}
+                    <h3 className="text-xl font-semibold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                        {title}
+                    </h3>
+                </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {isLocked ? (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 flex items-center gap-1">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200 flex items-center gap-1">
                             🔒 Locked
                         </span>
                     ) : (
@@ -65,7 +75,7 @@ export default function EssayCard({
                             {onEdit && (
                                 <button
                                     onClick={onEdit}
-                                    className="px-3 py-1 rounded-lg text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-colors"
+                                    className="px-3 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition-colors"
                                 >
                                     ✏️ Edit
                                 </button>
@@ -73,7 +83,7 @@ export default function EssayCard({
                             {onDelete && (
                                 <button
                                     onClick={onDelete}
-                                    className="px-3 py-1 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                                    className="px-3 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 border border-red-200 hover:bg-red-200 transition-colors"
                                 >
                                     🗑 Delete
                                 </button>
@@ -92,7 +102,7 @@ export default function EssayCard({
                 </div>
             </div>
 
-            <p className="text-slate-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+            <p className="text-slate-500  text-sm mb-3 line-clamp-2">
                 {content}
             </p>
 

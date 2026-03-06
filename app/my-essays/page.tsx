@@ -7,7 +7,7 @@ import {
     collection, query, where, getDocs, deleteDoc,
     doc, updateDoc, serverTimestamp,
 } from 'firebase/firestore'
-import Header from '@/components/Header'
+import StudentLayout from '@/components/StudentLayout'
 
 // ─── Rubric Aspects ───────────────────────────────────────────────────────────
 const ASPECTS = [
@@ -46,10 +46,10 @@ function getAspectScore(scores: Record<string, any>, id: string, index: number):
 const pct = (score: number) => Math.round((score / MAX_TOTAL) * 100)
 
 function scoreColor(p: number) {
-    if (p >= 80) return 'text-green-600 dark:text-green-400'
-    if (p >= 65) return 'text-blue-600 dark:text-blue-400'
-    if (p >= 50) return 'text-amber-600 dark:text-amber-400'
-    return 'text-red-600 dark:text-red-400'
+    if (p >= 80) return 'text-green-600 '
+    if (p >= 65) return 'text-blue-600 '
+    if (p >= 50) return 'text-amber-600 '
+    return 'text-red-600 '
 }
 function scoreColorHex(p: number) {
     if (p >= 80) return '#16a34a'
@@ -103,11 +103,11 @@ function StarRating({ value, onChange }: { value: number | null; onChange: (v: n
                     onClick={() => onChange(star === value ? null : star)}
                     onMouseEnter={() => setHovered(star)}
                     onMouseLeave={() => setHovered(null)}
-                    className={`text-2xl leading-none transition-transform ${star <= display ? 'text-amber-400 scale-110' : 'text-slate-300 dark:text-slate-600'}`}
+                    className={`text-2xl leading-none transition-transform ${star <= display ? 'text-amber-400 scale-110' : 'text-slate-300 '}`}
                 >★</button>
             ))}
             {(hovered || value) && (
-                <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">{STAR_LABELS[hovered ?? value ?? 0]}</span>
+                <span className="text-xs text-slate-500  ml-1">{STAR_LABELS[hovered ?? value ?? 0]}</span>
             )}
         </div>
     )
@@ -119,10 +119,10 @@ function AspectBar({ title, score, max }: { title: string; score: number; max: n
     return (
         <div className="mb-2">
             <div className="flex justify-between mb-1">
-                <span className="text-xs text-slate-500 dark:text-gray-400 font-semibold">{title}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{score}<span className="text-slate-400 dark:text-slate-500 font-normal">/{max}</span></span>
+                <span className="text-xs text-slate-500  font-semibold">{title}</span>
+                <span className="text-xs font-bold text-slate-700 ">{score}<span className="text-slate-400  font-normal">/{max}</span></span>
             </div>
-            <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-slate-100  overflow-hidden">
                 <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${p}%`, background: scoreColorHex(p) }}
@@ -168,27 +168,27 @@ function ReviewCard({
             : '—'
 
     return (
-        <div className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-slate-800 mb-3 shadow-sm">
+        <div className="border border-slate-200  rounded-xl overflow-hidden bg-white  mb-3 shadow-sm">
             {/* Header */}
-            <div className="px-4 py-3 flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 dark:border-white/10">
+            <div className="px-4 py-3 flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 ">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-700 dark:text-blue-300 shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-blue-100  flex items-center justify-center text-sm font-bold text-blue-700  shrink-0">
                         {review.reviewerIndex}
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">Reviewer {review.reviewerIndex}</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">{dateStr}</p>
+                        <p className="text-sm font-bold text-slate-900 ">Reviewer {review.reviewerIndex}</p>
+                        <p className="text-xs text-slate-400 ">{dateStr}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="text-right">
                         <span className={`text-xl font-extrabold ${scoreColor(p)}`}>{total}</span>
-                        <span className="text-xs text-slate-400 dark:text-slate-500">/{MAX_TOTAL}</span>
+                        <span className="text-xs text-slate-400 ">/{MAX_TOTAL}</span>
                         <span className={`block text-xs font-bold uppercase tracking-wide ${scoreColor(p)}`}>{scoreBadge(p)}</span>
                     </div>
                     <button
                         onClick={() => setExpanded(!expanded)}
-                        className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                        className="bg-slate-50  border border-slate-200  rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600  flex items-center gap-1.5 hover:bg-slate-100 :bg-slate-600 transition-colors"
                     >
                         {expanded ? 'Hide' : 'View'} Details
                         <span className={`transition-transform inline-block ${expanded ? 'rotate-180' : ''}`}>▾</span>
@@ -199,44 +199,44 @@ function ReviewCard({
             {expanded && (
                 <div>
                     {/* Score breakdown */}
-                    <div className="px-4 py-3 border-b border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-slate-900/30">
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Score Breakdown</p>
+                    <div className="px-4 py-3 border-b border-slate-100  bg-slate-50 ">
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-2">Score Breakdown</p>
                         {ASPECTS.map((a, i) => (
                             <AspectBar key={a.id} title={a.title} score={getAspectScore(review.scores, a.id, i)} max={a.max} />
                         ))}
                     </div>
 
                     {/* Comment */}
-                    <div className="px-4 py-3 border-b border-slate-100 dark:border-white/10">
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Reviewer's Comment</p>
-                        <p className="text-sm text-slate-700 dark:text-gray-200 leading-relaxed bg-slate-50 dark:bg-slate-900/40 px-4 py-3 rounded-lg border-l-4 border-blue-500">
+                    <div className="px-4 py-3 border-b border-slate-100 ">
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-2">Reviewer's Comment</p>
+                        <p className="text-sm text-slate-700  leading-relaxed bg-slate-50  px-4 py-3 rounded-lg border-l-4 border-blue-500">
                             {review.feedback || 'No written comment provided.'}
                         </p>
                     </div>
 
                     {/* Rate this review */}
-                    <div className="px-4 py-3 border-b border-slate-100 dark:border-white/10">
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Rate This Review</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">How helpful was this peer review to you?</p>
+                    <div className="px-4 py-3 border-b border-slate-100 ">
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Rate This Review</p>
+                        <p className="text-xs text-slate-500  mb-2">How helpful was this peer review to you?</p>
                         <StarRating value={rating} onChange={setRating} />
                         {saved && rating && (
-                            <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1.5">✓ You rated this {rating} star{rating !== 1 ? 's' : ''}</p>
+                            <p className="text-xs text-green-600  font-semibold mt-1.5">✓ You rated this {rating} star{rating !== 1 ? 's' : ''}</p>
                         )}
                     </div>
 
                     {/* Justification */}
                     <div className="px-4 py-3">
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Your Response</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Do you agree or disagree with this feedback? Explain your reasoning.</p>
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Your Response</p>
+                        <p className="text-xs text-slate-500  mb-2">Do you agree or disagree with this feedback? Explain your reasoning.</p>
 
                         {saved && response.trim() && !saving ? (
                             <div>
-                                <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg px-4 py-3 mb-2">
-                                    <p className="text-sm text-green-800 dark:text-green-300 leading-relaxed">{response}</p>
+                                <div className="bg-green-50  border border-green-200  rounded-lg px-4 py-3 mb-2">
+                                    <p className="text-sm text-green-800  leading-relaxed">{response}</p>
                                 </div>
                                 <button
                                     onClick={() => setSaved(false)}
-                                    className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                                    className="text-xs text-blue-600  font-semibold hover:underline"
                                 >Edit Response</button>
                             </div>
                         ) : (
@@ -246,19 +246,19 @@ function ReviewCard({
                                     onChange={e => { setResponse(e.target.value); setSaved(false) }}
                                     placeholder="Write at least 10 words. For example: I agree with the feedback about transitions. However, I believe my conclusion does summarise new insights because..."
                                     rows={4}
-                                    className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                                    className="w-full bg-slate-50  border border-slate-200  text-slate-900  rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 :text-slate-500"
                                 />
                                 <div className="flex items-center justify-between mt-2">
-                                    <span className={`text-xs ${canSubmit ? 'text-slate-400 dark:text-slate-500' : 'text-red-500 dark:text-red-400'}`}>
+                                    <span className={`text-xs ${canSubmit ? 'text-slate-400 ' : 'text-red-500 '}`}>
                                         {wordCount} word{wordCount !== 1 ? 's' : ''}
                                         {wordCount > 0 && wordCount < 10 && ` · ${10 - wordCount} more needed`}
                                     </span>
                                     <div className="flex items-center gap-2">
-                                        {saved && <span className="text-xs text-green-600 dark:text-green-400 font-semibold">✓ Saved</span>}
+                                        {saved && <span className="text-xs text-green-600  font-semibold">✓ Saved</span>}
                                         <button
                                             onClick={handleSave}
                                             disabled={!canSubmit || saving}
-                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${canSubmit && !saving ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'}`}
+                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${canSubmit && !saving ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-100  text-slate-400  cursor-not-allowed'}`}
                                         >
                                             {saving ? 'Saving…' : 'Save Response'}
                                         </button>
@@ -290,13 +290,13 @@ function EssayDetail({
     return (
         <div className="max-w-3xl mx-auto px-4 pb-12">
             <div className="flex items-center justify-between pt-5 pb-4">
-                <button onClick={onBack} className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-sm hover:underline">
+                <button onClick={onBack} className="flex items-center gap-1.5 text-blue-600  font-semibold text-sm hover:underline">
                     ← Back to My Essays
                 </button>
                 {reviewCount === 0 && essay.status !== 'pending_teacher_approval' && (
                     <button
                         onClick={() => onDeleteClick(essay.id)}
-                        className="flex items-center gap-1.5 text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors border border-red-100 dark:border-red-500/20"
+                        className="flex items-center gap-1.5 text-red-500 hover:text-red-700 bg-red-50  px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors border border-red-100 "
                     >
                         🗑️ Delete Essay
                     </button>
@@ -304,22 +304,22 @@ function EssayDetail({
             </div>
 
             {/* Essay header */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-5 mb-5 shadow-sm">
+            <div className="bg-white  border border-slate-200  rounded-xl p-5 mb-5 shadow-sm">
                 <div className="flex justify-between items-start flex-wrap gap-4">
                     <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{essay.topicName || 'Essay'}</p>
-                        <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-3 leading-snug">{essay.title}</h2>
-                        <div className="flex gap-4 flex-wrap text-xs text-slate-500 dark:text-gray-400">
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">{essay.topicName || 'Essay'}</p>
+                        <h2 className="text-xl font-extrabold text-slate-900  mb-3 leading-snug">{essay.title}</h2>
+                        <div className="flex gap-4 flex-wrap text-xs text-slate-500 ">
                             <span>📅 {essay.submittedAt?.toDate ? essay.submittedAt.toDate().toLocaleDateString() : '—'}</span>
                             <span>📝 {essay.wordCount} words</span>
                             <span>💬 {reviewCount} review{reviewCount !== 1 ? 's' : ''}</span>
                         </div>
                     </div>
                     {reviewCount > 0 && (
-                        <div className="text-center bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl px-5 py-3 shrink-0">
-                            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Avg Score</p>
+                        <div className="text-center bg-slate-50  border border-slate-200  rounded-xl px-5 py-3 shrink-0">
+                            <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Avg Score</p>
                             <p className={`text-4xl font-black leading-none ${scoreColor(avgPct)}`}>{avgScore}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">out of {MAX_TOTAL}</p>
+                            <p className="text-xs text-slate-400  mt-0.5">out of {MAX_TOTAL}</p>
                             <span className={`mt-2 inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${scoreColor(avgPct)} bg-current/10`}
                                 style={{ background: scoreColorHex(avgPct) + '18' }}>
                                 {scoreBadge(avgPct)}
@@ -330,17 +330,17 @@ function EssayDetail({
 
                 {/* Aspect averages */}
                 {reviewCount > 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Average Scores by Aspect</p>
+                    <div className="mt-4 pt-4 border-t border-slate-100 ">
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-3">Average Scores by Aspect</p>
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                             {ASPECTS.map((a, i) => {
                                 const avgA = avg(essay.reviews.map(r => getAspectScore(r.scores, a.id, i)))
                                 const ap = Math.round((avgA / a.max) * 100)
                                 return (
-                                    <div key={a.id} className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 border border-slate-100 dark:border-white/10 text-center">
-                                        <p className="text-xs text-slate-500 dark:text-gray-400 font-semibold mb-1">{a.title}</p>
-                                        <p className={`text-lg font-extrabold ${scoreColor(ap)}`}>{avgA}<span className="text-xs text-slate-400 dark:text-slate-500 font-normal">/{a.max}</span></p>
-                                        <div className="mt-1.5 h-1 rounded-full bg-slate-200 dark:bg-slate-700">
+                                    <div key={a.id} className="bg-slate-50  rounded-lg p-3 border border-slate-100  text-center">
+                                        <p className="text-xs text-slate-500  font-semibold mb-1">{a.title}</p>
+                                        <p className={`text-lg font-extrabold ${scoreColor(ap)}`}>{avgA}<span className="text-xs text-slate-400  font-normal">/{a.max}</span></p>
+                                        <div className="mt-1.5 h-1 rounded-full bg-slate-200 ">
                                             <div className="h-full rounded-full" style={{ width: `${ap}%`, background: scoreColorHex(ap) }} />
                                         </div>
                                     </div>
@@ -352,34 +352,34 @@ function EssayDetail({
             </div>
 
             {/* Essay Content */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-5 mb-5 shadow-sm">
-                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Your Essay</p>
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 text-slate-700 dark:text-gray-200 whitespace-pre-wrap text-sm leading-relaxed border border-slate-100 dark:border-white/5">
+            <div className="bg-white  border border-slate-200  rounded-xl p-5 mb-5 shadow-sm">
+                <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-3">Your Essay</p>
+                <div className="bg-slate-50  rounded-lg p-4 text-slate-700  whitespace-pre-wrap text-sm leading-relaxed border border-slate-100 ">
                     {essay.content}
                 </div>
             </div>
 
             {/* Reviews */}
             {essay.status === 'pending_teacher_approval' ? (
-                <div className="text-center py-10 text-amber-600 dark:text-amber-500">
+                <div className="text-center py-10 text-amber-600 ">
                     <p className="text-4xl mb-3">⏳</p>
                     <p className="text-sm font-bold mb-1">Pending Teacher Approval</p>
                     <p className="text-xs max-w-sm mx-auto">This essay was flagged by our AI detection system and requires teacher review before it can be assigned to peers.</p>
                 </div>
             ) : essay.status === 'rejected' ? (
-                <div className="text-center py-10 text-red-600 dark:text-red-500">
+                <div className="text-center py-10 text-red-600 ">
                     <p className="text-4xl mb-3">❌</p>
                     <p className="text-sm font-bold mb-1">Essay Rejected</p>
                     <p className="text-xs max-w-sm mx-auto">This essay was rejected by your teacher. Please check your messages for details.</p>
                 </div>
             ) : reviewCount === 0 ? (
-                <div className="text-center py-10 text-slate-400 dark:text-slate-500">
+                <div className="text-center py-10 text-slate-400 ">
                     <p className="text-4xl mb-3">⏳</p>
                     <p className="text-sm">No peer reviews yet. Check back soon!</p>
                 </div>
             ) : (
                 <>
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">{reviewCount} Peer Review{reviewCount !== 1 ? 's' : ''} Received</p>
+                    <p className="text-sm font-bold text-slate-700  mb-3">{reviewCount} Peer Review{reviewCount !== 1 ? 's' : ''} Received</p>
                     {essay.reviews.map((review, idx) => (
                         <ReviewCard
                             key={review.id}
@@ -414,10 +414,10 @@ function SummaryBar({ essays }: { essays: EssayData[] }) {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
             {stats.map((s, i) => (
-                <div key={i} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-4 text-center shadow-sm">
+                <div key={i} className="bg-white  border border-slate-200  rounded-xl p-4 text-center shadow-sm">
                     <p className="text-xl mb-1">{s.icon}</p>
-                    <p className={`text-xl font-extrabold ${s.colored ? scoreColor(s.p!) : 'text-slate-900 dark:text-white'}`}>{s.value}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide mt-0.5">{s.label}</p>
+                    <p className={`text-xl font-extrabold ${s.colored ? scoreColor(s.p!) : 'text-slate-900 '}`}>{s.value}</p>
+                    <p className="text-xs text-slate-400  font-semibold uppercase tracking-wide mt-0.5">{s.label}</p>
                 </div>
             ))}
         </div>
@@ -436,13 +436,13 @@ function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => vo
     return (
         <div
             onClick={onClick}
-            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-5 mb-4 cursor-pointer shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500/40 transition-all"
+            className="bg-white  border border-slate-200  rounded-xl p-5 mb-4 cursor-pointer shadow-sm hover:shadow-md hover:border-blue-300 :border-blue-500/40 transition-all"
         >
             <div className="flex items-start justify-between flex-wrap gap-3">
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{essay.topicName || 'Essay'}</p>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2 leading-snug">{essay.title}</h3>
-                    <div className="flex gap-4 flex-wrap text-xs text-slate-500 dark:text-gray-400">
+                    <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">{essay.topicName || 'Essay'}</p>
+                    <h3 className="text-base font-extrabold text-slate-900  mb-2 leading-snug">{essay.title}</h3>
+                    <div className="flex gap-4 flex-wrap text-xs text-slate-500 ">
                         <span>📅 {essay.submittedAt?.toDate ? essay.submittedAt.toDate().toLocaleDateString() : '—'}</span>
                         <span>📝 {essay.wordCount} words</span>
                     </div>
@@ -450,18 +450,18 @@ function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => vo
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {essay.status === 'pending_teacher_approval' ? (
-                            <span className="text-xs font-bold px-2.5 py-1 rounded-full text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50">
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-full text-amber-600 bg-amber-50   border border-amber-200 ">
                                 ⏳ Pending Approval
                             </span>
                         ) : essay.status === 'rejected' ? (
-                            <span className="text-xs font-bold px-2.5 py-1 rounded-full text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50">
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-full text-red-600 bg-red-50   border border-red-200 ">
                                 ❌ Rejected
                             </span>
                         ) : reviewCount > 0 ? (
                             <>
                                 <div className="flex items-baseline gap-0.5">
                                     <span className={`text-2xl font-black ${scoreColor(avgPct)}`}>{avgScore}</span>
-                                    <span className="text-xs text-slate-400 dark:text-slate-500">/{MAX_TOTAL}</span>
+                                    <span className="text-xs text-slate-400 ">/{MAX_TOTAL}</span>
                                 </div>
                                 <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${scoreColor(avgPct)}`}
                                     style={{ background: scoreColorHex(avgPct) + '18' }}>
@@ -469,7 +469,7 @@ function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => vo
                                 </span>
                             </>
                         ) : (
-                            <span className="text-xs text-slate-400 dark:text-slate-500 italic">No reviews yet</span>
+                            <span className="text-xs text-slate-400  italic">No reviews yet</span>
                         )}
                     </div>
                 </div>
@@ -477,26 +477,26 @@ function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => vo
 
             {/* Progress row */}
             {essay.status === 'pending_teacher_approval' ? (
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Awaiting manual teacher review due to AI detection.</p>
+                <div className="mt-4 pt-3 border-t border-slate-100 ">
+                    <p className="text-xs text-amber-600  font-medium">Awaiting manual teacher review due to AI detection.</p>
                 </div>
             ) : essay.status === 'rejected' ? (
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
-                    <p className="text-xs text-red-600 dark:text-red-400 font-medium">This essay was rejected. Click to view full text.</p>
+                <div className="mt-4 pt-3 border-t border-slate-100 ">
+                    <p className="text-xs text-red-600  font-medium">This essay was rejected. Click to view full text.</p>
                 </div>
             ) : (
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex items-center gap-4 flex-wrap">
+                <div className="mt-4 pt-3 border-t border-slate-100  flex items-center gap-4 flex-wrap">
                     {[
                         { dot: reviewCount > 0, label: `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` },
                         { dot: ratedCount === reviewCount && reviewCount > 0, partial: ratedCount > 0, label: `${ratedCount}/${reviewCount} rated` },
                         { dot: respondedCount === reviewCount && reviewCount > 0, partial: respondedCount > 0, label: `${respondedCount}/${reviewCount} responded` },
                     ].map((item, i) => (
                         <div key={i} className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full inline-block ${item.dot ? 'bg-green-500' : item.partial ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                            <span className="text-xs text-slate-600 dark:text-gray-300">{item.label}</span>
+                            <span className={`w-2 h-2 rounded-full inline-block ${item.dot ? 'bg-green-500' : item.partial ? 'bg-amber-400' : 'bg-slate-300 '}`} />
+                            <span className="text-xs text-slate-600 ">{item.label}</span>
                         </div>
                     ))}
-                    <span className="ml-auto text-xs font-semibold text-blue-600 dark:text-blue-400">View Reviews →</span>
+                    <span className="ml-auto text-xs font-semibold text-blue-600 ">View Reviews →</span>
                 </div>
             )}
         </div>
@@ -590,25 +590,24 @@ export default function MyEssaysPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 ">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans">
-            <Header />
+        <StudentLayout title="My Essays">
 
             {/* Delete confirmation modal */}
             {confirmDeleteId && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+                    <div className="bg-white  border border-slate-200  rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
                         <p className="text-5xl mb-4">🗑️</p>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Delete Essay?</h2>
-                        <p className="text-slate-500 dark:text-gray-400 text-sm mb-6">This action cannot be undone.</p>
+                        <h2 className="text-xl font-bold text-slate-900  mb-2">Delete Essay?</h2>
+                        <p className="text-slate-500  text-sm mb-6">This action cannot be undone.</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setConfirmDeleteId(null)} className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
+                            <button onClick={() => setConfirmDeleteId(null)} className="flex-1 bg-slate-100  text-slate-700  font-semibold py-2.5 rounded-lg hover:bg-slate-200 :bg-slate-600 transition-colors">Cancel</button>
                             <button onClick={() => handleDelete(confirmDeleteId)} disabled={deleting} className="flex-1 bg-red-500 text-white font-semibold py-2.5 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                                 {deleting ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Deleting…</> : 'Delete'}
                             </button>
@@ -628,8 +627,8 @@ export default function MyEssaysPage() {
                 <main className="max-w-3xl mx-auto px-4 py-8">
                     <div className="flex items-start justify-between mb-6">
                         <div>
-                            <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-1">My Essays</h1>
-                            <p className="text-sm text-slate-500 dark:text-gray-400">View your submissions, read peer feedback, and respond to reviews.</p>
+                            <h1 className="text-3xl font-black text-slate-900  mb-1">My Essays</h1>
+                            <p className="text-sm text-slate-500 ">View your submissions, read peer feedback, and respond to reviews.</p>
                         </div>
                         <button
                             onClick={() => router.push('/submit-essay')}
@@ -642,10 +641,10 @@ export default function MyEssaysPage() {
                     {essays.length > 0 && <SummaryBar essays={essays} />}
 
                     {essays.length === 0 ? (
-                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-12 text-center">
+                        <div className="bg-white  border border-slate-200  rounded-xl p-12 text-center">
                             <p className="text-5xl mb-4">📝</p>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No Essays Yet</h3>
-                            <p className="text-slate-500 dark:text-gray-400 mb-6 text-sm">You haven't submitted any essays yet.</p>
+                            <h3 className="text-xl font-bold text-slate-900  mb-2">No Essays Yet</h3>
+                            <p className="text-slate-500  mb-6 text-sm">You haven't submitted any essays yet.</p>
                             <button onClick={() => router.push('/submit-essay')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
                                 Submit Your First Essay
                             </button>
@@ -659,6 +658,6 @@ export default function MyEssaysPage() {
                     ))}
                 </main>
             )}
-        </div>
+        </StudentLayout>
     )
 }

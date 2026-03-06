@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
-import Header from '@/components/Header'
+import StudentLayout from '@/components/StudentLayout'
 
 // ─── Rubric Definition ────────────────────────────────────────────────────────
 const ASPECTS = [
@@ -71,12 +71,12 @@ function AspectCard({
     onSelect: (range: string | null) => void
 }) {
     return (
-        <div className="border border-slate-200 dark:border-white/10 rounded-xl mb-3 bg-white dark:bg-slate-800 overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10">
+        <div className="border border-slate-200  rounded-xl mb-3 bg-white  overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 ">
                 <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                     {index}
                 </span>
-                <span className="text-sm font-bold text-slate-900 dark:text-white">{aspect.title}</span>
+                <span className="text-sm font-bold text-slate-900 ">{aspect.title}</span>
             </div>
             <div className="p-3 space-y-1.5">
                 {aspect.levels.map((lv, i) => {
@@ -87,19 +87,19 @@ function AspectCard({
                             className={`flex items-stretch rounded-lg overflow-hidden border transition-all ${isSelected
                                 ? 'border-blue-500'
                                 : 'border-transparent'
-                                } ${i % 2 === 0 ? 'bg-slate-50 dark:bg-slate-900/40' : 'bg-white dark:bg-slate-800'}`}
+                                } ${i % 2 === 0 ? 'bg-slate-50 ' : 'bg-white '}`}
                         >
                             <button
                                 type="button"
                                 onClick={() => onSelect(isSelected ? null : lv.range)}
                                 className={`px-3 py-2 text-xs font-bold whitespace-nowrap shrink-0 border-r transition-all ${isSelected
                                     ? 'bg-blue-600 text-white border-blue-500'
-                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                                    : 'bg-slate-100  text-slate-600  border-slate-200  hover:bg-blue-50 :bg-blue-900/20'
                                     }`}
                             >
                                 {lv.range}
                             </button>
-                            <span className="px-3 py-2 text-xs text-slate-600 dark:text-gray-300 leading-relaxed">
+                            <span className="px-3 py-2 text-xs text-slate-600  leading-relaxed">
                                 {lv.desc}
                             </span>
                         </div>
@@ -116,29 +116,29 @@ function EssayPanel({ essay }: { essay: any }) {
     return (
         <div className="p-4 space-y-4">
             {/* Topic card */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-4">
-                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Topic</p>
-                <p className="text-base font-bold text-slate-900 dark:text-white mb-3">{essay?.topicName || 'Essay'}</p>
+            <div className="bg-white  border border-slate-200  rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Topic</p>
+                <p className="text-base font-bold text-slate-900  mb-3">{essay?.topicName || 'Essay'}</p>
                 {essay?.topicInstruction && (
                     <>
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Task Instruction</p>
-                        <p className="text-sm text-slate-600 dark:text-gray-300 leading-relaxed">{essay.topicInstruction}</p>
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Task Instruction</p>
+                        <p className="text-sm text-slate-600  leading-relaxed">{essay.topicInstruction}</p>
                     </>
                 )}
             </div>
 
             {/* Essay content */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-4">
+            <div className="bg-white  border border-slate-200  rounded-xl p-4">
                 {essay?.title && (
-                    <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 pb-3 border-b border-slate-100 dark:border-white/10">
+                    <p className="text-sm font-bold text-slate-900  mb-3 pb-3 border-b border-slate-100 ">
                         {essay.title}
                     </p>
                 )}
-                <p className="text-sm text-slate-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm text-slate-700  leading-relaxed whitespace-pre-wrap">
                     {essay?.content}
                 </p>
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
-                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-3 py-1 rounded-full">
+                <div className="mt-4 pt-3 border-t border-slate-100 ">
+                    <span className="text-xs font-medium text-blue-600  bg-blue-50  border border-blue-100  px-3 py-1 rounded-full">
                         📝 {wordCount} words
                     </span>
                 </div>
@@ -249,7 +249,7 @@ export default function ReviewEssay() {
     // ── States ────────────────────────────────────────────────────────────
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 ">
                 <div className="animate-spin rounded-full h-11 w-11 border-b-2 border-blue-500" />
             </div>
         )
@@ -257,11 +257,11 @@ export default function ReviewEssay() {
 
     if (notFound) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50  flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-5xl mb-4">🔍</p>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Essay Not Found</h2>
-                    <button onClick={() => router.push('/review')} className="text-blue-500 dark:text-blue-400 hover:underline text-sm">← Back to Reviews</button>
+                    <h2 className="text-xl font-bold text-slate-900  mb-2">Essay Not Found</h2>
+                    <button onClick={() => router.push('/review')} className="text-blue-500  hover:underline text-sm">← Back to Reviews</button>
                 </div>
             </div>
         )
@@ -269,36 +269,35 @@ export default function ReviewEssay() {
 
     if (alreadyReviewed) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-                <Header />
-                <div className="max-w-md mx-auto mt-20 p-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-2xl text-center shadow-sm">
+            <StudentLayout title="Already Reviewed">
+                <div className="max-w-md mx-auto mt-20 p-10 bg-white  border border-slate-200  rounded-2xl text-center shadow-sm">
                     <p className="text-5xl mb-4">✅</p>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Already Reviewed</h2>
-                    <p className="text-slate-500 dark:text-gray-400 text-sm mb-6">You've already submitted a review for this essay.</p>
+                    <h2 className="text-xl font-bold text-slate-900  mb-2">Already Reviewed</h2>
+                    <p className="text-slate-500  text-sm mb-6">You've already submitted a review for this essay.</p>
                     <button onClick={() => router.push('/review')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
                         Back to Reviews
                     </button>
                 </div>
-            </div>
+            </StudentLayout>
         )
     }
 
     // ── Rubric panel ──────────────────────────────────────────────────────
 
     const rubricPanelJSX = (
-        <div className="p-4 bg-slate-50 dark:bg-slate-900/50 space-y-0">
+        <div className="p-4 bg-slate-50  space-y-0">
             <div className="mb-4">
-                <p className="text-base font-bold text-slate-900 dark:text-white mb-0.5">Writing Development Rubric</p>
-                <p className="text-xs text-slate-500 dark:text-gray-400">Click a score range to select it for each category.</p>
+                <p className="text-base font-bold text-slate-900  mb-0.5">Writing Development Rubric</p>
+                <p className="text-xs text-slate-500 ">Click a score range to select it for each category.</p>
             </div>
 
             {error && (
-                <div className="mb-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-600 dark:text-red-400">
+                <div className="mb-3 px-4 py-3 rounded-lg bg-red-50  border border-red-200  text-sm text-red-600 ">
                     {error}
                 </div>
             )}
             {success && (
-                <div className="mb-3 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-sm text-green-700 dark:text-green-400">
+                <div className="mb-3 px-4 py-3 rounded-lg bg-green-50  border border-green-200  text-sm text-green-700 ">
                     {success}
                 </div>
             )}
@@ -315,18 +314,18 @@ export default function ReviewEssay() {
                 ))}
 
                 {/* Total score bar */}
-                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 p-4 mb-3 flex items-center justify-between">
+                <div className="border border-slate-200  rounded-xl bg-white  p-4 mb-3 flex items-center justify-between">
                     <div>
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Total Score</p>
-                        <p className={`text-3xl font-extrabold leading-none ${allScored ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'}`}>
+                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Total Score</p>
+                        <p className={`text-3xl font-extrabold leading-none ${allScored ? 'text-blue-600 ' : 'text-slate-300 '}`}>
                             {allScored ? totalScore : '—'}
                         </p>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end max-w-[60%]">
                         {ASPECTS.map(a => (
                             <div key={a.id} className="text-center">
-                                <div className="text-xs text-slate-400 dark:text-slate-500 mb-1">{a.title}</div>
-                                <div className={`px-2 py-0.5 rounded text-xs font-bold ${scores[a.id] ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
+                                <div className="text-xs text-slate-400  mb-1">{a.title}</div>
+                                <div className={`px-2 py-0.5 rounded text-xs font-bold ${scores[a.id] ? 'bg-blue-600 text-white' : 'bg-slate-100  text-slate-400 '}`}>
                                     {scores[a.id] ? getHighest(scores[a.id]) : '–'}
                                 </div>
                             </div>
@@ -335,10 +334,10 @@ export default function ReviewEssay() {
                 </div>
 
                 {/* Write Your Review */}
-                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 overflow-hidden mb-3">
-                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10">
+                <div className="border border-slate-200  rounded-xl bg-white  overflow-hidden mb-3">
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 ">
                         <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">6</span>
-                        <span className="text-sm font-bold text-slate-900 dark:text-white">Write Your Review</span>
+                        <span className="text-sm font-bold text-slate-900 ">Write Your Review</span>
                     </div>
                     <div className="p-4">
                         <textarea
@@ -346,9 +345,9 @@ export default function ReviewEssay() {
                             onChange={e => { setFeedback(e.target.value); setError(null) }}
                             placeholder="Please input at least 20 words. When providing comments, please avoid simply copying and pasting the descriptors from the rating rubric. Your peers would benefit from personalized feedback that is specific to their work."
                             rows={5}
-                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                            className="w-full bg-slate-50  border border-slate-200  text-slate-900  rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 :text-slate-500"
                         />
-                        <p className={`text-xs mt-1.5 ${feedbackValid ? 'text-slate-400 dark:text-slate-500' : 'text-red-500 dark:text-red-400'}`}>
+                        <p className={`text-xs mt-1.5 ${feedbackValid ? 'text-slate-400 ' : 'text-red-500 '}`}>
                             {wordCount} word{wordCount !== 1 ? 's' : ''}
                             {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
                         </p>
@@ -361,7 +360,7 @@ export default function ReviewEssay() {
                     disabled={!canSubmit}
                     className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${canSubmit
                         ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-green-500/20'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                        : 'bg-slate-100  text-slate-400  cursor-not-allowed'
                         }`}
                 >
                     {submitting ? (
@@ -377,19 +376,18 @@ export default function ReviewEssay() {
 
     // ── Layout ────────────────────────────────────────────────────────────
     return (
-        <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900 font-sans">
-            <Header />
+        <StudentLayout title="Reviewing Essay">
 
             {/* Mobile tabs */}
             {isMobile && (
-                <div className="flex bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-white/10 shrink-0">
+                <div className="flex bg-white  border-b border-slate-200  shrink-0">
                     {(['essay', 'rubric'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`flex-1 py-3 text-sm font-semibold capitalize transition-colors border-b-2 ${activeTab === tab
-                                ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
-                                : 'text-slate-500 dark:text-gray-400 border-transparent'
+                                ? 'text-blue-600  border-blue-600 '
+                                : 'text-slate-500  border-transparent'
                                 }`}
                         >
                             {tab === 'essay' ? 'Essay' : 'Rubric'}
@@ -402,19 +400,19 @@ export default function ReviewEssay() {
             {isMobile ? (
                 <div className="flex-1 overflow-auto">
                     {activeTab === 'essay' ? <EssayPanel essay={essay} /> : (
-                        <div className="p-4 bg-slate-50 dark:bg-slate-900/50 space-y-0">
+                        <div className="p-4 bg-slate-50  space-y-0">
                             <div className="mb-4">
-                                <p className="text-base font-bold text-slate-900 dark:text-white mb-0.5">Writing Development Rubric</p>
-                                <p className="text-xs text-slate-500 dark:text-gray-400">Click a score range to select it for each category.</p>
+                                <p className="text-base font-bold text-slate-900  mb-0.5">Writing Development Rubric</p>
+                                <p className="text-xs text-slate-500 ">Click a score range to select it for each category.</p>
                             </div>
 
                             {error && (
-                                <div className="mb-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-600 dark:text-red-400">
+                                <div className="mb-3 px-4 py-3 rounded-lg bg-red-50  border border-red-200  text-sm text-red-600 ">
                                     {error}
                                 </div>
                             )}
                             {success && (
-                                <div className="mb-3 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-sm text-green-700 dark:text-green-400">
+                                <div className="mb-3 px-4 py-3 rounded-lg bg-green-50  border border-green-200  text-sm text-green-700 ">
                                     {success}
                                 </div>
                             )}
@@ -431,18 +429,18 @@ export default function ReviewEssay() {
                                 ))}
 
                                 {/* Total score bar */}
-                                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 p-4 mb-3 flex items-center justify-between">
+                                <div className="border border-slate-200  rounded-xl bg-white  p-4 mb-3 flex items-center justify-between">
                                     <div>
-                                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Total Score</p>
-                                        <p className={`text-3xl font-extrabold leading-none ${allScored ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'}`}>
+                                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Total Score</p>
+                                        <p className={`text-3xl font-extrabold leading-none ${allScored ? 'text-blue-600 ' : 'text-slate-300 '}`}>
                                             {allScored ? totalScore : '—'}
                                         </p>
                                     </div>
                                     <div className="flex gap-2 flex-wrap justify-end max-w-[60%]">
                                         {ASPECTS.map(a => (
                                             <div key={a.id} className="text-center">
-                                                <div className="text-xs text-slate-400 dark:text-slate-500 mb-1">{a.title}</div>
-                                                <div className={`px-2 py-0.5 rounded text-xs font-bold ${scores[a.id] ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
+                                                <div className="text-xs text-slate-400  mb-1">{a.title}</div>
+                                                <div className={`px-2 py-0.5 rounded text-xs font-bold ${scores[a.id] ? 'bg-blue-600 text-white' : 'bg-slate-100  text-slate-400 '}`}>
                                                     {scores[a.id] ? getHighest(scores[a.id]) : '–'}
                                                 </div>
                                             </div>
@@ -451,10 +449,10 @@ export default function ReviewEssay() {
                                 </div>
 
                                 {/* Write Your Review */}
-                                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 overflow-hidden mb-3">
-                                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10">
+                                <div className="border border-slate-200  rounded-xl bg-white  overflow-hidden mb-3">
+                                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 ">
                                         <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">6</span>
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">Write Your Review</span>
+                                        <span className="text-sm font-bold text-slate-900 ">Write Your Review</span>
                                     </div>
                                     <div className="p-4">
                                         <textarea
@@ -462,9 +460,9 @@ export default function ReviewEssay() {
                                             onChange={e => { setFeedback(e.target.value); setError(null) }}
                                             placeholder="Please input at least 20 words. When providing comments, please avoid simply copying and pasting the descriptors from the rating rubric. Your peers would benefit from personalized feedback that is specific to their work."
                                             rows={5}
-                                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                                            className="w-full bg-slate-50  border border-slate-200  text-slate-900  rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 :text-slate-500"
                                         />
-                                        <p className={`text-xs mt-1.5 ${feedbackValid ? 'text-slate-400 dark:text-slate-500' : 'text-red-500 dark:text-red-400'}`}>
+                                        <p className={`text-xs mt-1.5 ${feedbackValid ? 'text-slate-400 ' : 'text-red-500 '}`}>
                                             {wordCount} word{wordCount !== 1 ? 's' : ''}
                                             {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
                                         </p>
@@ -477,7 +475,7 @@ export default function ReviewEssay() {
                                     disabled={!canSubmit}
                                     className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${canSubmit
                                         ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-green-500/20'
-                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                        : 'bg-slate-100  text-slate-400  cursor-not-allowed'
                                         }`}
                                 >
                                     {submitting ? (
@@ -493,24 +491,24 @@ export default function ReviewEssay() {
                 </div>
 
             ) : (
-                <div className="grid grid-cols-2 flex-1 overflow-hidden">
-                    <div className="overflow-auto border-r border-slate-200 dark:border-white/10">
+                <div className="grid grid-cols-2 h-full overflow-hidden">
+                    <div className="overflow-auto border-r border-slate-200 ">
                         <EssayPanel essay={essay} />
                     </div>
                     <div className="overflow-auto">
-                        <div className="p-4 bg-slate-50 dark:bg-slate-900/50 space-y-0">
+                        <div className="p-4 bg-slate-50  space-y-0">
                             <div className="mb-4">
-                                <p className="text-base font-bold text-slate-900 dark:text-white mb-0.5">Writing Development Rubric</p>
-                                <p className="text-xs text-slate-500 dark:text-gray-400">Click a score range to select it for each category.</p>
+                                <p className="text-base font-bold text-slate-900  mb-0.5">Writing Development Rubric</p>
+                                <p className="text-xs text-slate-500 ">Click a score range to select it for each category.</p>
                             </div>
 
                             {error && (
-                                <div className="mb-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-600 dark:text-red-400">
+                                <div className="mb-3 px-4 py-3 rounded-lg bg-red-50  border border-red-200  text-sm text-red-600 ">
                                     {error}
                                 </div>
                             )}
                             {success && (
-                                <div className="mb-3 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-sm text-green-700 dark:text-green-400">
+                                <div className="mb-3 px-4 py-3 rounded-lg bg-green-50  border border-green-200  text-sm text-green-700 ">
                                     {success}
                                 </div>
                             )}
@@ -527,18 +525,18 @@ export default function ReviewEssay() {
                                 ))}
 
                                 {/* Total score bar */}
-                                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 p-4 mb-3 flex items-center justify-between">
+                                <div className="border border-slate-200  rounded-xl bg-white  p-4 mb-3 flex items-center justify-between">
                                     <div>
-                                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Total Score</p>
-                                        <p className={`text-3xl font-extrabold leading-none ${allScored ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'}`}>
+                                        <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Total Score</p>
+                                        <p className={`text-3xl font-extrabold leading-none ${allScored ? 'text-blue-600 ' : 'text-slate-300 '}`}>
                                             {allScored ? totalScore : '—'}
                                         </p>
                                     </div>
                                     <div className="flex gap-2 flex-wrap justify-end max-w-[60%]">
                                         {ASPECTS.map(a => (
                                             <div key={a.id} className="text-center">
-                                                <div className="text-xs text-slate-400 dark:text-slate-500 mb-1">{a.title}</div>
-                                                <div className={`px-2 py-0.5 rounded text-xs font-bold ${scores[a.id] ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
+                                                <div className="text-xs text-slate-400  mb-1">{a.title}</div>
+                                                <div className={`px-2 py-0.5 rounded text-xs font-bold ${scores[a.id] ? 'bg-blue-600 text-white' : 'bg-slate-100  text-slate-400 '}`}>
                                                     {scores[a.id] ? getHighest(scores[a.id]) : '–'}
                                                 </div>
                                             </div>
@@ -547,10 +545,10 @@ export default function ReviewEssay() {
                                 </div>
 
                                 {/* Write Your Review */}
-                                <div className="border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 overflow-hidden mb-3">
-                                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10">
+                                <div className="border border-slate-200  rounded-xl bg-white  overflow-hidden mb-3">
+                                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 ">
                                         <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">6</span>
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">Write Your Review</span>
+                                        <span className="text-sm font-bold text-slate-900 ">Write Your Review</span>
                                     </div>
                                     <div className="p-4">
                                         <textarea
@@ -558,9 +556,9 @@ export default function ReviewEssay() {
                                             onChange={e => { setFeedback(e.target.value); setError(null) }}
                                             placeholder="Please input at least 20 words. When providing comments, please avoid simply copying and pasting the descriptors from the rating rubric. Your peers would benefit from personalized feedback that is specific to their work."
                                             rows={5}
-                                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                                            className="w-full bg-slate-50  border border-slate-200  text-slate-900  rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-vertical placeholder:text-slate-400 :text-slate-500"
                                         />
-                                        <p className={`text-xs mt-1.5 ${feedbackValid ? 'text-slate-400 dark:text-slate-500' : 'text-red-500 dark:text-red-400'}`}>
+                                        <p className={`text-xs mt-1.5 ${feedbackValid ? 'text-slate-400 ' : 'text-red-500 '}`}>
                                             {wordCount} word{wordCount !== 1 ? 's' : ''}
                                             {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
                                         </p>
@@ -573,7 +571,7 @@ export default function ReviewEssay() {
                                     disabled={!canSubmit}
                                     className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${canSubmit
                                         ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-green-500/20'
-                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                        : 'bg-slate-100  text-slate-400  cursor-not-allowed'
                                         }`}
                                 >
                                     {submitting ? (
@@ -588,6 +586,6 @@ export default function ReviewEssay() {
                     </div>
                 </div>
             )}
-        </div>
+        </StudentLayout>
     )
 }
