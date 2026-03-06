@@ -43,6 +43,12 @@ export default function TeacherReviewActivity() {
     const [sortBy, setSortBy] = useState<string>('date')
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
     const [expandedId, setExpandedId] = useState<string | null>(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const ITEMS_PER_PAGE = 25
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [search, groupFilter, sortBy, sortDir])
 
     useEffect(() => {
         const fetchData = async () => {
@@ -55,7 +61,7 @@ export default function TeacherReviewActivity() {
                 const [usersSnap, essaysSnap, reviewsSnap] = await Promise.all([
                     getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
                     getDocs(collection(db, 'essays')),
-                    getDocs(query(collection(db, 'reviews'), orderBy('completedAt', 'desc'), limit(50))),
+                    getDocs(query(collection(db, 'reviews'), orderBy('completedAt', 'desc'), limit(500))),
                 ])
 
                 const usersMap = new Map(usersSnap.docs.map(d => [d.id, d.data() as any]))
@@ -160,6 +166,12 @@ export default function TeacherReviewActivity() {
     const sameGroup = filtered.filter(r => r.reviewerGroup && r.reviewerGroup === r.essayAuthorGroup).length
     const crossGroup = filtered.filter(r => r.reviewerGroup !== r.essayAuthorGroup).length
 
+    const paginatedRows = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE
+        return filtered.slice(start, start + ITEMS_PER_PAGE)
+    }, [filtered, currentPage])
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
@@ -237,7 +249,7 @@ export default function TeacherReviewActivity() {
                                             {search || groupFilter ? 'No reviews match your filters.' : 'No peer reviews submitted yet.'}
                                         </td>
                                     </tr>
-                                ) : filtered.map(row => {
+                                ) : paginatedRows.map(row => {
                                     const sameGrp = row.reviewerGroup && row.reviewerGroup === row.essayAuthorGroup
                                     const isExpanded = expandedId === row.reviewId
                                     const hasStudentResponse = row.studentRating || row.studentResponse?.trim()
@@ -417,9 +429,30 @@ export default function TeacherReviewActivity() {
                             </tbody>
                         </table>
                     </div>
-                    {filtered.length > 0 && (
-                        <div className="px-5 py-3 border-t border-slate-100 text-xs text-slate-400">
-                            Showing {filtered.length} of {rows.length} reviews · Click any row to see feedback details
+                    {filtered.length > 0 && totalPages > 1 && (
+                        <div className="px-5 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50">
+                            <div className="text-sm text-slate-500">
+                                Showing <span className="font-medium text-slate-700">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium text-slate-700">{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)}</span> of <span className="font-medium text-slate-700">{filtered.length}</span> reviews
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm text-slate-500 font-medium px-2">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm"
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

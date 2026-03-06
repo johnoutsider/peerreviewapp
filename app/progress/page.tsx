@@ -16,6 +16,7 @@ interface EssayProgress {
     essayId: string
     title: string
     topicName: string
+    topicId?: string
     date: Date
     // New rubric: score /100
     score100?: number
@@ -37,6 +38,8 @@ export default function Progress() {
         averageBand: 0,
         totalReviewed: 0
     })
+    const [minReviewsUnlocked, setMinReviewsUnlocked] = useState(true)
+    const [completedReviewsTotal, setCompletedReviewsTotal] = useState(0)
 
     useEffect(() => {
         const fetchProgress = async () => {
@@ -72,10 +75,12 @@ export default function Progress() {
                     allReviews.push(...chunkSnap.docs.map(d => ({ id: d.id, ...d.data() as any })))
                 }
 
-                // 3. Process each essay
+
+                // 4. Process each essay
                 const processed: EssayProgress[] = []
 
                 for (const essay of essays) {
+
                     // Get reviews for this specific essay
                     const essayReviews = allReviews.filter(r => r.essayId === essay.id)
 
@@ -91,12 +96,14 @@ export default function Progress() {
 
                     // Only track essays that have actual reviews and scores
                     if (validReviews.length > 0) {
+                        const finalScoresObj = calculateFinalScores(validReviews as any)
                         const usingNew = isNewRubric(validReviews[0].scores ?? {})
 
                         let date = new Date()
                         if (essay.submittedAt) {
                             date = essay.submittedAt.toDate ? essay.submittedAt.toDate() : new Date(essay.submittedAt)
                         }
+
 
                         if (usingNew) {
                             // Average /100 score across peer reviews
@@ -123,7 +130,16 @@ export default function Progress() {
                                 // Normalise to /100 for radar
                                 return { subject: label, score: Math.round((avg / max) * 100), fullMark: 100 }
                             })
-                            processed.push({ essayId: essay.id, title: essay.title || 'Untitled', topicName: essay.topicName || 'Custom Topic', date, score100: avg100, isNew: true, aspects })
+                            processed.push({
+                                essayId: essay.id,
+                                title: essay.title || 'Untitled',
+                                topicName: essay.topicName || 'Custom Topic',
+                                topicId: essay.topicId,
+                                date,
+                                score100: avg100,
+                                isNew: true,
+                                aspects
+                            })
                         } else {
                             const { finalScores, overallBand } = calculateFinalScores(validReviews as any)
                             const aspects = [
@@ -132,7 +148,16 @@ export default function Progress() {
                                 { subject: 'Lexical', score: finalScores.lexicalResource, fullMark: 9 },
                                 { subject: 'Grammar', score: finalScores.grammaticalRange, fullMark: 9 },
                             ]
-                            processed.push({ essayId: essay.id, title: essay.title || 'Untitled', topicName: essay.topicName || 'Custom Topic', date, overallBand, isNew: false, aspects })
+                            processed.push({
+                                essayId: essay.id,
+                                title: essay.title || 'Untitled',
+                                topicName: essay.topicName || 'Custom Topic',
+                                topicId: essay.topicId,
+                                date,
+                                overallBand,
+                                isNew: false,
+                                aspects
+                            })
                         }
                     }
                 }
@@ -167,6 +192,16 @@ export default function Progress() {
 
                 setProgressData(processed)
 
+                // Unlock condition for global progress view:
+                // require at least 2 completed reviews across all topics
+                const { getStudentCompletedReviewCount } = await import('@/lib/peer-assignment')
+                let totalCompleted = 0
+                const topicIds = Array.from(new Set(essays.map((e: any) => e.topicId).filter(Boolean)))
+                for (const topicId of topicIds) {
+                    totalCompleted += await getStudentCompletedReviewCount(auth.currentUser.uid, topicId!)
+                }
+                setCompletedReviewsTotal(totalCompleted)
+                setMinReviewsUnlocked(totalCompleted >= 2)
             } catch (error) {
                 console.error('Error fetching progress:', error)
             } finally {
@@ -219,100 +254,117 @@ export default function Progress() {
                 ) : (
                     <div className="space-y-6">
 
-                        {/* Top Stats */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-blue-50 border-blue-200  backdrop-blur-sm border  rounded-xl p-5">
-                                <div className="text-blue-700  text-sm mb-1 font-medium">Average Score</div>
-                                <div className="text-3xl font-bold text-slate-900 ">{stats.averageBand}<span className="text-base font-normal text-blue-400">/100</span></div>
+                        {/* Unlock banner if student hasn't completed enough peer reviews overall */}
+                        {!minReviewsUnlocked && (
+                            <div className="bg-amber-50  border border-amber-200  rounded-xl p-4">
+                                <h2 className="text-sm font-semibold text-amber-700  mb-1">
+                                    Complete more peer reviews to unlock full progress insights
+                                </h2>
+                                <p className="text-xs text-amber-700 ">
+                                    Review at least <span className="font-semibold">2 classmates&apos; essays</span> across your topics to see average scores and skill breakdowns.
+                                    You have completed <span className="font-semibold">{completedReviewsTotal}</span> so far.
+                                </p>
                             </div>
-                            <div className="bg-purple-50 border-purple-200  backdrop-blur-sm border  rounded-xl p-5">
-                                <div className="text-purple-700  text-sm mb-1 font-medium">Reviewed Essays</div>
-                                <div className="text-3xl font-bold text-slate-900 ">{stats.totalReviewed}</div>
-                            </div>
-                            <div className="bg-green-50 border-green-200  backdrop-blur-sm border  rounded-xl p-5">
-                                <div className="text-green-700  text-sm mb-1 font-medium">Strongest Skill</div>
-                                <div className="text-xl font-bold text-slate-900  leading-tight truncate" title={stats.strongestSkill.name}>
-                                    {stats.strongestSkill.name}
-                                </div>
-                                <div className="text-sm text-green-600  mt-1">Avg: {stats.strongestSkill.score}</div>
-                            </div>
-                            <div className="bg-orange-50 border-orange-200  backdrop-blur-sm border  rounded-xl p-5">
-                                <div className="text-orange-700  text-sm mb-1 font-medium">Needs Focus</div>
-                                <div className="text-xl font-bold text-slate-900  leading-tight truncate" title={stats.weakestSkill.name}>
-                                    {stats.weakestSkill.name}
-                                </div>
-                                <div className="text-sm text-orange-600  mt-1">Avg: {stats.weakestSkill.score}</div>
-                            </div>
-                        </div>
+                        )}
 
-                        {/* Main Charts area */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                            {/* Line Chart: Overall Trend */}
-                            <div className="lg:col-span-2 bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-slate-900  mb-4">Score Trend</h3>
-                                <div className="flex-1 w-full min-h-0">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart
-                                            data={progressData.map(p => ({ ...p, displayScore: p.isNew ? p.score100 : p.overallBand }))}
-                                            margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                                            <XAxis
-                                                dataKey="date"
-                                                tickFormatter={(date) => date.toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                                stroke="rgba(255,255,255,0.5)"
-                                                tick={{ fill: 'rgba(255,255,255,0.5)' }}
-                                                dy={10}
-                                            />
-                                            <YAxis
-                                                domain={[0, 100]}
-                                                ticks={[0, 25, 50, 75, 100]}
-                                                stroke="rgba(255,255,255,0.5)"
-                                                tick={{ fill: 'rgba(255,255,255,0.5)' }}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
-                                                itemStyle={{ color: '#60A5FA', fontWeight: 'bold' }}
-                                                labelFormatter={(val, items) => {
-                                                    const item = items[0]?.payload
-                                                    return item ? `Topic: ${item.topicName}` : ''
-                                                }}
-                                                formatter={(value: any, _name: any, props: any) => [
-                                                    props.payload.isNew ? `${value}/100` : `Band ${value}`,
-                                                    'Score'
-                                                ]}
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="displayScore"
-                                                stroke="#8B5CF6"
-                                                strokeWidth={4}
-                                                dot={{ r: 6, fill: '#8B5CF6', strokeWidth: 2, stroke: '#1E293B' }}
-                                                activeDot={{ r: 8, fill: '#A78BFA' }}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
+                        {/* Top Stats (hidden until unlocked) */}
+                        {minReviewsUnlocked && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="bg-blue-50 border-blue-200  backdrop-blur-sm border  rounded-xl p-5">
+                                    <div className="text-blue-700  text-sm mb-1 font-medium">Average Score</div>
+                                    <div className="text-3xl font-bold text-slate-900 ">{stats.averageBand}<span className="text-base font-normal text-blue-400">/100</span></div>
+                                </div>
+                                <div className="bg-purple-50 border-purple-200  backdrop-blur-sm border  rounded-xl p-5">
+                                    <div className="text-purple-700  text-sm mb-1 font-medium">Reviewed Essays</div>
+                                    <div className="text-3xl font-bold text-slate-900 ">{stats.totalReviewed}</div>
+                                </div>
+                                <div className="bg-green-50 border-green-200  backdrop-blur-sm border  rounded-xl p-5">
+                                    <div className="text-green-700  text-sm mb-1 font-medium">Strongest Skill</div>
+                                    <div className="text-xl font-bold text-slate-900  leading-tight truncate" title={stats.strongestSkill.name}>
+                                        {stats.strongestSkill.name}
+                                    </div>
+                                    <div className="text-sm text-green-600  mt-1">Avg: {stats.strongestSkill.score}</div>
+                                </div>
+                                <div className="bg-orange-50 border-orange-200  backdrop-blur-sm border  rounded-xl p-5">
+                                    <div className="text-orange-700  text-sm mb-1 font-medium">Needs Focus</div>
+                                    <div className="text-xl font-bold text-slate-900  leading-tight truncate" title={stats.weakestSkill.name}>
+                                        {stats.weakestSkill.name}
+                                    </div>
+                                    <div className="text-sm text-orange-600  mt-1">Avg: {stats.weakestSkill.score}</div>
                                 </div>
                             </div>
+                        )}
 
-                            {/* Radar Chart: Skill Profile */}
-                            <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm h-[400px] flex flex-col">
-                                <h3 className="text-lg font-semibold text-slate-900  mb-4">Skill Profile</h3>
-                                <div className="flex-1 w-full min-h-0">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={averageCriteria}>
-                                            <PolarGrid stroke="rgba(255,255,255,0.2)" />
-                                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }} />
-                                            <PolarRadiusAxis angle={30} domain={[0, averageCriteria[0]?.fullMark ?? 100]} tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                                            <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }} formatter={(value) => [value, 'Score']} />
-                                            <Radar name="Score" dataKey="score" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.5} />
-                                        </RadarChart>
-                                    </ResponsiveContainer>
+                        {/* Main Charts area (hidden until unlocked) */}
+                        {minReviewsUnlocked && (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                                {/* Line Chart: Overall Trend */}
+                                <div className="lg:col-span-2 bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm h-[400px] flex flex-col">
+                                    <h3 className="text-lg font-semibold text-slate-900  mb-4">Score Trend</h3>
+                                    <div className="flex-1 w-full min-h-0">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart
+                                                data={progressData.map(p => ({ ...p, displayScore: p.isNew ? p.score100 : p.overallBand }))}
+                                                margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                                                <XAxis
+                                                    dataKey="date"
+                                                    tickFormatter={(date) => date.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                    stroke="rgba(255,255,255,0.5)"
+                                                    tick={{ fill: 'rgba(255,255,255,0.5)' }}
+                                                    dy={10}
+                                                />
+                                                <YAxis
+                                                    domain={[0, 100]}
+                                                    ticks={[0, 25, 50, 75, 100]}
+                                                    stroke="rgba(255,255,255,0.5)"
+                                                    tick={{ fill: 'rgba(255,255,255,0.5)' }}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
+                                                    itemStyle={{ color: '#60A5FA', fontWeight: 'bold' }}
+                                                    labelFormatter={(val, items) => {
+                                                        const item = items[0]?.payload
+                                                        return item ? `Topic: ${item.topicName}` : ''
+                                                    }}
+                                                    formatter={(value: any, _name: any, props: any) => [
+                                                        props.payload.isNew ? `${value}/100` : `Band ${value}`,
+                                                        'Score'
+                                                    ]}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="displayScore"
+                                                    stroke="#8B5CF6"
+                                                    strokeWidth={4}
+                                                    dot={{ r: 6, fill: '#8B5CF6', strokeWidth: 2, stroke: '#1E293B' }}
+                                                    activeDot={{ r: 8, fill: '#A78BFA' }}
+                                                />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 </div>
-                            </div>
 
-                        </div>
+                                {/* Radar Chart: Skill Profile */}
+                                <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm h-[400px] flex flex-col">
+                                    <h3 className="text-lg font-semibold text-slate-900  mb-4">Skill Profile</h3>
+                                    <div className="flex-1 w-full min-h-0">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={averageCriteria}>
+                                                <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }} />
+                                                <PolarRadiusAxis angle={30} domain={[0, averageCriteria[0]?.fullMark ?? 100]} tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                                                <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }} formatter={(value) => [value, 'Score']} />
+                                                <Radar name="Score" dataKey="score" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.5} />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                            </div>
+                        )}
 
                         {/* Recent Essays History List */}
                         <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm">

@@ -17,13 +17,13 @@ export default function Feedback() {
     const [essay, setEssay] = useState<any>(null)
     const [reviews, setReviews] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [unlockLoading, setUnlockLoading] = useState(true)
     const [finalScores, setFinalScores] = useState<any>(null)
-    const [reviewsGiven, setReviewsGiven] = useState(0)
-    const [sameTopicReviewsDone, setSameTopicReviewsDone] = useState(0)
-    const [assignedSameTopicCount, setAssignedSameTopicCount] = useState(0)
     const [notFound, setNotFound] = useState(false)
     const [accessDenied, setAccessDenied] = useState(false)
     const [isTeacher, setIsTeacher] = useState(false)
+    const [canViewScores, setCanViewScores] = useState(true)
+    const [completedReviewCount, setCompletedReviewCount] = useState(0)
 
     // Teacher review state
     const [teacherReview, setTeacherReview] = useState('')
@@ -107,46 +107,6 @@ export default function Feedback() {
                 })
                 setStudentResponses(initialResponses)
 
-                // Check how many reviews this student has GIVEN + same-topic gating
-                if (!isTeacherRole) {
-                    const uid = auth.currentUser.uid
-
-                    // All reviews given by this student
-                    const myReviewsSnap = await getDocs(
-                        query(collection(db, 'reviews'), where('reviewerId', '==', uid))
-                    )
-                    setReviewsGiven(myReviewsSnap.size)
-
-                    // How many of those reviews are for same-topic essays?
-                    const myReviewedEssayIds = myReviewsSnap.docs.map(d => d.data().essayId as string)
-                    if (myReviewedEssayIds.length > 0 && essayData.topicId) {
-                        // Check which reviewed essays share the same topic
-                        const reviewedEssaysSnap = await getDocs(
-                            query(collection(db, 'essays'), where('topicId', '==', essayData.topicId))
-                        )
-                        const sameTopicEssayIds = new Set(reviewedEssaysSnap.docs.map(d => d.id))
-                        const sameTopicDone = myReviewedEssayIds.filter(eid => sameTopicEssayIds.has(eid)).length
-                        setSameTopicReviewsDone(sameTopicDone)
-                    }
-
-                    // How many same-topic essays are assigned to this student?
-                    const assignedSnap = await getDocs(
-                        query(
-                            collection(db, 'essays'),
-                            where('peerReviewIds', 'array-contains', uid),
-                            where('topicId', '==', essayData.topicId)
-                        )
-                    )
-                    // Exclude own essay from count
-                    const assignedOtherTopicEssays = assignedSnap.docs.filter(d => d.data().studentId !== uid)
-                    setAssignedSameTopicCount(assignedOtherTopicEssays.length)
-                }
-
-                // Calculate final scores
-                if (reviewsData.length > 0) {
-                    const final = calculateFinalScores(reviewsData as any)
-                    setFinalScores(final)
-                }
 
                 setEssay(essayData)
                 setReviews(reviewsData)
@@ -159,6 +119,48 @@ export default function Feedback() {
 
         fetchFeedback()
     }, [essayId, router])
+
+    // Gate score visibility: students must complete at least 2 reviews in this topic
+    useEffect(() => {
+        const checkUnlock = async () => {
+            if (!auth.currentUser) return
+            if (!essay || !essay.topicId) {
+                setCanViewScores(true)
+                setUnlockLoading(false)
+                return
+            }
+
+            try {
+                const { getStudentCompletedReviewCount } = await import('@/lib/peer-assignment')
+                const count = await getStudentCompletedReviewCount(auth.currentUser.uid, essay.topicId)
+                setCompletedReviewCount(count)
+
+                // Teachers always see scores. Students must complete >= 2 reviews in this topic.
+                if (isTeacher || essay.studentId !== auth.currentUser.uid) {
+                    setCanViewScores(true)
+                } else {
+                    setCanViewScores(count >= 2)
+                }
+            } catch (err) {
+                console.error('Error checking review unlock:', err)
+                setCanViewScores(true)
+            } finally {
+                setUnlockLoading(false)
+            }
+        }
+
+        checkUnlock()
+    }, [essay, isTeacher])
+
+    // Calculate final scores once reviews are loaded (independent of unlock state)
+    useEffect(() => {
+        if (reviews.length > 0) {
+            const final = calculateFinalScores(reviews as any)
+            setFinalScores(final)
+        } else {
+            setFinalScores(null)
+        }
+    }, [reviews])
 
     const handleTeacherSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -241,53 +243,6 @@ export default function Feedback() {
         )
     }
 
-    // Gate: students must review at least 2 same-topic essays before seeing results
-    if (!isTeacher && sameTopicReviewsDone < 2) {
-        // Required reviews to unlock feedback
-        const TARGET = 2
-        // Show progress percentage
-        const progressPct = Math.min(100, Math.round((sameTopicReviewsDone / TARGET) * 100))
-
-        return (
-            <StudentLayout title="Results Locked">
-                <main className="container mx-auto px-4 py-16 max-w-xl text-center">
-                    <div className="bg-white  backdrop-blur-sm rounded-2xl border border-slate-200  shadow-sm p-10">
-                        <div className="text-7xl mb-6">🔒</div>
-                        <h1 className="text-3xl font-bold text-slate-900  mb-3">Results Locked</h1>
-                        <p className="text-slate-600  mb-2 text-lg">
-                            To see your essay feedback you need to{' '}
-                            <span className="text-yellow-400 font-semibold">review 2 of your classmates&apos; essays first</span>.
-                        </p>
-                        {essay?.topicName && (
-                            <p className="text-slate-500  mb-6 text-sm">
-                                You must review essays from the <span className="text-blue-300 font-medium">{essay.topicName}</span> topic.
-                            </p>
-                        )}
-                        {/* Progress bar */}
-                        <div className="w-full bg-slate-100  rounded-full h-3 mb-2">
-                            <div className="bg-yellow-400 h-3 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
-                        </div>
-                        <p className="text-sm text-slate-500  mb-8">
-                            {sameTopicReviewsDone} / {TARGET} same-topic reviews completed
-                        </p>
-                        <Link
-                            href="/review"
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all text-lg block text-center"
-                        >
-                            👥 Go Review Now
-                        </Link>
-                        <Link
-                            href="/my-essays"
-                            className="mt-4 text-slate-500  hover:text-slate-900  text-sm transition-colors inline-block"
-                        >
-                            ← Back to My Essays
-                        </Link>
-                    </div>
-                </main>
-            </StudentLayout>
-        )
-    }
-
     const criteria = [
         { key: 'taskAchievement', label: 'Task Achievement' },
         { key: 'coherenceCohesion', label: 'Coherence & Cohesion' },
@@ -308,16 +263,14 @@ export default function Feedback() {
         { key: 'mechanics', label: 'Mechanics', max: 5 },
     ]
     const peerReviews = reviews.filter(r => r.reviewerRole !== 'ai' && r.reviewerRole !== 'teacher')
-    const avgScore100 = usingNewRubric && peerReviews.length > 0
+    const avgScore100 = (usingNewRubric && peerReviews.length > 0)
         ? Math.round(peerReviews.reduce((sum, r) => sum + getScore100(r.scores ?? {}), 0) / peerReviews.length)
         : 0
 
-
-
+    // ─── Render ───
     return (
-        <StudentLayout title="Feedback">
-
-            <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <StudentLayout title="Feedback & Scores">
+            <main className="container mx-auto px-4 py-8 max-w-4xl">
                 <div className="mb-8 flex items-start justify-between gap-4">
                     <div>
                         <h1 className="text-4xl font-bold text-slate-900  mb-2">{essay.title}</h1>
@@ -335,66 +288,38 @@ export default function Feedback() {
 
                 {/* AI assessments are created during submission; on-demand AI buttons removed. */}
 
-                {/* Essay Content - Always visible */}
-                <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-semibold text-slate-900 ">Your Essay</h2>
-                        <div className="flex items-center gap-2">
-                            {essay.topicName && (
-                                <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-medium">
-                                    🏷️ {essay.topicName}
-                                </span>
-                            )}
-                            <span className="bg-white  border border-slate-200  text-slate-600  border border-slate-200  shadow-sm px-3 py-1 rounded-full text-sm font-medium">
-                                📝 {essay.content?.trim().split(/\s+/).filter((w: string) => w).length ?? 0} words
-                            </span>
-                        </div>
+                {/* Unlock banner for students who haven't yet completed enough reviews */}
+                {!isTeacher && essay.studentId === auth.currentUser?.uid && !canViewScores && !unlockLoading && (
+                    <div className="mb-6 bg-amber-50  border border-amber-200  rounded-xl p-4">
+                        <h2 className="text-sm font-semibold text-amber-700  mb-1">
+                            Complete peer reviews to unlock your score
+                        </h2>
+                        <p className="text-xs text-amber-700 ">
+                            Review at least <span className="font-semibold">2 classmates&apos; essays in this topic</span> to see your final scores.
+                            You have completed <span className="font-semibold">{completedReviewCount}</span> so far.
+                        </p>
+                        <Link
+                            href="/review"
+                            className="inline-block mt-3 text-xs font-semibold text-amber-800 underline"
+                        >
+                            Go to Peer Review
+                        </Link>
                     </div>
-                    <div className="bg-slate-100  rounded-lg p-4">
-                        <p className="text-slate-600  whitespace-pre-wrap">{essay.content}</p>
-                    </div>
-                </div>
+                )}
 
-                {/* Overall Score Banner — format depends on rubric type */}
-                {usingNewRubric ? (
-                    /* New 5-category rubric → /100 */
-                    <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 mb-8 text-center">
-                        <div className="text-slate-600  text-lg mb-2">Overall Score</div>
-                        <div className={`text-7xl font-bold mb-2 ${getScore100Color(avgScore100)}`}>{avgScore100}</div>
-                        <div className="text-slate-500  text-base mb-1">out of 100</div>
-                        <div className="text-2xl font-semibold text-slate-900  mb-3">
-                            {getScore100Label(avgScore100)}
-                        </div>
-                        <div className="text-sm text-slate-500 ">
-                            Average of {peerReviews.length} peer review{peerReviews.length !== 1 ? 's' : ''}
-                        </div>
-                    </div>
-                ) : finalScores ? (
-                    /* Legacy IELTS rubric → band 0-9 */
-                    <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 mb-8 text-center">
-                        <div className="text-slate-600  text-lg mb-2">Overall Band Score</div>
-                        <div className="text-7xl font-bold text-slate-900  mb-2">{finalScores.overallBand}</div>
-                        <div className="text-2xl font-semibold text-slate-900 ">
-                            {getScoreLabel(finalScores.overallBand)}
-                        </div>
-                        <div className="mt-4 text-sm text-slate-500 ">
-                            Based on {peerReviews.length} peer review{peerReviews.length !== 1 ? 's' : ''}
-                        </div>
-                    </div>
-                ) : null}
-
-                {/* Score Visualization — only for old IELTS rubric */}
-                {!usingNewRubric && finalScores && (
+                {/* Score Visualization — only for old IELTS rubric, hidden if locked for the owner */}
+                {!usingNewRubric && finalScores && canViewScores && (
                     <div className="mb-8">
                         <ScoreChart scores={finalScores.finalScores} title="Final Scores by Criterion" />
                     </div>
                 )}
 
-                {/* Score Breakdown — adapts to rubric format */}
-                <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm mb-8">
-                    <h2 className="text-2xl font-semibold text-slate-900  mb-4">Score Breakdown</h2>
+                {/* Score Breakdown — adapts to rubric format; hidden if locked for the owner */}
+                {canViewScores && (
+                    <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-slate-200  shadow-sm mb-8">
+                        <h2 className="text-2xl font-semibold text-slate-900  mb-4">Score Breakdown</h2>
 
-                    {usingNewRubric ? (
+                        {usingNewRubric ? (
                         /* New rubric: show 5 aspects with max scores and per-review columns */
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -444,42 +369,43 @@ export default function Feedback() {
                                 </tbody>
                             </table>
                         </div>
-                    ) : (
-                        /* Legacy IELTS rubric: original table */
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b border-slate-200  shadow-sm">
-                                        <th className="py-3 px-4 text-slate-600 ">Criterion</th>
-                                        {reviews.map((review, idx) => (
-                                            <th key={idx} className="py-3 px-4 text-center text-slate-600 ">
-                                                {review.reviewerRole === 'ai' ? '🤖 AI' : review.reviewerRole === 'teacher' ? 'Teacher' : `Reviewer ${idx + 1}`}
-                                            </th>
-                                        ))}
-                                        {finalScores && <th className="py-3 px-4 text-center text-slate-600  font-bold">Final</th>}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {criteria.map(({ key, label }) => (
-                                        <tr key={key} className="border-b border-slate-200  shadow-sm">
-                                            <td className="py-3 px-4 text-slate-900 ">{label}</td>
+                        ) : (
+                            /* Legacy IELTS rubric: original table */
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-200  shadow-sm">
+                                            <th className="py-3 px-4 text-slate-600 ">Criterion</th>
                                             {reviews.map((review, idx) => (
-                                                <td key={idx} className="py-3 px-4 text-center text-slate-900  font-bold">
-                                                    {review.scores?.[key] || 'N/A'}
-                                                </td>
+                                                <th key={idx} className="py-3 px-4 text-center text-slate-600 ">
+                                                    {review.reviewerRole === 'ai' ? '🤖 AI' : review.reviewerRole === 'teacher' ? 'Teacher' : `Reviewer ${idx + 1}`}
+                                                </th>
                                             ))}
-                                            {finalScores && (
-                                                <td className="py-3 px-4 text-center font-bold text-slate-900 ">
-                                                    {finalScores.finalScores[key]}
-                                                </td>
-                                            )}
+                                            {finalScores && <th className="py-3 px-4 text-center text-slate-600  font-bold">Final</th>}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                                    </thead>
+                                    <tbody>
+                                        {criteria.map(({ key, label }) => (
+                                            <tr key={key} className="border-b border-slate-200  shadow-sm">
+                                                <td className="py-3 px-4 text-slate-900 ">{label}</td>
+                                                {reviews.map((review, idx) => (
+                                                    <td key={idx} className="py-3 px-4 text-center text-slate-900  font-bold">
+                                                        {review.scores?.[key] || 'N/A'}
+                                                    </td>
+                                                ))}
+                                                {finalScores && (
+                                                    <td className="py-3 px-4 text-center font-bold text-slate-900 ">
+                                                        {finalScores.finalScores[key]}
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )}
 
 
 

@@ -1,27 +1,44 @@
 import { db } from './firebase'
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, limit } from 'firebase/firestore'
 
 /**
- * Assigns up to 3 same-topic peer reviewers to an essay on submission.
- * Falls back to any-topic if not enough same-topic students exist.
+ * Assigns up to 3 peer reviewers to an essay on submission.
+ *
+ * Strict rules:
+ * - Reviewers must be students in the same class.
+ * - Reviewers must have already submitted at least one essay for the SAME topic.
+ * - If no eligible same-topic classmates exist, no peer reviewers are assigned
+ *   (teacher / future peers can still review later).
  */
 export async function assignPeerReviewers(
     essayId: string,
     authorId: string,
     classId: string,
-    topicId?: string
+    topicId: string
 ): Promise<string[]> {
     try {
         const usersRef = collection(db, 'users')
-        const q = query(usersRef, where('classId', '==', classId), where('role', '==', 'student'))
-        const snapshot = await getDocs(q)
+        const usersSnap = await getDocs(
+            query(usersRef, where('classId', '==', classId), where('role', '==', 'student'))
+        )
 
-        const potentialReviewers = snapshot.docs
-            .filter(d => d.id !== authorId)
+        // Find which classmates have submitted at least one essay for this topic
+        const essaysSnap = await getDocs(
+            query(collection(db, 'essays'), where('topicId', '==', topicId))
+        )
+        const topicSubmitters = new Set<string>()
+        essaysSnap.docs.forEach(d => {
+            const data = d.data() as any
+            if (data.studentId) topicSubmitters.add(data.studentId)
+        })
+
+        const potentialReviewers = usersSnap.docs
+            .filter(d => d.id !== authorId && topicSubmitters.has(d.id))
             .map(d => d.id)
 
         if (potentialReviewers.length === 0) return []
 
+        // Simple random selection among eligible classmates
         const shuffled = potentialReviewers.sort(() => Math.random() - 0.5)
         const selected = shuffled.slice(0, Math.min(3, shuffled.length))
 
@@ -47,9 +64,15 @@ export async function assignPeerReviewers(
 export async function claimEssayForReview(
     reviewerId: string,
     classId: string,
-    topicId?: string        // If provided, enforces same-topic matching
+    topicId: string        // Required: enforce same-topic matching
 ): Promise<string | null> {
     try {
+        // Reviewer must have submitted at least one essay for this topic
+        const hasSubmitted = await hasSubmittedTopic(reviewerId, topicId)
+        if (!hasSubmitted) {
+            return null
+        }
+
         const essaysRef = collection(db, 'essays')
         const q = query(essaysRef, where('status', '==', 'under_review'))
         const snapshot = await getDocs(q)
@@ -58,7 +81,7 @@ export async function claimEssayForReview(
             .map(d => ({ id: d.id, ...d.data() }) as any)
             .filter(data => {
                 const existingReviewers: string[] = data.peerReviewIds || []
-                const topicMatch = topicId ? data.topicId === topicId : true
+                const topicMatch = data.topicId === topicId
 
                 return (
                     data.studentId !== reviewerId &&          // not own essay
@@ -105,6 +128,61 @@ export async function getStudentSubmittedTopicIds(studentId: string): Promise<st
     } catch (error) {
         console.error('getStudentSubmittedTopicIds error:', error)
         return []
+    }
+}
+
+/**
+ * Returns the number of reviews a student has completed for a specific topic.
+ */
+export async function getStudentCompletedReviewCount(studentId: string, topicId: string): Promise<number> {
+    try {
+        // 1. Get all essays for this topic
+        const essaysSnap = await getDocs(
+            query(collection(db, 'essays'), where('topicId', '==', topicId))
+        )
+        const topicEssayIds = essaysSnap.docs.map(d => d.id)
+
+        if (topicEssayIds.length === 0) return 0
+
+        // 2. Get reviews by this student for any of those essays
+        // Note: Firestore 'in' query limited to 10. If more essays exist, we chunk.
+        let count = 0
+        for (let i = 0; i < topicEssayIds.length; i += 10) {
+            const chunk = topicEssayIds.slice(i, i + 10)
+            const reviewsSnap = await getDocs(
+                query(
+                    collection(db, 'reviews'),
+                    where('reviewerId', '==', studentId),
+                    where('essayId', 'in', chunk)
+                )
+            )
+            count += reviewsSnap.size
+        }
+
+        return count
+    } catch (error) {
+        console.error('getStudentCompletedReviewCount error:', error)
+        return 0
+    }
+}
+
+/**
+ * Checks if a student has submitted an essay for a specific topic.
+ */
+export async function hasSubmittedTopic(studentId: string, topicId: string): Promise<boolean> {
+    try {
+        const snap = await getDocs(
+            query(
+                collection(db, 'essays'),
+                where('studentId', '==', studentId),
+                where('topicId', '==', topicId),
+                limit(1)
+            )
+        )
+        return !snap.empty
+    } catch (error) {
+        console.error('hasSubmittedTopic error:', error)
+        return false
     }
 }
 

@@ -34,12 +34,14 @@ export default function Review() {
     const [loading, setLoading] = useState(true)
     const [topics, setTopics] = useState<Topic[]>([])
     const [selectedTopicId, setSelectedTopicId] = useState('')
-    const [studentSubmittedTopicIds, setStudentSubmittedTopicIds] = useState<string[]>([]) // Topics student has submitted essays for
+    const [eligibleTopicIds, setEligibleTopicIds] = useState<string[]>([])
     const [isTeacher, setIsTeacher] = useState(false)
     const [requesting, setRequesting] = useState(false)
     const [actionError, setActionError] = useState<string | null>(null)
     const [actionSuccess, setActionSuccess] = useState<string | null>(null)
     const [showFindPanel, setShowFindPanel] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const ITEMS_PER_PAGE = 25
 
     useEffect(() => {
         const init = async () => {
@@ -66,40 +68,25 @@ export default function Review() {
 
                 setIsTeacher(profile.role === 'teacher')
 
-                // Determine all topics the student has submitted essays for
-                const { getStudentSubmittedTopicIds } = await import('@/lib/peer-assignment')
-                const myTopicIds = await getStudentSubmittedTopicIds(auth.currentUser.uid)
-                setStudentSubmittedTopicIds(myTopicIds)
+                // For students, restrict review topics to those they have submitted essays for
+                if (profile.role !== 'teacher') {
+                    const { getStudentSubmittedTopicIds } = await import('@/lib/peer-assignment')
+                    const submittedTopicIds = await getStudentSubmittedTopicIds(auth.currentUser.uid)
+                    setEligibleTopicIds(submittedTopicIds)
 
-                // Pre-select the first available topic if present
-                if (myTopicIds.length > 0) {
-                    setSelectedTopicId(myTopicIds[0])
+                    // Pre-select the first topic the student has submitted for (if any)
+                    const firstEligible = topicsSnap.docs.find(d => submittedTopicIds.includes(d.id))
+                    if (firstEligible) {
+                        setSelectedTopicId(firstEligible.id)
+                    }
+                } else if (topicsSnap.docs.length > 0) {
+                    // Teachers can review any topic; default to latest
+                    setSelectedTopicId(topicsSnap.docs[0].id)
                 }
 
                 // Get essays assigned to this reviewer
-                let essaysQuery = query(
-                    collection(db, 'essays'),
-                    where('peerReviewIds', 'array-contains', auth.currentUser.uid),
-                    limit(20)
-                )
-                let essaysSnapshot = await getDocs(essaysQuery)
-
-                // If no essays assigned and we have selected a valid topic, try to claim one (same topic enforced)
-                if (essaysSnapshot.empty && myTopicIds.length > 0) {
-                    const { claimEssayForReview } = await import('@/lib/peer-assignment')
-                    // Default fallback attempt will just search their first available topic
-                    const claimedId = await claimEssayForReview(auth.currentUser.uid, profile.classId, myTopicIds[0])
-
-                    if (claimedId) {
-                        router.push(`/review/${claimedId}`)
-                        return
-                    }
-                }
-
-                const essays = essaysSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as Essay[]
+                const { getAssignedEssays } = await import('@/lib/peer-assignment')
+                const essays = await getAssignedEssays(auth.currentUser.uid)
 
                 // Get reviews already completed by this user
                 const reviewsQuery = query(
@@ -109,7 +96,7 @@ export default function Review() {
                 const reviewsSnapshot = await getDocs(reviewsQuery)
                 const reviewed = new Set(reviewsSnapshot.docs.map(doc => doc.data().essayId))
 
-                setAssignedEssays(essays)
+                setAssignedEssays(essays as Essay[])
                 setReviewedEssays(reviewed)
             } catch (error) {
                 console.error('Error fetching assigned essays:', error)
@@ -136,23 +123,29 @@ export default function Review() {
                 return
             }
 
-            const { claimEssayForReview } = await import('@/lib/peer-assignment')
+            if (profile.role === 'teacher') {
+                setActionError('Teachers cannot use the automatic peer-review finder.')
+                return
+            }
 
-            // Student can only search using the topic they specifically select from their allowed subjects
-            // Teachers can search anything (selectedTopicId)
-            const searchTopicId = isTeacher ? (selectedTopicId || undefined) : selectedTopicId
+            if (!selectedTopicId) {
+                setActionError('Select a topic you have submitted an essay for before finding a peer essay.')
+                return
+            }
 
-            // If student tries to search without a topic but has topics, default to first or error out
-            if (!isTeacher && !searchTopicId) {
-                setActionError('You must select a specific topic you have submitted an essay for.')
-                setRequesting(false)
+            const { claimEssayForReview, hasSubmittedTopic } = await import('@/lib/peer-assignment')
+
+            // Enforce: students can only review topics they have submitted essays for
+            const hasSubmitted = await hasSubmittedTopic(auth.currentUser.uid, selectedTopicId)
+            if (!hasSubmitted) {
+                setActionError('You must submit an essay for this topic before reviewing classmates in it.')
                 return
             }
 
             const claimedId = await claimEssayForReview(
                 auth.currentUser.uid,
                 profile.classId,
-                searchTopicId
+                selectedTopicId
             )
 
             if (claimedId) {
@@ -162,7 +155,7 @@ export default function Review() {
                 const topicLabel = searchTopicId
                     ? `the "${topics.find(t => t.id === searchTopicId)?.name}" topic`
                     : 'any topic'
-                setActionError(`No essays available for ${topicLabel} right now. Please check back later or try a different topic!`)
+                setActionError(`No essays available for ${topicLabel} right now. Peer review is a community process—as soon as more classmates submit and need reviews, you will be able to find one here. Please try again in 30 minutes!`)
             }
         } catch (error) {
             console.error('Error finding essay:', error)
@@ -180,40 +173,6 @@ export default function Review() {
         )
     }
 
-    // Gate: Students MUST submit an essay before they can review
-    if (!isTeacher && studentSubmittedTopicIds.length === 0) {
-        return (
-            <StudentLayout title="Peer Review">
-                <main className="container mx-auto px-4 py-16 max-w-xl text-center">
-                    <div className="bg-white  backdrop-blur-sm rounded-2xl border border-slate-200  shadow-sm p-10 shadow-2xl">
-                        <div className="text-7xl mb-6">🔒</div>
-                        <h1 className="text-3xl font-bold text-slate-900  mb-3">Reviews Locked</h1>
-                        <p className="text-slate-600  mb-6 text-lg">
-                            To participate in peer reviews, you need to{' '}
-                            <span className="text-purple-400 font-semibold">submit your own essay first</span>.
-                        </p>
-
-                        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-6 mb-8 text-left">
-                            <h3 className="text-purple-400 font-semibold mb-2">How it works:</h3>
-                            <ul className="text-slate-600  text-sm space-y-2">
-                                <li>1️⃣ Write and submit your essay for a specific topic</li>
-                                <li>2️⃣ Unlock the peer review system for that topic</li>
-                                <li>3️⃣ Review classmates' essays on the same topic</li>
-                                <li>4️⃣ Unlock your own essay scores and feedback</li>
-                            </ul>
-                        </div>
-
-                        <Link
-                            href="/submit-essay"
-                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/25 flex items-center justify-center gap-2 w-full block"
-                        >
-                            ✍️ Open Essay Submission Form
-                        </Link>
-                    </div>
-                </main>
-            </StudentLayout>
-        )
-    }
 
     return (
         <StudentLayout title="Peer Review">
@@ -226,7 +185,7 @@ export default function Review() {
                     </div>
                     <button
                         onClick={() => setShowFindPanel(prev => !prev)}
-                        className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
                     >
                         <span>➕</span> Find Another Essay
                     </button>
@@ -234,28 +193,28 @@ export default function Review() {
 
                 {/* Find Essay Panel */}
                 {showFindPanel && (
-                    <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-purple-500/30 mb-6">
+                    <div className="bg-white  backdrop-blur-sm rounded-xl p-6 border border-purple-500/30 mb-6 shadow-sm">
                         <h3 className="text-lg font-semibold text-slate-900  mb-4">🔍 Search for an Essay to Review</h3>
                         <div className="flex flex-col sm:flex-row gap-4 items-end">
                             <div className="flex-1">
                                 <label className="block text-slate-600  text-sm mb-2">
-                                    {isTeacher ? 'Filter by Topic (optional)' : 'Select Unlocked Topic to Review'}
+                                    Review Topic (must match your own submission)
                                 </label>
                                 <select
                                     value={selectedTopicId}
                                     onChange={e => setSelectedTopicId(e.target.value)}
-                                    className="w-full bg-white  border border-slate-200  text-slate-900  border border-slate-300  rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 transition-colors"
+                                    className="w-full bg-white  border border-slate-200  text-slate-900  rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 transition-colors"
                                 >
-                                    {isTeacher && <option value="">Any Topic</option>}
+                                    <option value="">Select topic…</option>
                                     {topics
-                                        .filter(t => isTeacher || studentSubmittedTopicIds.includes(t.id))
+                                        .filter(t => isTeacher || eligibleTopicIds.length === 0 || eligibleTopicIds.includes(t.id))
                                         .map(t => (
                                             <option key={t.id} value={t.id}>{t.name}</option>
                                         ))}
                                 </select>
-                                {!isTeacher && (
-                                    <p className="text-purple-400 text-xs mt-2">
-                                        💡 You can only review essays for topics you have submitted your own essay for.
+                                {!isTeacher && eligibleTopicIds.length === 0 && (
+                                    <p className="mt-2 text-xs text-amber-600 ">
+                                        Submit an essay first to unlock peer review for that topic.
                                     </p>
                                 )}
                             </div>
@@ -280,44 +239,81 @@ export default function Review() {
                 {actionError && <Alert type="info" message={actionError} onClose={() => setActionError(null)} />}
                 {actionSuccess && <Alert type="success" message={actionSuccess} />}
 
-                {assignedEssays.length === 0 ? (
-                    <div className="bg-white  backdrop-blur-sm rounded-xl p-12 border border-slate-200  shadow-sm text-center">
-                        <div className="text-6xl mb-4">📝</div>
-                        <h3 className="text-2xl font-semibold text-slate-900  mb-2">No Essays to Review</h3>
-                        <p className="text-slate-500  mb-6">You don&apos;t have any essays assigned for review yet.</p>
-                        <button
-                            onClick={() => setShowFindPanel(true)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg transition-colors"
-                        >
-                            Find an Essay to Review
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid gap-6">
-                        {assignedEssays.map(essay => {
-                            const topic = essay.topicId ? topics.find(t => t.id === essay.topicId) : null
-                            return (
-                                <div key={essay.id} className="space-y-2">
-                                    {topic?.reviewDeadline && (
-                                        <DeadlineBanner label="Peer Review" deadline={topic.reviewDeadline} emoji="👥" />
-                                    )}
-                                    <div className="relative">
-                                        <EssayCard
-                                            {...essay}
-                                            topicName={essay.topicName}
-                                            onClick={() => router.push(`/review/${essay.id}`)}
-                                        />
-                                        {reviewedEssays.has(essay.id) && (
-                                            <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                                                ✓ Reviewed
+                {(() => {
+                    const paginatedEssays = assignedEssays.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                    const totalPages = Math.ceil(assignedEssays.length / ITEMS_PER_PAGE)
+
+                    if (assignedEssays.length === 0) {
+                        return (
+                            <div className="bg-white  backdrop-blur-sm rounded-xl p-12 border border-slate-200  shadow-sm text-center">
+                                <div className="text-6xl mb-4">📝</div>
+                                <h3 className="text-2xl font-semibold text-slate-900  mb-2">No Essays to Review</h3>
+                                <p className="text-slate-500  mb-6">You don&apos;t have any essays assigned for review yet.</p>
+                                <button
+                                    onClick={() => setShowFindPanel(true)}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg transition-colors"
+                                >
+                                    Find an Essay to Review
+                                </button>
+                            </div>
+                        )
+                    }
+
+                    return (
+                        <>
+                            <div className="grid gap-6">
+                                {paginatedEssays.map(essay => {
+                                    const topic = essay.topicId ? topics.find(t => t.id === essay.topicId) : null
+                                    return (
+                                        <div key={essay.id} className="space-y-2">
+                                            {topic?.reviewDeadline && (
+                                                <DeadlineBanner label="Peer Review" deadline={topic.reviewDeadline} emoji="👥" />
+                                            )}
+                                            <div className="relative">
+                                                <EssayCard
+                                                    {...essay}
+                                                    topicName={essay.topicName}
+                                                    onClick={() => router.push(`/review/${essay.id}`)}
+                                                />
+                                                {reviewedEssays.has(essay.id) && (
+                                                    <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                                                        ✓ Reviewed
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                            {assignedEssays.length > 0 && totalPages > 1 && (
+                                <div className="mt-6 px-5 py-4 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 bg-white">
+                                    <div className="text-sm text-slate-500">
+                                        Showing <span className="font-medium text-slate-700">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium text-slate-700">{Math.min(currentPage * ITEMS_PER_PAGE, assignedEssays.length)}</span> of <span className="font-medium text-slate-700">{assignedEssays.length}</span> assigned essays
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            disabled={currentPage === 1}
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                                        >
+                                            Previous
+                                        </button>
+                                        <span className="text-sm text-slate-500 font-medium px-2">
+                                            Page {currentPage} of {totalPages}
+                                        </span>
+                                        <button
+                                            disabled={currentPage === totalPages}
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                                        >
+                                            Next
+                                        </button>
                                     </div>
                                 </div>
-                            )
-                        })}
-                    </div>
-                )}
+                            )}
+                        </>
+                    )
+                })()}
 
                 <div className="mt-8 bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
                     <h3 className="text-blue-400 font-semibold mb-3">💡 Review Tips</h3>

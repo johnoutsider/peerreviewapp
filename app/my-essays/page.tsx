@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import {
     collection, query, where, getDocs, deleteDoc,
-    doc, updateDoc, serverTimestamp, limit, orderBy
+    doc, updateDoc, serverTimestamp, limit
 } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
 
@@ -352,6 +352,7 @@ function EssayDetail({
                 )}
             </div>
 
+
             {/* Essay Content */}
             <div className="bg-white  border border-slate-200  rounded-xl p-5 mb-5 shadow-sm">
                 <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-3">Your Essay</p>
@@ -437,7 +438,7 @@ function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => vo
     return (
         <div
             onClick={onClick}
-            className="bg-white  border border-slate-200  rounded-xl p-5 mb-4 cursor-pointer shadow-sm hover:shadow-md hover:border-blue-300 :border-blue-500/40 transition-all"
+            className="group relative bg-white  border border-slate-200  rounded-xl p-5 mb-4 cursor-pointer shadow-sm hover:shadow-md hover:border-blue-300 :border-blue-500/40 transition-all"
         >
             <div className="flex items-start justify-between flex-wrap gap-3">
                 <div className="flex-1 min-w-0">
@@ -512,14 +513,21 @@ export default function MyEssaysPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
     const [deleting, setDeleting] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const ITEMS_PER_PAGE = 25
+
 
     useEffect(() => {
         const load = async () => {
             if (!auth.currentUser) { router.push('/'); return }
             try {
-                // Fetch essays
+                // Fetch essays (client-side sort; avoids composite index requirement)
                 const essaySnap = await getDocs(
-                    query(collection(db, 'essays'), where('studentId', '==', auth.currentUser!.uid), orderBy('submittedAt', 'desc'), limit(20))
+                    query(
+                        collection(db, 'essays'),
+                        where('studentId', '==', auth.currentUser!.uid),
+                        limit(500),
+                    )
                 )
                 const rawEssays = essaySnap.docs.map(d => ({ id: d.id, ...d.data() as any }))
                 rawEssays.sort((a, b) => (b.submittedAt?.toMillis?.() ?? 0) - (a.submittedAt?.toMillis?.() ?? 0))
@@ -600,65 +608,106 @@ export default function MyEssaysPage() {
     return (
         <StudentLayout title="My Essays">
 
-            {/* Delete confirmation modal */}
-            {confirmDeleteId && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-                    <div className="bg-white  border border-slate-200  rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
-                        <p className="text-5xl mb-4">🗑️</p>
-                        <h2 className="text-xl font-bold text-slate-900  mb-2">Delete Essay?</h2>
-                        <p className="text-slate-500  text-sm mb-6">This action cannot be undone.</p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setConfirmDeleteId(null)} className="flex-1 bg-slate-100  text-slate-700  font-semibold py-2.5 rounded-lg hover:bg-slate-200 :bg-slate-600 transition-colors">Cancel</button>
-                            <button onClick={() => handleDelete(confirmDeleteId)} disabled={deleting} className="flex-1 bg-red-500 text-white font-semibold py-2.5 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                                {deleting ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Deleting…</> : 'Delete'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {(() => {
+                const paginatedEssays = essays.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                const totalPages = Math.ceil(essays.length / ITEMS_PER_PAGE)
 
-            {selectedEssay ? (
-                <EssayDetail
-                    essay={selectedEssay}
-                    onBack={() => setSelectedId(null)}
-                    onSaveReview={handleSaveReview}
-                    onDeleteClick={setConfirmDeleteId}
-                />
-            ) : (
-                <main className="max-w-3xl mx-auto px-4 py-8">
-                    <div className="flex items-start justify-between mb-6">
-                        <div>
-                            <h1 className="text-3xl font-black text-slate-900  mb-1">My Essays</h1>
-                            <p className="text-sm text-slate-500 ">View your submissions, read peer feedback, and respond to reviews.</p>
-                        </div>
-                        <Link
-                            href="/submit-essay"
-                            className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shrink-0"
-                        >
-                            + New Essay
-                        </Link>
-                    </div>
+                return (
+                    <>
 
-                    {essays.length > 0 && <SummaryBar essays={essays} />}
+                        {/* Delete confirmation modal */}
+                        {confirmDeleteId && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+                                <div className="bg-white  border border-slate-200  rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+                                    <p className="text-5xl mb-4">🗑️</p>
+                                    <h2 className="text-xl font-bold text-slate-900  mb-2">Delete Essay?</h2>
+                                    <p className="text-slate-500  text-sm mb-6">This action cannot be undone.</p>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setConfirmDeleteId(null)} className="flex-1 bg-slate-100  text-slate-700  font-semibold py-2.5 rounded-lg hover:bg-slate-200 :bg-slate-600 transition-colors">Cancel</button>
+                                        <button onClick={() => handleDelete(confirmDeleteId)} disabled={deleting} className="flex-1 bg-red-500 text-white font-semibold py-2.5 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                                            {deleting ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Deleting…</> : 'Delete'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
-                    {essays.length === 0 ? (
-                        <div className="bg-white  border border-slate-200  rounded-xl p-12 text-center">
-                            <p className="text-5xl mb-4">📝</p>
-                            <h3 className="text-xl font-bold text-slate-900  mb-2">No Essays Yet</h3>
-                            <p className="text-slate-500  mb-6 text-sm">You haven't submitted any essays yet.</p>
-                            <Link href="/submit-essay" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-                                Submit Your First Essay
-                            </Link>
-                        </div>
-                    ) : essays.map(essay => (
-                        <EssayListCard
-                            key={essay.id}
-                            essay={essay}
-                            onClick={() => setSelectedId(essay.id)}
-                        />
-                    ))}
-                </main>
-            )}
+                        {selectedEssay ? (
+                            <EssayDetail
+                                essay={selectedEssay}
+                                onBack={() => setSelectedId(null)}
+                                onSaveReview={handleSaveReview}
+                                onDeleteClick={setConfirmDeleteId}
+                            />
+                        ) : (
+                            <main className="max-w-3xl mx-auto px-4 py-8">
+                                <div className="flex items-start justify-between mb-6">
+                                    <div>
+                                        <h1 className="text-3xl font-black text-slate-900  mb-1">My Essays</h1>
+                                        <p className="text-sm text-slate-500 ">View your submissions, read peer feedback, and respond to reviews.</p>
+                                    </div>
+                                    <Link
+                                        href="/submit-essay"
+                                        className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shrink-0"
+                                    >
+                                        + New Essay
+                                    </Link>
+                                </div>
+
+                                {essays.length > 0 && <SummaryBar essays={essays} />}
+
+                                {essays.length === 0 ? (
+                                    <div className="bg-white  border border-slate-200  rounded-xl p-12 text-center">
+                                        <p className="text-5xl mb-4">📝</p>
+                                        <h3 className="text-xl font-bold text-slate-900  mb-2">No Essays Yet</h3>
+                                        <p className="text-slate-500  mb-6 text-sm">You haven't submitted any essays yet.</p>
+                                        <Link href="/submit-essay" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+                                            Submit Your First Essay
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {paginatedEssays.map(essay => (
+                                            <EssayListCard
+                                                key={essay.id}
+                                                essay={essay}
+                                                onClick={() => setSelectedId(essay.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {essays.length > 0 && totalPages > 1 && (
+                                    <div className="mt-6 px-5 py-4 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 bg-white">
+                                        <div className="text-sm text-slate-500">
+                                            Showing <span className="font-medium text-slate-700">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium text-slate-700">{Math.min(currentPage * ITEMS_PER_PAGE, essays.length)}</span> of <span className="font-medium text-slate-700">{essays.length}</span> essays
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                disabled={currentPage === 1}
+                                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                                className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="text-sm text-slate-500 font-medium px-2">
+                                                Page {currentPage} of {totalPages}
+                                            </span>
+                                            <button
+                                                disabled={currentPage === totalPages}
+                                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                                className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </main>
+                        )}
+                    </>
+                )
+            })()}
         </StudentLayout>
     )
 }

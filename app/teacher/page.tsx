@@ -34,6 +34,12 @@ export default function TeacherDashboard() {
     const [groupFilter, setGroupFilter] = useState('')
     const [topicFilter, setTopicFilter] = useState('')
     const [topics, setTopics] = useState<Topic[]>([])
+    const [currentPage, setCurrentPage] = useState(1)
+    const ITEMS_PER_PAGE = 25
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [groupFilter, topicFilter])
 
     // Map of topicId -> topicName for quick lookup
     const topicMap = Object.fromEntries(topics.map(t => [t.id, t.name]))
@@ -52,7 +58,7 @@ export default function TeacherDashboard() {
             if (!auth.currentUser) { router.push('/'); return }
 
             try {
-                const studentsSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'student'), limit(20)))
+                const studentsSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'student'), limit(500)))
                 const studentIds = studentsSnap.docs.map(d => d.id)
 
                 const essaysSnapDocs: any[] = []
@@ -182,6 +188,9 @@ export default function TeacherDashboard() {
             return groupMatch && topicMatch
         })
 
+    const paginatedStudents = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+
     // Global totals (always unfiltered — for consistency in the stat cards)
     const totalEssaysAll = students.reduce((a, s) => a + s.submittedCount, 0)
     const totalReviewsAll = students.reduce((a, s) => a + s.reviewsGiven, 0)
@@ -291,9 +300,9 @@ export default function TeacherDashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {filtered.map((student, index) => (
+                                {paginatedStudents.map((student, index) => (
                                     <tr key={student.uid} className="hover:bg-slate-50 transition-colors">
-                                        <td className="py-3.5 px-5 text-slate-300 text-sm">{index + 1}</td>
+                                        <td className="py-3.5 px-5 text-slate-300 text-sm">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
                                         <td className="py-3.5 px-5">
                                             <div className="text-slate-800 font-medium text-sm">{student.displayName || student.name}</div>
                                             {student.displayName && student.displayName !== student.name && (
@@ -359,6 +368,32 @@ export default function TeacherDashboard() {
                             </tbody>
                         </table>
                     </div>
+                    {filtered.length > 0 && totalPages > 1 && (
+                        <div className="px-5 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50">
+                            <div className="text-sm text-slate-500">
+                                Showing <span className="font-medium text-slate-700">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium text-slate-700">{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)}</span> of <span className="font-medium text-slate-700">{filtered.length}</span> students
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm text-slate-500 font-medium px-2">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </TeacherLayout>

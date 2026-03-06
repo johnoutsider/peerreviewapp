@@ -212,9 +212,10 @@ export default function SubmitEssay() {
             }
             */
 
-            // Step 3: Assign peer reviewers ONLY if not pending teacher approval
+            // Step 3: Assign peer reviewers ONLY if not pending teacher approval.
+            // Reviewers must be same-class classmates who have submitted for this topic.
             if (!isBypassing) {
-                await assignPeerReviewers(essayRef.id, auth.currentUser.uid, userProfile.classId)
+                await assignPeerReviewers(essayRef.id, auth.currentUser.uid, userProfile.classId, topicId)
             }
 
             setSuccess('Essay submitted successfully! Redirecting...')
