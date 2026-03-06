@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, doc, getDoc, setDoc, addDoc, serverTimestamp, query, where, getDocs, updateDoc, deleteDoc } from 'firebase/firestore'
-import Header from '@/components/Header'
+import StudentLayout from '@/components/StudentLayout'
+import TeacherLayout from '@/components/TeacherLayout'
 import Alert from '@/components/Alert'
 
 export default function Profile() {
@@ -13,6 +14,7 @@ export default function Profile() {
     const [groupName, setGroupName] = useState('')
     const [email, setEmail] = useState('')
     const [googleName, setGoogleName] = useState('')
+    const [role, setRole] = useState('student')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [success, setSuccess] = useState<string | null>(null)
@@ -35,6 +37,7 @@ export default function Profile() {
                     const data = snap.data() as any
                     setDisplayName(data.displayName || data.name || '')
                     setGroupName(data.groupName || '')
+                    if (data.role) setRole(data.role)
                     if (data.telegramChatId) {
                         setTelegramLinked(true)
                         setTelegramUsername(data.telegramUsername || '')
@@ -151,65 +154,66 @@ export default function Profile() {
     }
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 ">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
     )
 
+    const Layout = role === 'teacher' ? TeacherLayout : StudentLayout
+
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
-            <main className="container mx-auto px-4 py-8 max-w-xl">
+        <Layout title="My Profile">
+            <div className="container mx-auto px-4 py-8 max-w-xl">
                 <div className="mb-8 flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white shrink-0">
                         {(displayName || googleName || '?')[0].toUpperCase()}
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Profile</h1>
-                        <p className="text-slate-500 dark:text-gray-400 text-sm">{email}</p>
+                        <h1 className="text-3xl font-bold text-slate-900 ">My Profile</h1>
+                        <p className="text-slate-500 text-sm">{email}</p>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-8 border border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="bg-white backdrop-blur-sm rounded-xl p-8 border border-slate-200 shadow-sm">
                     {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
                     {success && <Alert type="success" message={success} />}
 
                     <form onSubmit={handleSave} className="space-y-6">
                         <div>
-                            <label className="block text-slate-900 dark:text-white font-semibold mb-1">
-                                Display Name <span className="text-slate-500 dark:text-gray-400 font-normal text-sm">(your real name)</span>
+                            <label className="block text-slate-900 font-semibold mb-1">
+                                Display Name <span className="text-slate-500 font-normal text-sm">(your real name)</span>
                             </label>
                             <input
                                 type="text"
                                 value={displayName}
                                 onChange={e => setDisplayName(e.target.value)}
                                 placeholder={googleName || 'Enter your real name'}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                                className="w-full bg-white border border-slate-200 text-slate-900 border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                                 maxLength={60}
                             />
                             <p className="text-gray-500 text-xs mt-1">This is the name your teacher will see</p>
                         </div>
 
                         <div>
-                            <label className="block text-slate-900 dark:text-white font-semibold mb-1">
-                                Group Name <span className="text-slate-500 dark:text-gray-400 font-normal text-sm">(e.g. Group A, Wednesday 14:00)</span>
+                            <label className="block text-slate-900 font-semibold mb-1">
+                                Group Name <span className="text-slate-500 font-normal text-sm">(e.g. Group A, Wednesday 14:00)</span>
                             </label>
                             <input
                                 type="text"
                                 value={groupName}
                                 onChange={e => setGroupName(e.target.value)}
                                 placeholder="Enter your group or class"
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                                className="w-full bg-white border border-slate-200 text-slate-900 border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                                 maxLength={60}
                             />
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-4 border border-slate-200 dark:border-white/10">
-                            <p className="text-slate-500 dark:text-gray-400 text-sm">
-                                <span className="text-slate-600 dark:text-gray-300 font-medium">Google Account:</span> {googleName}
+                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 ">
+                            <p className="text-slate-500 text-sm">
+                                <span className="text-slate-600 font-medium">Google Account:</span> {googleName}
                             </p>
-                            <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">
-                                <span className="text-slate-600 dark:text-gray-300 font-medium">Email:</span> {email}
+                            <p className="text-slate-500 text-sm mt-1">
+                                <span className="text-slate-600 font-medium">Email:</span> {email}
                             </p>
                         </div>
 
@@ -224,15 +228,15 @@ export default function Profile() {
                 </div>
 
                 {/* Notification Settings Area */}
-                <div className="mt-8 bg-white dark:bg-slate-800 backdrop-blur-sm rounded-xl p-8 border border-slate-200 dark:border-white/10 shadow-sm">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                <div className="mt-8 bg-white backdrop-blur-sm rounded-xl p-8 border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
                         <span>🔔</span> Notifications
                     </h2>
-                    <p className="text-slate-500 dark:text-gray-400 text-sm mb-6">
+                    <p className="text-slate-500 text-sm mb-6">
                         Get notified instantly when your peers complete reviewing your essays.
                     </p>
 
-                    <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-5 border border-slate-200 dark:border-white/10">
+                    <div className="bg-slate-50 rounded-lg p-5 border border-slate-200 ">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center text-xl shrink-0">
@@ -241,11 +245,11 @@ export default function Profile() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-slate-900 dark:text-white font-medium">Telegram Notifications</h3>
+                                    <h3 className="text-slate-900 font-medium">Telegram Notifications</h3>
                                     {telegramLinked ? (
                                         <p className="text-sm text-green-500 font-medium">✓ Connected {telegramUsername ? `(@${telegramUsername})` : ''}</p>
                                     ) : (
-                                        <p className="text-sm text-slate-500 dark:text-gray-400">Not connected</p>
+                                        <p className="text-sm text-slate-500 ">Not connected</p>
                                     )}
                                 </div>
                             </div>
@@ -262,8 +266,8 @@ export default function Profile() {
                         </div>
 
                         {!telegramLinked && linkCode && (
-                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 animate-fade-in">
-                                <p className="text-sm text-slate-600 dark:text-gray-300 mb-3">
+                            <div className="mt-4 pt-4 border-t border-slate-200 animate-fade-in">
+                                <p className="text-sm text-slate-600 mb-3">
                                     Click the button below to open Telegram and start the bot to link your account.
                                 </p>
                                 <a
@@ -282,7 +286,7 @@ export default function Profile() {
                         )}
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </Layout>
     )
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
@@ -314,12 +315,12 @@ export default function TeacherDashboard() {
                                             ) : <span className="text-slate-300">—</span>}
                                         </td>
                                         <td className="py-3.5 px-5 text-right">
-                                            <button
-                                                className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors"
-                                                onClick={() => router.push(`/teacher/${student.uid}`)}
+                                            <Link
+                                                href={`/teacher/${student.uid}`}
+                                                className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors inline-block"
                                             >
                                                 View →
-                                            </button>
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))}

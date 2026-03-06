@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
@@ -189,12 +190,12 @@ export default function Progress() {
                         <h1 className="text-4xl font-bold text-slate-900  mb-2">📈 Your Writing Progress</h1>
                         <p className="text-slate-500 ">Track your IELTS scores across all reviewed essays</p>
                     </div>
-                    <button
-                        onClick={() => router.push('/dashboard')}
-                        className="text-slate-500  hover:text-slate-900  transition-colors"
+                    <Link
+                        href="/dashboard"
+                        className="inline-block text-slate-500  hover:text-slate-900  transition-colors"
                     >
                         &larr; Back
-                    </button>
+                    </Link>
                 </div>
 
                 {progressData.length === 0 ? (
@@ -204,12 +205,12 @@ export default function Progress() {
                         <p className="text-slate-500  mb-6 max-w-md mx-auto">
                             Progress tracking will appear here once your submitted essays receive peer or AI reviews.
                         </p>
-                        <button
-                            onClick={() => router.push('/submit-essay')}
-                            className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                        <Link
+                            href="/submit-essay"
+                            className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
                         >
                             Submit an Essay
-                        </button>
+                        </Link>
                     </div>
                 ) : (
                     <div className="space-y-6">
@@ -314,10 +315,10 @@ export default function Progress() {
                             <h3 className="text-xl font-semibold text-slate-900  mb-6">Assessed Essays History</h3>
                             <div className="space-y-4">
                                 {[...progressData].reverse().map(essay => (
-                                    <div
+                                    <Link
                                         key={essay.essayId}
-                                        onClick={() => router.push(`/feedback/${essay.essayId}`)}
-                                        className="bg-slate-50  hover:bg-white :bg-slate-800 border border-slate-200  transition-colors rounded-lg p-4 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                                        href={`/feedback/${essay.essayId}`}
+                                        className="bg-slate-50  hover:bg-white :bg-slate-800 border border-slate-200  transition-colors rounded-lg p-4 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 block"
                                     >
                                         <div className="flex-1">
                                             <h4 className="text-slate-900  font-medium mb-1 line-clamp-1">{essay.title}</h4>
@@ -341,7 +342,7 @@ export default function Progress() {
                                                 </>
                                             )}
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         </div>

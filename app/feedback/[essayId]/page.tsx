@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
@@ -217,9 +218,9 @@ export default function Feedback() {
             <div className="min-h-screen bg-slate-50  flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-slate-900  mb-4">Essay Not Found</h1>
-                    <button onClick={() => router.push('/my-essays')} className="text-blue-400 hover:text-blue-300">
+                    <Link href="/my-essays" className="text-blue-400 hover:text-blue-300 inline-block">
                         &larr; Back to My Essays
-                    </button>
+                    </Link>
                 </div>
             </div>
         )
@@ -232,9 +233,9 @@ export default function Feedback() {
                     <div className="text-6xl mb-4">🚫</div>
                     <h1 className="text-4xl font-bold text-slate-900  mb-4">Access Denied</h1>
                     <p className="text-slate-500  mb-6">You only have permission to view your own essays.</p>
-                    <button onClick={() => router.push('/my-essays')} className="text-blue-400 hover:text-blue-300">
+                    <Link href="/my-essays" className="text-blue-400 hover:text-blue-300 inline-block">
                         &larr; Back to My Essays
-                    </button>
+                    </Link>
                 </div>
             </div>
         )
@@ -269,18 +270,18 @@ export default function Feedback() {
                         <p className="text-sm text-slate-500  mb-8">
                             {sameTopicReviewsDone} / {TARGET} same-topic reviews completed
                         </p>
-                        <button
-                            onClick={() => router.push('/review')}
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all text-lg"
+                        <Link
+                            href="/review"
+                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all text-lg block text-center"
                         >
                             👥 Go Review Now
-                        </button>
-                        <button
-                            onClick={() => router.push('/my-essays')}
-                            className="mt-4 text-slate-500  hover:text-slate-900  text-sm transition-colors"
+                        </Link>
+                        <Link
+                            href="/my-essays"
+                            className="mt-4 text-slate-500  hover:text-slate-900  text-sm transition-colors inline-block"
                         >
                             ← Back to My Essays
-                        </button>
+                        </Link>
                     </div>
                 </main>
             </StudentLayout>
@@ -323,12 +324,12 @@ export default function Feedback() {
                         <p className="text-slate-500 ">Comprehensive Feedback &amp; Assessment</p>
                     </div>
                     {!isTeacher && essay.studentId === auth.currentUser?.uid && reviews.length === 0 && (
-                        <button
-                            onClick={() => router.push(`/edit-essay/${essayId}`)}
-                            className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-colors font-medium text-sm"
+                        <Link
+                            href={`/edit-essay/${essayId}`}
+                            className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-colors font-medium text-sm inline-block text-center"
                         >
                             ✏️ Edit Essay
-                        </button>
+                        </Link>
                     )}
                 </div>
 

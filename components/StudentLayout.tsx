@@ -233,7 +233,7 @@ export default function StudentLayout({ children, title = 'Dashboard' }: Student
                         </button>
 
                         <nav className="flex items-center gap-1.5 text-sm">
-                            <a href="/dashboard" className="text-white/70 hover:text-white transition-colors font-medium">Home</a>
+                            <Link href="/dashboard" className="text-white/70 hover:text-white transition-colors font-medium">Home</Link>
                             {title !== 'Dashboard' && (
                                 <>
                                     <span className="text-white/40">/</span>
@@ -246,17 +246,17 @@ export default function StudentLayout({ children, title = 'Dashboard' }: Student
                     {/* Right: user info */}
                     <div className="flex items-center gap-3">
                         {userProfile && (
-                            <div className="hidden sm:flex flex-col items-end">
+                            <Link href="/profile" className="hidden sm:flex flex-col items-end hover:opacity-80 transition-opacity">
                                 <span className="text-white text-sm font-semibold leading-tight">
                                     {userProfile.displayName || userProfile.name || 'Student'}
                                 </span>
                                 <span className="text-white/60 text-xs">Student</span>
-                            </div>
+                            </Link>
                         )}
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md"
+                        <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md hover:scale-105 transition-transform"
                             style={{ background: 'rgba(255,255,255,0.25)', border: '2px solid rgba(255,255,255,0.4)' }}>
                             {initials}
-                        </div>
+                        </Link>
                     </div>
                 </header>
 

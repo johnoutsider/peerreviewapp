@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
@@ -117,7 +118,7 @@ export default function StudentDetails() {
         <div className="min-h-screen bg-slate-50 flex items-center justify-center">
             <div className="text-center">
                 <h1 className="text-2xl font-bold text-slate-800 mb-4">Student Not Found</h1>
-                <button onClick={() => router.push('/teacher')} className="text-blue-400 hover:text-blue-300">← Back to Dashboard</button>
+                <Link href="/teacher" className="text-blue-400 hover:text-blue-300">← Back to Dashboard</Link>
             </div>
         </div>
     )
@@ -198,16 +199,16 @@ export default function StudentDetails() {
 
                 <div className="container mx-auto px-4 py-8 max-w-5xl px-6">
                     <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-                        <button onClick={() => router.push('/teacher')} className="text-slate-500 hover:text-slate-800 flex items-center gap-1.5 transition-colors text-sm">
+                        <Link href="/teacher" className="text-slate-500 hover:text-slate-800 flex items-center gap-1.5 transition-colors text-sm">
                             ← Back to Dashboard
-                        </button>
+                        </Link>
                         <div className="flex flex-wrap gap-3">
-                            <button
-                                onClick={() => router.push(`/teacher/progress/${studentId}`)}
-                                className="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                            <Link
+                                href={`/teacher/progress/${studentId}`}
+                                className="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 block"
                             >
                                 📈 View Progress Chart
-                            </button>
+                            </Link>
                             <button
                                 onClick={() => setConfirmDeleteStudent(true)}
                                 className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -268,9 +269,9 @@ export default function StudentDetails() {
                                     className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow transition-shadow"
                                 >
                                     <div className="flex justify-between items-start gap-4 flex-wrap">
-                                        <div
-                                            className="flex-1 min-w-0 cursor-pointer"
-                                            onClick={() => router.push(`/feedback/${essay.id}`)}
+                                        <Link
+                                            href={`/feedback/${essay.id}`}
+                                            className="flex-1 min-w-0 cursor-pointer block"
                                         >
                                             <div className="flex items-center gap-3 flex-wrap mb-2">
                                                 <h3 className="text-base font-semibold text-slate-800 hover:text-teal-600 transition-colors">
@@ -308,14 +309,14 @@ export default function StudentDetails() {
                                                     </span>
                                                 )}
                                             </div>
-                                        </div>
+                                        </Link>
                                         <div className="flex items-center gap-2 shrink-0">
-                                            <button
-                                                onClick={() => router.push(`/feedback/${essay.id}`)}
-                                                className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-sm font-medium border border-teal-100 hover:bg-teal-100 transition-colors"
+                                            <Link
+                                                href={`/feedback/${essay.id}`}
+                                                className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-sm font-medium border border-teal-100 hover:bg-teal-100 transition-colors inline-block"
                                             >
                                                 View & Grade →
-                                            </button>
+                                            </Link>
                                             <button
                                                 onClick={() => setConfirmDeleteId(essay.id)}
                                                 className="bg-red-500/10 text-red-400 px-3 py-1 rounded-full text-sm font-medium border border-red-500/20 hover:bg-red-500/20 transition-colors"

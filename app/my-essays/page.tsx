@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import {
     collection, query, where, getDocs, deleteDoc,
@@ -630,12 +631,12 @@ export default function MyEssaysPage() {
                             <h1 className="text-3xl font-black text-slate-900  mb-1">My Essays</h1>
                             <p className="text-sm text-slate-500 ">View your submissions, read peer feedback, and respond to reviews.</p>
                         </div>
-                        <button
-                            onClick={() => router.push('/submit-essay')}
-                            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shrink-0"
+                        <Link
+                            href="/submit-essay"
+                            className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shrink-0"
                         >
                             + New Essay
-                        </button>
+                        </Link>
                     </div>
 
                     {essays.length > 0 && <SummaryBar essays={essays} />}
@@ -645,9 +646,9 @@ export default function MyEssaysPage() {
                             <p className="text-5xl mb-4">📝</p>
                             <h3 className="text-xl font-bold text-slate-900  mb-2">No Essays Yet</h3>
                             <p className="text-slate-500  mb-6 text-sm">You haven't submitted any essays yet.</p>
-                            <button onClick={() => router.push('/submit-essay')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+                            <Link href="/submit-essay" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
                                 Submit Your First Essay
-                            </button>
+                            </Link>
                         </div>
                     ) : essays.map(essay => (
                         <EssayListCard

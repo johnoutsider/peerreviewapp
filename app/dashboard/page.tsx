@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
@@ -112,41 +113,41 @@ export default function Dashboard() {
                     <h2 className="text-2xl font-semibold text-slate-900  mb-4">Quick Actions</h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button
-                            onClick={() => router.push('/submit-essay')}
-                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-blue-500 hover:shadow-md transition-all text-left flex flex-col justify-center"
+                        <Link
+                            href="/submit-essay"
+                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-blue-500 hover:shadow-md transition-all text-left flex flex-col justify-center block"
                         >
                             <div className="text-3xl mb-2">✍️</div>
                             <h3 className="text-xl font-bold mb-1">Submit New Essay</h3>
                             <p className="text-slate-600 font-medium text-sm">Upload your essay and get AI feedback</p>
-                        </button>
+                        </Link>
 
-                        <button
-                            onClick={() => router.push('/review')}
-                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-green-500 hover:shadow-md transition-all text-left flex flex-col justify-center"
+                        <Link
+                            href="/review"
+                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-green-500 hover:shadow-md transition-all text-left flex flex-col justify-center block"
                         >
                             <div className="text-3xl mb-2">🤝</div>
                             <h3 className="text-xl font-bold mb-1">Review Peers</h3>
                             <p className="text-slate-600 font-medium text-sm">Help your classmates by reviewing their essays</p>
-                        </button>
+                        </Link>
 
-                        <button
-                            onClick={() => router.push('/my-essays')}
-                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-purple-500 hover:shadow-md transition-all text-left flex flex-col justify-center"
+                        <Link
+                            href="/my-essays"
+                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-purple-500 hover:shadow-md transition-all text-left flex flex-col justify-center block"
                         >
                             <div className="text-3xl mb-2">📊</div>
                             <h3 className="text-xl font-bold mb-1">View My Essays</h3>
                             <p className="text-slate-600 font-medium text-sm">See your submissions and feedback</p>
-                        </button>
+                        </Link>
 
-                        <button
-                            onClick={() => router.push('/progress')}
-                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-orange-500 hover:shadow-md transition-all text-left flex flex-col justify-center"
+                        <Link
+                            href="/progress"
+                            className="bg-white border border-slate-200 text-slate-900 p-6 rounded-lg hover:border-orange-500 hover:shadow-md transition-all text-left flex flex-col justify-center block"
                         >
                             <div className="text-3xl mb-2">📈</div>
                             <h3 className="text-xl font-bold mb-1">Track Progress</h3>
                             <p className="text-slate-600 font-medium text-sm">Monitor your improvement over time</p>
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </main>

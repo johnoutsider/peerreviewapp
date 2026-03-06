@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
@@ -261,7 +262,7 @@ export default function ReviewEssay() {
                 <div className="text-center">
                     <p className="text-5xl mb-4">🔍</p>
                     <h2 className="text-xl font-bold text-slate-900  mb-2">Essay Not Found</h2>
-                    <button onClick={() => router.push('/review')} className="text-blue-500  hover:underline text-sm">← Back to Reviews</button>
+                    <Link href="/review" className="text-blue-500  hover:underline text-sm inline-block">← Back to Reviews</Link>
                 </div>
             </div>
         )
@@ -274,9 +275,9 @@ export default function ReviewEssay() {
                     <p className="text-5xl mb-4">✅</p>
                     <h2 className="text-xl font-bold text-slate-900  mb-2">Already Reviewed</h2>
                     <p className="text-slate-500  text-sm mb-6">You've already submitted a review for this essay.</p>
-                    <button onClick={() => router.push('/review')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+                    <Link href="/review" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors">
                         Back to Reviews
-                    </button>
+                    </Link>
                 </div>
             </StudentLayout>
         )

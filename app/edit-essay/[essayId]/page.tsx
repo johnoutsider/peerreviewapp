@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import Header from '@/components/Header'
@@ -103,7 +104,7 @@ export default function EditEssay() {
             <Header />
             <main className="container mx-auto px-4 py-8 max-w-4xl text-center">
                 <p className="text-red-400 text-lg">{error}</p>
-                <button onClick={() => router.push('/my-essays')} className="mt-4 text-blue-400 hover:text-blue-300">← Back to My Essays</button>
+                <Link href="/my-essays" className="mt-4 text-blue-400 hover:text-blue-300 inline-block">← Back to My Essays</Link>
             </main>
         </div>
     )
@@ -115,9 +116,9 @@ export default function EditEssay() {
             <Header />
             <main className="container mx-auto px-4 py-8 max-w-4xl">
                 <div className="mb-8">
-                    <button onClick={() => router.push('/my-essays')} className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white transition-colors mb-4 flex items-center gap-2">
+                    <Link href="/my-essays" className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white transition-colors mb-4 flex items-center gap-2 inline-block">
                         ← Back to My Essays
-                    </button>
+                    </Link>
                     <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">Edit Essay</h1>
                     <p className="text-slate-500 dark:text-gray-400">
                         {isReviewed
@@ -199,9 +200,9 @@ export default function EditEssay() {
                                     <p className="text-amber-300 text-sm">⚠️ Once a peer reviews your essay, the content will be permanently locked.</p>
                                 </div>
                                 <div className="flex gap-4">
-                                    <button type="button" onClick={() => router.push('/my-essays')} className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 font-semibold py-4 rounded-lg hover:bg-slate-600/50 transition-all">
+                                    <Link href="/my-essays" className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 font-semibold py-4 rounded-lg hover:bg-slate-600/50 transition-all text-center block">
                                         Cancel
-                                    </button>
+                                    </Link>
                                     <button type="submit" disabled={saving} className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                                         {saving ? <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />Saving...</> : 'Save Changes'}
                                     </button>

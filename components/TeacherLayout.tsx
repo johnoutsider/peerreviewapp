@@ -269,17 +269,17 @@ export default function TeacherLayout({ children, title = 'Teacher Panel' }: Tea
                     {/* Right: user info */}
                     <div className="flex items-center gap-3">
                         {userProfile && (
-                            <div className="hidden sm:flex flex-col items-end">
+                            <Link href="/profile" className="hidden sm:flex flex-col items-end hover:opacity-80 transition-opacity">
                                 <span className="text-white text-sm font-semibold leading-tight">
                                     {userProfile.displayName || userProfile.name || 'Teacher'}
                                 </span>
                                 <span className="text-white/60 text-xs">O'qituvchi</span>
-                            </div>
+                            </Link>
                         )}
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md"
+                        <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md hover:scale-105 transition-transform"
                             style={{ background: 'rgba(255,255,255,0.25)', border: '2px solid rgba(255,255,255,0.4)' }}>
                             {initials}
-                        </div>
+                        </Link>
                     </div>
                 </header>
 

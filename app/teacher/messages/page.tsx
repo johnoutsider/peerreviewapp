@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
@@ -310,9 +311,9 @@ export default function TeacherMessages() {
             <div className="p-6 max-w-4xl mx-auto">
                 <div className="mb-8 flex items-center justify-between">
                     <div>
-                        <button onClick={() => router.push('/teacher')} className="text-slate-400 hover:text-slate-700 text-sm flex items-center gap-1 mb-2 transition-colors">
+                        <Link href="/teacher" className="text-slate-400 hover:text-slate-700 text-sm flex items-center gap-1 mb-2 transition-colors inline-block">
                             ← Teacher Dashboard
-                        </button>
+                        </Link>
                         <h1 className="text-2xl font-bold text-slate-800 mb-0.5">Messages</h1>
                         <p className="text-slate-500 dark:text-gray-400 mt-1">Send announcements & view student replies</p>
                     </div>

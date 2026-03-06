@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
@@ -201,12 +202,12 @@ export default function Review() {
                             </ul>
                         </div>
 
-                        <button
-                            onClick={() => router.push('/submit-essay')}
-                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/25 flex items-center justify-center gap-2 w-full"
+                        <Link
+                            href="/submit-essay"
+                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/25 flex items-center justify-center gap-2 w-full block"
                         >
                             ✍️ Open Essay Submission Form
-                        </button>
+                        </Link>
                     </div>
                 </main>
             </StudentLayout>

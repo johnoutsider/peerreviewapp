@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import Header from '@/components/Header'
@@ -186,12 +187,12 @@ export default function StudentProgressForTeacher() {
 
             <main className="container mx-auto px-4 py-8 max-w-6xl">
                 <div className="mb-6">
-                    <button
-                        onClick={() => router.push(`/teacher/${studentId}`)}
-                        className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-sm mb-3"
+                    <Link
+                        href={`/teacher/${studentId}`}
+                        className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-sm mb-3 inline-block"
                     >
                         &larr; Back to Student Profile
-                    </button>
+                    </Link>
                     <h1 className="text-2xl font-bold text-slate-800 mb-0.5">{studentName}&apos;s Progress</h1>
                     <p className="text-slate-400 text-sm">Writing assessment history &amp; skill breakdown</p>
                 </div>
