@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -20,6 +20,7 @@ interface Message {
     readBy: string[]
     recipients: string[] | null   // null = all students
     replyCount?: number
+    targetGroup?: string | null
 }
 
 interface Student {
@@ -38,6 +39,8 @@ interface Reply {
     createdAt: any
 }
 
+const MESSAGES_PER_PAGE = 8
+
 export default function TeacherMessages() {
     const router = useRouter()
     const [messages, setMessages] = useState<Message[]>([])
@@ -54,6 +57,10 @@ export default function TeacherMessages() {
     const [selectedUids, setSelectedUids] = useState<Set<string>>(new Set())
     const [selectedGroup, setSelectedGroup] = useState('')
     const [studentSearch, setStudentSearch] = useState('')
+
+    const [sentSearch, setSentSearch] = useState('')
+    const [sentGroupFilter, setSentGroupFilter] = useState('')
+    const [sentMessagePage, setSentMessagePage] = useState(1)
 
     // Telegram
     const [sendViaTelegram, setSendViaTelegram] = useState(false)
@@ -210,7 +217,7 @@ export default function TeacherMessages() {
                             console.error('[Telegram] Broadcast API failed:', errText)
                         }
                     } else {
-                        console.warn('[Telegram] No chatIds found — no Telegram messages sent.')
+                        console.warn('[Telegram] No chatIds found â€” no Telegram messages sent.')
                         setTelegramResult({ sent: 0, skipped: targetStudents.length })
                     }
                 } catch (tgErr) {
@@ -229,7 +236,7 @@ export default function TeacherMessages() {
             setTimeout(() => { setSuccess(null); setTelegramResult(null) }, 5000)
         } catch (e: any) {
             if (e?.code === 'permission-denied') {
-                setError('Permission denied — deploy the updated Firestore rules.')
+                setError('Permission denied â€” deploy the updated Firestore rules.')
             } else {
                 setError('Failed to send. Please try again.')
             }
@@ -266,7 +273,7 @@ export default function TeacherMessages() {
         try {
             await addDoc(collection(db, 'messages', msgId, 'replies'), {
                 studentId: auth.currentUser.uid,
-                studentName: '🎓 Teacher',
+                studentName: 'ðŸŽ“ Teacher',
                 role: 'teacher',
                 body: text,
                 createdAt: serverTimestamp(),
@@ -292,14 +299,59 @@ export default function TeacherMessages() {
         s.email.toLowerCase().includes(studentSearch.toLowerCase())
     )
 
+    const getRecipientStudents = (msg: Message) => {
+        if (!msg.recipients) return students
+        return students.filter(student => msg.recipients?.includes(student.uid))
+    }
+
+    const getRecipientGroups = (msg: Message) => ([...new Set(
+        getRecipientStudents(msg)
+            .map(student => student.groupName)
+            .filter(Boolean)
+    )])
+
+    const filteredMessages = messages.filter(msg => {
+        const recipientStudents = getRecipientStudents(msg)
+        const recipientGroups = getRecipientGroups(msg)
+
+        if (sentGroupFilter && !recipientGroups.includes(sentGroupFilter)) {
+            return false
+        }
+
+        const query = sentSearch.trim().toLowerCase()
+        if (!query) return true
+
+        const searchableFields = [
+            msg.title,
+            msg.body,
+            msg.targetGroup || '',
+            ...recipientStudents.flatMap(student => [student.displayName, student.groupName, student.email]),
+        ]
+
+        return searchableFields.some(value => String(value || '').toLowerCase().includes(query))
+    })
+
+    const totalMessagePages = Math.max(1, Math.ceil(filteredMessages.length / MESSAGES_PER_PAGE))
+    const safeMessagePage = Math.min(sentMessagePage, totalMessagePages)
+    const paginatedMessages = filteredMessages.slice((safeMessagePage - 1) * MESSAGES_PER_PAGE, safeMessagePage * MESSAGES_PER_PAGE)
+
     const recipientLabel = (msg: Message) => {
-        if (!msg.recipients) return `📣 All students`
+        if (!msg.recipients) return `All students`
         const names = msg.recipients
             .map(uid => students.find(s => s.uid === uid)?.displayName || 'Unknown')
             .join(', ')
-        return `👤 ${msg.recipients.length} student${msg.recipients.length !== 1 ? 's' : ''}: ${names}`
+        return `${msg.recipients.length} student${msg.recipients.length !== 1 ? 's' : ''}: ${names}`
     }
 
+    useEffect(() => {
+        setSentMessagePage(1)
+    }, [sentSearch, sentGroupFilter])
+
+    useEffect(() => {
+        if (sentMessagePage > totalMessagePages) {
+            setSentMessagePage(totalMessagePages)
+        }
+    }, [sentMessagePage, totalMessagePages])
     const telegramConnectedCount = (() => {
         if (targetMode === 'all') return students.filter(s => s.telegramChatId).length
         if (targetMode === 'group') return groupStudents.filter(s => s.telegramChatId).length
@@ -312,12 +364,12 @@ export default function TeacherMessages() {
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <Link href="/teacher" className="text-slate-400 hover:text-slate-700 text-sm flex items-center gap-1 mb-2 transition-colors inline-block">
-                            ← Teacher Dashboard
+                            â† Teacher Dashboard
                         </Link>
                         <h1 className="text-2xl font-bold text-slate-800 mb-0.5">Messages</h1>
                         <p className="text-slate-500 dark:text-gray-400 mt-1">Send announcements & view student replies</p>
                     </div>
-                    <div className="text-5xl">✉️</div>
+                    <div className="text-5xl">âœ‰ï¸</div>
                 </div>
 
                 {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
@@ -326,14 +378,14 @@ export default function TeacherMessages() {
                         <Alert type="success" message={success} />
                         {telegramResult && (
                             <div className="mt-2 px-4 py-2.5 rounded-lg bg-teal-50 border border-teal-200 text-sm text-teal-700 flex items-center gap-2">
-                                📱 Telegram: <strong>{telegramResult.sent}</strong> sent
-                                {telegramResult.skipped > 0 && <span className="text-slate-400">· {telegramResult.skipped} skipped (no Telegram linked)</span>}
+                                ðŸ“± Telegram: <strong>{telegramResult.sent}</strong> sent
+                                {telegramResult.skipped > 0 && <span className="text-slate-400">Â· {telegramResult.skipped} skipped (no Telegram linked)</span>}
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* ── Compose ── */}
+                {/* â”€â”€ Compose â”€â”€ */}
                 <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm mb-6">
                     <h2 className="text-base font-semibold text-slate-700 mb-4">New Message</h2>
                     <form onSubmit={handleSend} className="space-y-4">
@@ -354,14 +406,14 @@ export default function TeacherMessages() {
                             <textarea
                                 value={body}
                                 onChange={e => setBody(e.target.value)}
-                                placeholder="Write your message here…"
+                                placeholder="Write your message hereâ€¦"
                                 rows={4}
                                 className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-4 py-2.5 focus:outline-none focus:border-teal-500 transition-colors resize-none text-sm"
                                 required
                             />
                         </div>
 
-                        {/* ── Recipients ── */}
+                        {/* â”€â”€ Recipients â”€â”€ */}
                         <div>
                             <label className="block text-slate-600 text-sm font-medium mb-2">Send to</label>
                             <div className="flex gap-2 mb-3 flex-wrap">
@@ -415,7 +467,7 @@ export default function TeacherMessages() {
                                             type="text"
                                             value={studentSearch}
                                             onChange={e => setStudentSearch(e.target.value)}
-                                            placeholder="Search by name, group or email…"
+                                            placeholder="Search by name, group or emailâ€¦"
                                             className="w-full bg-white border border-slate-200 text-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
                                         />
                                     </div>
@@ -428,7 +480,7 @@ export default function TeacherMessages() {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-slate-800 text-sm font-medium truncate flex items-center gap-1.5">
                                                         {s.displayName}
-                                                        {s.telegramChatId && <span title="Telegram connected" className="text-teal-500 text-xs">📱</span>}
+                                                        {s.telegramChatId && <span title="Telegram connected" className="text-teal-500 text-xs">ðŸ“±</span>}
                                                     </p>
                                                     <p className="text-slate-400 text-xs truncate">{s.groupName || s.email}</p>
                                                 </div>
@@ -448,7 +500,7 @@ export default function TeacherMessages() {
                             )}
                         </div>
 
-                        {/* ── Telegram toggle ── */}
+                        {/* â”€â”€ Telegram toggle â”€â”€ */}
                         <div className="flex items-start gap-3 p-4 rounded-xl bg-teal-50 border border-teal-100">
                             <input
                                 id="tg-toggle"
@@ -458,7 +510,7 @@ export default function TeacherMessages() {
                                 className="mt-0.5 w-4 h-4 accent-teal-500"
                             />
                             <label htmlFor="tg-toggle" className="cursor-pointer select-none">
-                                <p className="text-slate-800 text-sm font-semibold">📱 Also send via Telegram</p>
+                                <p className="text-slate-800 text-sm font-semibold">ðŸ“± Also send via Telegram</p>
                                 <p className="text-slate-500 text-xs mt-0.5">
                                     {telegramConnectedCount > 0
                                         ? `${telegramConnectedCount} of the target students have Telegram connected`
@@ -473,32 +525,54 @@ export default function TeacherMessages() {
                             className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             {sending
-                                ? 'Sending…'
+                                ? 'Sendingâ€¦'
                                 : `Send to ${targetMode === 'all' ? `All ${students.length} Students` : targetMode === 'group' ? `${groupStudents.length} in "${selectedGroup}"` : `${selectedUids.size} Selected`}`
                             }
                         </button>
                     </form>
                 </div>
 
-                {/* ── Sent Messages ── */}
+                {/* â”€â”€ Sent Messages â”€â”€ */}
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
                         <h2 className="text-base font-semibold text-slate-700">Sent Messages</h2>
-                        <span className="text-slate-400 text-sm">{messages.length} sent</span>
+                        <span className="text-slate-400 text-sm">{filteredMessages.length} matched of {messages.length}</span>
                     </div>
 
+
+                    <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/70">
+                        <div className="grid gap-3 md:grid-cols-[1fr,220px]">
+                            <input
+                                type="text"
+                                value={sentSearch}
+                                onChange={e => setSentSearch(e.target.value)}
+                                placeholder="Search by title, message, student or email…"
+                                className="w-full bg-white border border-slate-200 text-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
+                            />
+                            <select
+                                value={sentGroupFilter}
+                                onChange={e => setSentGroupFilter(e.target.value)}
+                                className="w-full bg-white border border-slate-200 text-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
+                            >
+                                <option value="">All groups</option>
+                                {groups.map(group => (
+                                    <option key={group} value={group}>{group}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                     {loading ? (
                         <div className="flex justify-center py-12">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
                         </div>
-                    ) : messages.length === 0 ? (
+                    ) : filteredMessages.length === 0 ? (
                         <div className="py-12 text-center text-gray-500">
-                            <div className="text-4xl mb-3">📭</div>
-                            <p>No messages sent yet.</p>
+                            <div className="text-4xl mb-3">ðŸ“­</div>
+                            <p>{messages.length === 0 ? 'No messages sent yet.' : 'No messages match the current filters.'}</p>
                         </div>
                     ) : (
                         <ul className="divide-y divide-slate-50">
-                            {messages.map(msg => {
+                            {paginatedMessages.map(msg => {
                                 const isOpen = expandedId === msg.id
                                 const msgReplies = replies[msg.id] || []
                                 return (
@@ -509,9 +583,9 @@ export default function TeacherMessages() {
                                                     <p className="text-slate-800 font-semibold text-sm">{msg.title}</p>
                                                     <p className="text-slate-400 text-sm mt-0.5 line-clamp-1">{msg.body}</p>
                                                     <div className="flex flex-wrap gap-3 mt-2 text-xs">
-                                                        <span className="text-gray-500">{msg.createdAt?.toDate?.().toLocaleString() || 'Just sent…'}</span>
+                                                        <span className="text-gray-500">{msg.createdAt?.toDate?.().toLocaleString() || 'Just sentâ€¦'}</span>
                                                         <span className="text-blue-400/80">{recipientLabel(msg)}</span>
-                                                        <span className="text-green-400">✓ {msg.readBy?.length || 0} read</span>
+                                                        <span className="text-green-400">âœ“ {msg.readBy?.length || 0} read</span>
                                                     </div>
                                                 </div>
                                                 <div className="shrink-0 flex items-center gap-3">
@@ -519,10 +593,10 @@ export default function TeacherMessages() {
                                                         <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                                                     ) : msgReplies.length > 0 ? (
                                                         <span className="bg-orange-500/20 text-orange-300 border border-orange-500/30 px-2 py-0.5 rounded-full text-xs font-medium">
-                                                            💬 {msgReplies.length}
+                                                            ðŸ’¬ {msgReplies.length}
                                                         </span>
                                                     ) : null}
-                                                    <span className={`text-slate-400 text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                                                    <span className={`text-slate-400 text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`}>â–¾</span>
                                                 </div>
                                             </div>
                                         </button>
@@ -533,10 +607,10 @@ export default function TeacherMessages() {
                                                     <p className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">{msg.body}</p>
                                                 </div>
                                                 <p className="text-sm font-semibold text-slate-600 mb-3">
-                                                    💬 Student Replies {msgReplies.length > 0 && `(${msgReplies.length})`}
+                                                    ðŸ’¬ Student Replies {msgReplies.length > 0 && `(${msgReplies.length})`}
                                                 </p>
                                                 {loadingReplies === msg.id ? (
-                                                    <p className="text-gray-500 text-sm">Loading replies…</p>
+                                                    <p className="text-gray-500 text-sm">Loading repliesâ€¦</p>
                                                 ) : msgReplies.length === 0 ? (
                                                     <p className="text-gray-600 text-sm italic">No replies yet.</p>
                                                 ) : (
@@ -563,7 +637,7 @@ export default function TeacherMessages() {
                                                         value={teacherReplyText[msg.id] || ''}
                                                         onChange={e => setTeacherReplyText(prev => ({ ...prev, [msg.id]: e.target.value }))}
                                                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendTeacherReply(msg.id) } }}
-                                                        placeholder="Reply to students… (Enter to send)"
+                                                        placeholder="Reply to studentsâ€¦ (Enter to send)"
                                                         rows={2}
                                                         className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-teal-500 transition-colors resize-none"
                                                     />
@@ -572,7 +646,7 @@ export default function TeacherMessages() {
                                                         disabled={sendingTeacherReply === msg.id || !(teacherReplyText[msg.id] || '').trim()}
                                                         className="shrink-0 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
                                                     >
-                                                        {sendingTeacherReply === msg.id ? '…' : 'Reply ↑'}
+                                                        {sendingTeacherReply === msg.id ? 'â€¦' : 'Reply â†‘'}
                                                     </button>
                                                 </div>
                                             </div>
@@ -581,6 +655,29 @@ export default function TeacherMessages() {
                                 )
                             })}
                         </ul>
+                    )}
+                    {!loading && filteredMessages.length > MESSAGES_PER_PAGE && (
+                        <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 bg-white">
+                            <p className="text-sm text-slate-500">Page {safeMessagePage} of {totalMessagePages}</p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setSentMessagePage(prev => Math.max(1, prev - 1))}
+                                    disabled={safeMessagePage === 1}
+                                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:border-teal-400 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSentMessagePage(prev => Math.min(totalMessagePages, prev + 1))}
+                                    disabled={safeMessagePage === totalMessagePages}
+                                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:border-teal-400 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>

@@ -68,9 +68,9 @@ export async function POST(req: Request) {
         })
 
         // 3. Send Telegram Message
-        const telDoc = await adminDb.collection('telegram_links').doc(essayData.studentId).get()
+        const telDoc = await adminDb.collection('users').doc(essayData.studentId).get()
         if (telDoc.exists) {
-            const chatId = telDoc.data()?.chatId
+            const chatId = telDoc.data()?.telegramChatId
             if (chatId) {
                 const messageText = `✅ *Essay Approved*\n\nYour essay was reviewed and *APPROVED* by your teacher!\n\nIt is now entering the peer review stage.`
 

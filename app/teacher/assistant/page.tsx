@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -225,7 +225,7 @@ export default function TeacherAssistant() {
 
         } catch (error: any) {
             console.error('Agent error:', error)
-            setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ Error: ${error.message || 'Unable to fetch response from the AI assistant.'}` }])
+            setMessages(prev => [...prev, { role: 'assistant', content: `âš ï¸ Error: ${error.message || 'Unable to fetch response from the AI assistant.'}` }])
         } finally {
             setSending(false)
         }
@@ -247,7 +247,7 @@ export default function TeacherAssistant() {
         <TeacherLayout title="AI Assistant">
             <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
 
-                {/* ── Chat History Sidebar ── */}
+                {/* â”€â”€ Chat History Sidebar â”€â”€ */}
                 <div className={`
                     absolute md:static inset-y-0 left-0 z-20 flex flex-col w-64 shrink-0
                     bg-white border-r border-slate-100 transition-transform duration-300
@@ -291,7 +291,7 @@ export default function TeacherAssistant() {
                     </div>
                 </div>
 
-                {/* ── Main Chat Area ── */}
+                {/* â”€â”€ Main Chat Area â”€â”€ */}
                 <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
 
                     {/* Inner header bar */}
@@ -310,7 +310,7 @@ export default function TeacherAssistant() {
                         {loadingData ? (
                             <div className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full flex items-center gap-1.5 border border-amber-100">
                                 <div className="w-2.5 h-2.5 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
-                                Syncing data…
+                                Syncing dataâ€¦
                             </div>
                         ) : (
                             <div className="text-xs text-teal-600 bg-teal-50 px-3 py-1 rounded-full flex items-center gap-1.5 border border-teal-100">
@@ -355,7 +355,7 @@ export default function TeacherAssistant() {
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder={loadingData ? 'Syncing data, please wait…' : 'Ask your assistant…'}
+                                placeholder={loadingData ? 'Syncing data, please waitâ€¦' : 'Ask your assistantâ€¦'}
                                 disabled={sending || loadingData}
                                 className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl pl-4 pr-14 py-3 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 transition-all text-sm"
                             />
@@ -383,4 +383,6 @@ export default function TeacherAssistant() {
         </TeacherLayout>
     )
 }
+
+
 

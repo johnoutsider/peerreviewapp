@@ -44,9 +44,9 @@ export async function POST(req: Request) {
         })
 
         // 3. Send Telegram Message
-        const telDoc = await adminDb.collection('telegram_links').doc(essayData.studentId).get()
+        const telDoc = await adminDb.collection('users').doc(essayData.studentId).get()
         if (telDoc.exists) {
-            const chatId = telDoc.data()?.chatId
+            const chatId = telDoc.data()?.telegramChatId
             if (chatId) {
                 // To avoid Telegram Markdown parse errors on dynamic content, we'll keep formatting simple.
                 const messageText = `❌ *Essay Not Approved*\n\nYour essay was reviewed by your teacher and was NOT approved.\n\nReason: ${reason}\n\nPlease revisit the site to rewrite your essay.`

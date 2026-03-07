@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
@@ -55,6 +55,12 @@ const navLinks = [
         )
     },
     {
+        href: '/teacher/teacher-assistant', label: 'Teacher Assistant', icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
+                <path d="M12 3l3 6 6 .9-4.5 4.3 1.1 6.1L12 17l-5.6 3.3 1.1-6.1L3 9.9 9 9z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        )
+    },    {
         href: '/teacher/eva-settings', label: 'EVA Settings', icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
                 <path d="M12 2a5 5 0 015 5v.5a5 5 0 01-10 0V7a5 5 0 015-5z" />
@@ -123,7 +129,7 @@ export default function TeacherLayout({ children, title = 'Teacher Panel' }: Tea
     return (
         <div className="teacher-layout flex h-screen overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-            {/* ── Sidebar ── */}
+            {/* â”€â”€ Sidebar â”€â”€ */}
             {/* Mobile overlay */}
             {mobileSidebarOpen && (
                 <div
@@ -145,7 +151,7 @@ export default function TeacherLayout({ children, title = 'Teacher Panel' }: Tea
                 <div className="flex items-center gap-3 px-4 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)', minHeight: '64px' }}>
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm text-white shrink-0"
                         style={{ background: 'linear-gradient(135deg, #1a9aaa 0%, #127080 100%)' }}>
-                        📊
+                        PF
                     </div>
                     {!sidebarCollapsed && (
                         <div className="overflow-hidden">
@@ -153,7 +159,7 @@ export default function TeacherLayout({ children, title = 'Teacher Panel' }: Tea
                             <div className="text-xs font-medium" style={{ color: '#6b8ca8' }}>Teacher Panel</div>
                         </div>
                     )}
-                    {/* Collapse button — desktop only */}
+                    {/* Collapse button â€” desktop only */}
                     <button
                         onClick={() => setSidebarCollapsed(c => !c)}
                         className="hidden md:flex ml-auto p-1.5 rounded-md hover:bg-white/10 transition-colors text-gray-400 hover:text-white shrink-0"
@@ -235,10 +241,10 @@ export default function TeacherLayout({ children, title = 'Teacher Panel' }: Tea
                 </div>
             </aside>
 
-            {/* ── Right Side ── */}
+            {/* â”€â”€ Right Side â”€â”€ */}
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
-                {/* ── Top Header Bar ── */}
+                {/* â”€â”€ Top Header Bar â”€â”€ */}
                 <header className="flex items-center justify-between px-5 h-16 shrink-0 shadow-md z-10"
                     style={{ backgroundColor: '#1a9aaa', minHeight: '64px' }}>
                     {/* Left: mobile menu btn + breadcrumb */}
@@ -283,7 +289,7 @@ export default function TeacherLayout({ children, title = 'Teacher Panel' }: Tea
                     </div>
                 </header>
 
-                {/* ── Page Content ── */}
+                {/* â”€â”€ Page Content â”€â”€ */}
                 <main className="flex-1 overflow-y-auto" style={{ backgroundColor: '#f0f2f5' }}>
                     {children}
                 </main>
@@ -291,3 +297,12 @@ export default function TeacherLayout({ children, title = 'Teacher Panel' }: Tea
         </div>
     )
 }
+
+
+
+
+
+
+
+
+
