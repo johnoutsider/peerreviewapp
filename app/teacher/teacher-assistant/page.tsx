@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, where } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
 import { auth, db } from '@/lib/firebase'
 
@@ -135,11 +135,33 @@ export default function TeacherAssistantPage() {
     }, [])
 
     const loadSchedulerData = useCallback(async () => {
-        const res = await fetch('/api/scheduler/tasks', { cache: 'no-store' })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Failed to load scheduler data')
-        setTasks(data.tasks || [])
-        setExportsList(data.exports || [])
+        const [tasksSnap, exportsSnap] = await Promise.all([
+            getDocs(query(collection(db, 'scheduledTasks'), orderBy('createdAt', 'desc'))),
+            getDocs(query(collection(db, 'schedulerExports'), orderBy('createdAt', 'desc'), limit(10))),
+        ])
+
+        const nextTasks = tasksSnap.docs.map(taskDoc => {
+            const data = taskDoc.data() as Record<string, any>
+            return {
+                id: taskDoc.id,
+                ...data,
+                runAt: data.runAt?.toDate?.()?.toISOString?.() ?? null,
+                lastRunAt: data.lastRunAt?.toDate?.()?.toISOString?.() ?? null,
+                createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,
+            } as ScheduledTask
+        })
+
+        const nextExports = exportsSnap.docs.map(exportDoc => {
+            const data = exportDoc.data() as Record<string, any>
+            return {
+                id: exportDoc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,
+            } as ExportFile
+        })
+
+        setTasks(nextTasks)
+        setExportsList(nextExports)
     }, [])
 
     const loadTopics = useCallback(async () => {
@@ -194,16 +216,12 @@ export default function TeacherAssistantPage() {
             }
         })()
     }, [ready, loadSchedulerData, loadTopics, loadGroups, showToast])
-
     useEffect(() => {
         if (!ready) return
-        const interval = setInterval(async () => {
-            try {
-                await fetch('/api/cron/scheduler', { cache: 'no-store' })
-                await loadSchedulerData()
-            } catch {
-                // ignore background poll errors
-            }
+        const interval = setInterval(() => {
+            loadSchedulerData().catch(() => {
+                // ignore background refresh errors
+            })
         }, 30_000)
 
         return () => clearInterval(interval)
@@ -272,22 +290,20 @@ export default function TeacherAssistantPage() {
                 normalizedRunAt = next.toISOString()
             }
 
-            const res = await fetch('/api/scheduler/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    taskType,
-                    scheduleType,
-                    runAt: normalizedRunAt,
-                    recurringDay: scheduleType === 'weekly' ? recurringDay : null,
-                    recurringTime: scheduleType === 'once' ? null : recurringTime,
-                    config,
-                    createdBy: teacherId,
-                    scheduleTimezone,
-                }),
+            await addDoc(collection(db, 'scheduledTasks'), {
+                taskType,
+                scheduleType,
+                runAt: new Date(normalizedRunAt),
+                recurringDay: scheduleType === 'weekly' ? recurringDay : null,
+                recurringTime: scheduleType === 'once' ? null : recurringTime,
+                config,
+                createdBy: teacherId,
+                scheduleTimezone,
+                status: 'scheduled',
+                createdAt: new Date(),
+                lastRunAt: null,
+                lastResult: null,
             })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to create task')
 
             await loadSchedulerData()
             showToast('Task scheduled successfully')
@@ -320,9 +336,7 @@ export default function TeacherAssistantPage() {
     const handleDelete = async (taskId: string) => {
         if (!confirm('Delete this scheduled task?')) return
         try {
-            const res = await fetch(`/api/scheduler/tasks?id=${taskId}`, { method: 'DELETE' })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Delete failed')
+            await deleteDoc(doc(db, 'scheduledTasks', taskId))
             setTasks(prev => prev.filter(task => task.id !== taskId))
             showToast('Task deleted')
         } catch (error: any) {
