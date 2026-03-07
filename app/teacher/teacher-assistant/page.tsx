@@ -59,6 +59,7 @@ const TASK_META: Record<TaskType, { label: string; description: string }> = {
 }
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const PRODUCTION_SCHEDULER_NOTE = 'Automatic production runs on Vercel Hobby are processed once each day. The selected day is honored, but the exact time is treated as a preference instead of a precise trigger.'
 
 function localDateTimeValue(minutesAhead = 5) {
     const date = new Date(Date.now() + minutesAhead * 60_000)
@@ -126,6 +127,7 @@ export default function TeacherAssistantPage() {
     const [customMessage, setCustomMessage] = useState('')
     const [bulkAction, setBulkAction] = useState<'approve' | 'reject'>('approve')
     const [groupFilter, setGroupFilter] = useState('')
+    const [scheduleTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tashkent')
 
     const showToast = useCallback((text: string, error = false) => {
         setToast({ text, error })
@@ -281,6 +283,7 @@ export default function TeacherAssistantPage() {
                     recurringTime: scheduleType === 'once' ? null : recurringTime,
                     config,
                     createdBy: teacherId,
+                    scheduleTimezone,
                 }),
             })
             const data = await res.json()
@@ -382,6 +385,12 @@ export default function TeacherAssistantPage() {
                             ))}
                         </div>
 
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            <div className="font-semibold">Production scheduler mode</div>
+                            <p className="mt-1 text-amber-800">{PRODUCTION_SCHEDULER_NOTE}</p>
+                            <p className="mt-2 text-xs text-amber-700">Current task timezone: {scheduleTimezone}</p>
+                        </div>
+
                         <div className="grid gap-4 md:grid-cols-3">
                             <label className="space-y-2 text-sm font-medium text-slate-700">
                                 <span>Schedule Type</span>
@@ -442,7 +451,7 @@ export default function TeacherAssistantPage() {
                                     <textarea value={customMessage} onChange={event => setCustomMessage(event.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Optional reminder message" />
                                 </label>
                                 <p className="text-xs text-slate-500">
-                                    At the scheduled time, the app checks the selected topic and selected group. If you leave the group as All groups, it reminds every student who still does not have a submitted essay. Telegram messages are sent when the student has linked their bot chat.
+                                    On the scheduled day, the app checks the selected topic and selected group. If you leave the group as All groups, it reminds every student who still does not have a submitted essay. Telegram messages are sent when the student has linked their bot chat.
                                 </p>
                             </div>
                         )}

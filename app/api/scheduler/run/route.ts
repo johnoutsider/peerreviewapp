@@ -14,6 +14,7 @@ type ScheduledTask = {
     runAt: any
     recurringDay?: number | null
     recurringTime?: string | null
+    scheduleTimezone?: string | null
     status: 'scheduled' | 'running' | 'completed' | 'failed'
     config: Record<string, any>
     createdBy: string
@@ -79,24 +80,27 @@ export async function POST(req: NextRequest) {
     }
 }
 
+function toDate(value: any) {
+    if (!value) return null
+    if (value instanceof Date) return value
+    const date = value.toDate?.()
+    return date instanceof Date ? date : null
+}
+
 function computeNextRun(task: ScheduledTask): Date | null {
     if (task.scheduleType === 'once') return null
 
-    const [hours, minutes] = (task.recurringTime || '09:00').split(':').map(Number)
-    const next = new Date()
-    next.setSeconds(0, 0)
-    next.setHours(hours, minutes)
+    const currentRunAt = toDate(task.runAt)
+    if (!currentRunAt) return null
 
+    const next = new Date(currentRunAt)
     if (task.scheduleType === 'daily') {
-        if (next <= new Date()) next.setDate(next.getDate() + 1)
+        next.setDate(next.getDate() + 1)
         return next
     }
 
     if (task.scheduleType === 'weekly') {
-        const targetDay = task.recurringDay ?? 1
-        let daysUntil = (targetDay - next.getDay() + 7) % 7
-        if (daysUntil === 0 && next <= new Date()) daysUntil = 7
-        next.setDate(next.getDate() + daysUntil)
+        next.setDate(next.getDate() + 7)
         return next
     }
 
@@ -194,6 +198,7 @@ async function runReminders(task: ScheduledTask) {
         pendingStudents: pendingStudents.map(student => student.displayName || student.name || 'Student'),
     }
 }
+
 async function pickPeerReviewers(studentId: string, classId?: string | null) {
     if (!classId) return [] as string[]
 
@@ -377,4 +382,3 @@ async function runExportCsv(task: ScheduledTask) {
 
     return { rowCount: rows.length, exportId: exportRef.id, filename }
 }
-

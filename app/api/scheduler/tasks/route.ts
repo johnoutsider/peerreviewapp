@@ -31,7 +31,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        const { taskType, scheduleType, runAt, recurringDay, recurringTime, config, createdBy } = body
+        const { taskType, scheduleType, runAt, recurringDay, recurringTime, config, createdBy, scheduleTimezone } = body
 
         if (!taskType || !scheduleType || !runAt || !createdBy) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -50,12 +50,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'A topic is required for reminder tasks' }, { status: 400 })
         }
 
+        const normalizedTimeZone = String(scheduleTimezone || '').trim() || 'Asia/Tashkent'
+
         const ref = await adminDb.collection('scheduledTasks').add({
             taskType,
             scheduleType,
             runAt: new Date(runAt),
             recurringDay: recurringDay ?? null,
             recurringTime: recurringTime ?? null,
+            scheduleTimezone: normalizedTimeZone,
             config: config ?? {},
             createdBy,
             status: 'scheduled',
@@ -84,4 +87,3 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: error.message || 'Failed to delete task' }, { status: 500 })
     }
 }
-
