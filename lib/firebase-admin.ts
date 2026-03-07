@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin';
+﻿import * as admin from 'firebase-admin';
 
 function readFirstEnv(...keys: string[]) {
     for (const key of keys) {
@@ -51,7 +51,19 @@ function missingFields(serviceAccount: { projectId: string; clientEmail: string;
         .map(([key]) => key);
 }
 
-if (!admin.apps.length) {
+let initializedApp: admin.app.App | null = null;
+let initializationError: Error | null = null;
+
+function getAdminApp() {
+    if (initializedApp) return initializedApp;
+    if (admin.apps.length > 0) {
+        initializedApp = admin.apps[0]!;
+        return initializedApp;
+    }
+    if (initializationError) {
+        throw initializationError;
+    }
+
     try {
         const serviceAccount = getServiceAccount();
         const missing = missingFields(serviceAccount);
@@ -63,7 +75,7 @@ if (!admin.apps.length) {
             );
         }
 
-        admin.initializeApp({
+        initializedApp = admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: serviceAccount.projectId,
                 clientEmail: serviceAccount.clientEmail,
@@ -72,10 +84,24 @@ if (!admin.apps.length) {
             projectId: serviceAccount.projectId,
         });
         console.log('Firebase Admin initialized with explicit credentials');
+        return initializedApp;
     } catch (error: any) {
-        console.error('Firebase admin initialization error:', error);
+        initializationError = error instanceof Error ? error : new Error(String(error));
+        console.error('Firebase admin initialization error:', initializationError);
+        throw initializationError;
     }
 }
 
-export const adminDb = admin.firestore();
-export const adminAuth = admin.auth();
+function createLazyProxy<T extends object>(factory: () => T): T {
+    return new Proxy({} as T, {
+        get(_target, prop, receiver) {
+            const instance = factory();
+            const value = Reflect.get(instance as object, prop, receiver);
+            return typeof value === 'function' ? value.bind(instance) : value;
+        },
+    });
+}
+
+export const adminDb = createLazyProxy(() => admin.firestore(getAdminApp())) as FirebaseFirestore.Firestore;
+export const adminAuth = createLazyProxy(() => admin.auth(getAdminApp())) as admin.auth.Auth;
+export { getAdminApp };
