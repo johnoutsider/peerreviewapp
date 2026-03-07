@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -259,7 +260,14 @@ export default function SubmitEssay() {
                 <div className="bg-white  rounded-xl p-6 sm:p-8 border border-slate-200  shadow-sm">
                     {/* Alerts */}
                     {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
-                    {success && <Alert type="success" message={success} />}
+                    {success && (
+                        <>
+                            <Alert type="success" message={success} />
+                            <Link href="/my-essays" className="inline-block mt-3 text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                                Go to My Essays →
+                            </Link>
+                        </>
+                    )}
 
                     <form onSubmit={handleSubmit}>
                         {/* Topic Dropdown */}

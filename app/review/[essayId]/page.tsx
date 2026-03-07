@@ -299,7 +299,7 @@ export default function ReviewEssay() {
             )}
             {success && (
                 <div className="mb-3 px-4 py-3 rounded-lg bg-green-50  border border-green-200  text-sm text-green-700 ">
-                    {success}
+                    {success} <Link href="/review" className="font-semibold underline ml-1 inline-block mt-1">Go to Reviews →</Link>
                 </div>
             )}
 
@@ -414,7 +414,7 @@ export default function ReviewEssay() {
                             )}
                             {success && (
                                 <div className="mb-3 px-4 py-3 rounded-lg bg-green-50  border border-green-200  text-sm text-green-700 ">
-                                    {success}
+                                    {success} <Link href="/review" className="font-semibold underline ml-1 inline-block mt-1">Go to Reviews →</Link>
                                 </div>
                             )}
 
@@ -510,7 +510,7 @@ export default function ReviewEssay() {
                             )}
                             {success && (
                                 <div className="mb-3 px-4 py-3 rounded-lg bg-green-50  border border-green-200  text-sm text-green-700 ">
-                                    {success}
+                                    {success} <Link href="/review" className="font-semibold underline ml-1 inline-block mt-1">Go to Reviews →</Link>
                                 </div>
                             )}
 

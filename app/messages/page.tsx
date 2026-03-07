@@ -8,7 +8,7 @@ import {
     collection, query, orderBy, onSnapshot,
     doc, updateDoc, arrayUnion, addDoc, serverTimestamp, getDocs
 } from 'firebase/firestore'
-import Header from '@/components/Header'
+import StudentLayout from '@/components/StudentLayout'
 
 interface Message {
     id: string
@@ -111,14 +111,15 @@ export default function StudentMessages() {
     const unread = messages.filter(m => !m.readBy?.includes(currentUser?.uid || '')).length
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-        </div>
+        <StudentLayout title="Messages">
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+            </div>
+        </StudentLayout>
     )
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <Header />
+        <StudentLayout title="Messages">
             <main className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="mb-8 flex items-center justify-between">
                     <div>
@@ -258,6 +259,6 @@ export default function StudentMessages() {
                     </div>
                 )}
             </main>
-        </div>
+        </StudentLayout>
     )
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
@@ -262,12 +263,13 @@ export default function TeacherReviewActivity() {
                                             >
                                                 {/* Reviewer */}
                                                 <td className="py-3.5 px-5">
-                                                    <button
-                                                        onClick={e => { e.stopPropagation(); router.push(`/teacher/${row.reviewerId}`) }}
-                                                        className="text-teal-600 hover:text-teal-700 font-medium text-sm text-left transition-colors"
+                                                    <Link
+                                                        href={`/teacher/${row.reviewerId}`}
+                                                        onClick={e => e.stopPropagation()}
+                                                        className="text-teal-600 hover:text-teal-700 font-medium text-sm text-left transition-colors block"
                                                     >
                                                         {row.reviewerName}
-                                                    </button>
+                                                    </Link>
                                                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                                         {row.reviewerGroup && (
                                                             <span className="text-xs text-violet-600">{row.reviewerGroup}</span>
@@ -283,24 +285,26 @@ export default function TeacherReviewActivity() {
                                                 <td className="px-3 text-slate-400 text-lg">→</td>
                                                 {/* Author */}
                                                 <td className="py-3.5 px-5">
-                                                    <button
-                                                        onClick={e => { e.stopPropagation(); router.push(`/teacher/${row.essayAuthorId}`) }}
-                                                        className="text-green-600 hover:text-green-700 font-medium text-sm text-left transition-colors"
+                                                    <Link
+                                                        href={`/teacher/${row.essayAuthorId}`}
+                                                        onClick={e => e.stopPropagation()}
+                                                        className="text-green-600 hover:text-green-700 font-medium text-sm text-left transition-colors block"
                                                     >
                                                         {row.essayAuthorName}
-                                                    </button>
+                                                    </Link>
                                                     {row.essayAuthorGroup && (
                                                         <div className="text-xs text-violet-600 mt-0.5">{row.essayAuthorGroup}</div>
                                                     )}
                                                 </td>
                                                 {/* Essay */}
                                                 <td className="py-3.5 px-5">
-                                                    <button
-                                                        onClick={e => { e.stopPropagation(); router.push(`/feedback/${row.essayId}`) }}
-                                                        className="text-slate-700 hover:text-slate-900 text-sm text-left line-clamp-1 transition-colors max-w-[180px]"
+                                                    <Link
+                                                        href={`/feedback/${row.essayId}`}
+                                                        onClick={e => e.stopPropagation()}
+                                                        className="text-slate-700 hover:text-slate-900 text-sm text-left line-clamp-1 transition-colors max-w-[180px] block"
                                                     >
                                                         {row.essayTitle}
-                                                    </button>
+                                                    </Link>
                                                     {row.essaySubmittedAt && (
                                                         <div className="text-xs text-slate-400 mt-0.5">
                                                             Submitted {row.essaySubmittedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -354,12 +358,13 @@ export default function TeacherReviewActivity() {
                                                 {/* Actions */}
                                                 <td className="py-3.5 px-5">
                                                     <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={e => { e.stopPropagation(); router.push(`/feedback/${row.essayId}`) }}
-                                                            className="text-xs bg-violet-50 text-violet-700 border border-violet-100 px-2.5 py-1 rounded-full hover:bg-violet-100 transition-colors"
+                                                        <Link
+                                                            href={`/feedback/${row.essayId}`}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className="text-xs bg-violet-50 text-violet-700 border border-violet-100 px-2.5 py-1 rounded-full hover:bg-violet-100 transition-colors inline-block"
                                                         >
                                                             View Essay →
-                                                        </button>
+                                                        </Link>
                                                         <span className={`text-slate-400 text-sm transition-transform inline-block ${isExpanded ? 'rotate-180' : ''}`}>▾</span>
                                                         {hasStudentResponse && !isExpanded && (
                                                             <span title="Student responded" className="text-amber-500 text-xs">✍️</span>

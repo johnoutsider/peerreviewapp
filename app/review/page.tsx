@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs, orderBy, Timestamp, limit } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
@@ -270,11 +270,12 @@ export default function Review() {
                                                 <DeadlineBanner label="Peer Review" deadline={topic.reviewDeadline} emoji="👥" />
                                             )}
                                             <div className="relative">
-                                                <EssayCard
-                                                    {...essay}
-                                                    topicName={essay.topicName}
-                                                    onClick={() => router.push(`/review/${essay.id}`)}
-                                                />
+                                                <Link href={`/review/${essay.id}`} className="block">
+                                                    <EssayCard
+                                                        {...essay}
+                                                        topicName={essay.topicName}
+                                                    />
+                                                </Link>
                                                 {reviewedEssays.has(essay.id) && (
                                                     <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
                                                         ✓ Reviewed

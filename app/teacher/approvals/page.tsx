@@ -1,10 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import TeacherLayout from '@/components/TeacherLayout'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs, updateDoc, doc, or } from 'firebase/firestore'
+import {
+    addDoc,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    serverTimestamp,
+    updateDoc,
+} from 'firebase/firestore'
 
 interface PendingEssay {
     id: string
@@ -21,7 +29,6 @@ interface PendingEssay {
 }
 
 export default function TeacherApprovalsPage() {
-    const router = useRouter()
     const [essays, setEssays] = useState<PendingEssay[]>([])
     const [archivedEssays, setArchivedEssays] = useState<PendingEssay[]>([])
     const [loading, setLoading] = useState(true)
@@ -42,9 +49,9 @@ export default function TeacherApprovalsPage() {
                 let allFlags = snap.docs.map(d => ({ id: d.id, ...d.data() } as PendingEssay))
                     .filter(e =>
                         e.status === 'pending_teacher_approval' ||
-                        (e.approvedBy) ||
-                        (e.rejectedBy) ||
-                        (e.status === 'rejected' && e.rejectionReason) // strict safety checks for archived
+                        e.approvedBy ||
+                        e.rejectedBy ||
+                        (e.status === 'rejected' && e.rejectionReason)
                     )
 
                 // Sort by newest first
@@ -56,7 +63,7 @@ export default function TeacherApprovalsPage() {
                 setEssays(pending)
                 setArchivedEssays(archived)
             } catch (err) {
-                console.error("Failed to load approvals:", err)
+                console.error('Failed to load approvals:', err)
             } finally {
                 setLoading(false)
             }
@@ -68,24 +75,54 @@ export default function TeacherApprovalsPage() {
         if (!selectedEssay || !auth.currentUser) return
         setApproving(true)
         try {
-            const res = await fetch('/api/teacher/approve-essay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    essayId: selectedEssay.id,
-                    teacherId: auth.currentUser.uid
-                })
+            const essayRef = doc(db, 'essays', selectedEssay.id)
+            const studentSnap = await getDoc(doc(db, 'users', selectedEssay.studentId))
+            const classId = studentSnap.data()?.classId
+
+            let selectedPeers: string[] = []
+
+            if (classId) {
+                const usersSnapshot = await getDocs(query(collection(db, 'users')))
+                const potentialReviewers = usersSnapshot.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter((user: any) => user.classId === classId && user.role === 'student' && user.id !== selectedEssay.studentId)
+                    .map((user: any) => user.id)
+
+                if (potentialReviewers.length > 0) {
+                    const shuffled = [...potentialReviewers].sort(() => Math.random() - 0.5)
+                    selectedPeers = shuffled.slice(0, Math.min(3, shuffled.length))
+                }
+            }
+
+            await updateDoc(essayRef, {
+                status: 'under_review',
+                approvedBy: auth.currentUser.uid,
+                approvedAt: serverTimestamp(),
+                peerReviewIds: selectedPeers,
+                requiresTeacherApproval: false,
             })
 
-            if (!res.ok) throw new Error("Approval failed")
+            await addDoc(collection(db, 'messages'), {
+                fromId: 'system',
+                fromName: 'Teacher (Approval)',
+                recipients: [selectedEssay.studentId],
+                title: `Your essay "${selectedEssay.title}" was approved!`,
+                body: 'Your essay has been reviewed and APPROVED by your teacher! It has now been assigned to peers for review.',
+                createdAt: serverTimestamp(),
+                readBy: [],
+                type: 'system',
+            })
 
-            // Move to archive
             setEssays(prev => prev.filter(e => e.id !== selectedEssay.id))
-            setArchivedEssays(prev => [{ ...selectedEssay, status: 'under_review', approvedBy: auth.currentUser!.uid }, ...prev])
+            setArchivedEssays(prev => [{
+                ...selectedEssay,
+                status: 'under_review',
+                approvedBy: auth.currentUser!.uid,
+            }, ...prev])
             setSelectedEssay(null)
         } catch (err) {
             console.error(err)
-            alert("Error approving essay. Check console.")
+            alert('Error approving essay. Check console.')
         } finally {
             setApproving(false)
         }
@@ -95,26 +132,36 @@ export default function TeacherApprovalsPage() {
         if (!selectedEssay || !auth.currentUser || !rejectReason.trim()) return
         setRejecting(true)
         try {
-            const res = await fetch('/api/teacher/reject-essay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    essayId: selectedEssay.id,
-                    teacherId: auth.currentUser.uid,
-                    reason: rejectReason
-                })
+            await updateDoc(doc(db, 'essays', selectedEssay.id), {
+                status: 'rejected',
+                rejectedBy: auth.currentUser.uid,
+                rejectedAt: serverTimestamp(),
+                rejectionReason: rejectReason,
             })
 
-            if (!res.ok) throw new Error("Rejection failed")
+            await addDoc(collection(db, 'messages'), {
+                fromId: 'system',
+                fromName: 'Teacher (Review)',
+                recipients: [selectedEssay.studentId],
+                title: `Your essay "${selectedEssay.title}" was not approved`,
+                body: `Your essay has been reviewed by your teacher and was NOT approved for peer review.\n\nReason: ${rejectReason}\n\nPlease check your My Essays tab, rewrite your essay from scratch using your own words, and submit it again.`,
+                createdAt: serverTimestamp(),
+                readBy: [],
+                type: 'system',
+            })
 
-            // Move to archive
             setEssays(prev => prev.filter(e => e.id !== selectedEssay.id))
-            setArchivedEssays(prev => [{ ...selectedEssay, status: 'rejected', rejectedBy: auth.currentUser!.uid, rejectionReason: rejectReason }, ...prev])
+            setArchivedEssays(prev => [{
+                ...selectedEssay,
+                status: 'rejected',
+                rejectedBy: auth.currentUser!.uid,
+                rejectionReason: rejectReason,
+            }, ...prev])
             setSelectedEssay(null)
             setRejectReason('')
         } catch (err) {
             console.error(err)
-            alert("Error rejecting essay. Check console.")
+            alert('Error rejecting essay. Check console.')
         } finally {
             setRejecting(false)
         }
@@ -140,9 +187,8 @@ export default function TeacherApprovalsPage() {
                     </div>
                 ) : essays.length === 0 ? (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
-                        <span className="text-4xl mb-4 block">✅</span>
-                        <p className="font-medium text-slate-700">All caught up!</p>
-                        <p className="text-sm">There are no essays pending approval right now.</p>
+                        <span className="text-4xl mb-4 block">All caught up</span>
+                        <p className="font-medium text-slate-700">No essays are pending approval right now.</p>
                     </div>
                 ) : (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -188,7 +234,6 @@ export default function TeacherApprovalsPage() {
                     </div>
                 )}
 
-                {/* ARCHIVE SECTION */}
                 {!loading && archivedEssays.length > 0 && (
                     <div className="mt-12">
                         <div className="mb-4">
@@ -223,11 +268,11 @@ export default function TeacherApprovalsPage() {
                                                 <td className="px-6 py-4">
                                                     {essay.status === 'rejected' ? (
                                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-600 font-semibold text-xs rounded-full">
-                                                            ✕ Rejected
+                                                            Rejected
                                                         </span>
                                                     ) : (
                                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-600 font-semibold text-xs rounded-full">
-                                                            ✓ Approved
+                                                            Approved
                                                         </span>
                                                     )}
                                                 </td>
@@ -251,11 +296,9 @@ export default function TeacherApprovalsPage() {
                     </div>
                 )}
 
-                {/* MODAL / DETAILED VIEW */}
                 {selectedEssay && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm">
                         <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-fade-in relative">
-                            {/* Header */}
                             <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
@@ -266,21 +309,19 @@ export default function TeacherApprovalsPage() {
                                     <p className="text-xs text-slate-500 mt-1">By {selectedEssay.studentName}</p>
                                 </div>
                                 <button
-                                    onClick={() => { setSelectedEssay(null); setRejectReason(''); }}
+                                    onClick={() => { setSelectedEssay(null); setRejectReason('') }}
                                     className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
                                 >
-                                    ✕
+                                    Close
                                 </button>
                             </div>
 
-                            {/* Body */}
                             <div className="flex-1 overflow-y-auto p-6 bg-slate-50 shadow-inner">
                                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm text-slate-800 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-serif">
                                     {selectedEssay.content}
                                 </div>
                             </div>
 
-                            {/* Rejection input area (only if pending) */}
                             {selectedEssay.status === 'pending_teacher_approval' ? (
                                 <div className="px-6 pt-4 border-t border-slate-200 bg-white">
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">Reject Reason (Required if rejecting)</label>
@@ -301,10 +342,9 @@ export default function TeacherApprovalsPage() {
                                 </div>
                             )}
 
-                            {/* Actions / Footer */}
                             <div className="p-6 bg-white rounded-b-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <button
-                                    onClick={() => { setSelectedEssay(null); setRejectReason(''); }}
+                                    onClick={() => { setSelectedEssay(null); setRejectReason('') }}
                                     className="px-4 py-2 font-semibold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors order-3 sm:order-1"
                                 >
                                     {selectedEssay.status === 'pending_teacher_approval' ? 'Cancel' : 'Close'}
