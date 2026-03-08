@@ -161,7 +161,7 @@ export async function GET() {
                 })
 
                 // Clean up the uploaded input file from OpenAI to save storage
-                try { await openai.files.del(job.inputFileId) } catch { /* non-critical */ }
+                try { await openai.files.delete(job.inputFileId) } catch { /* non-critical */ }
 
                 collected++
 
