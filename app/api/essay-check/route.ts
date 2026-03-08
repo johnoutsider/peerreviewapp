@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { db } from '@/lib/firebase-admin'
+import { adminDb } from '@/lib/firebase-admin'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
