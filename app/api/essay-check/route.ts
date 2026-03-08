@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         // Fetch custom system prompt from Firestore (falls back to default)
         let systemPrompt = DEFAULT_SYSTEM_PROMPT
         try {
-            const evaDoc = await db.collection('settings').doc('eva').get()
+            const evaDoc = await adminDb.collection('settings').doc('eva').get()
             if (evaDoc.exists) {
                 const data = evaDoc.data()
                 if (data?.systemPrompt?.trim()) {
