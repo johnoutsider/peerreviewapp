@@ -1,0 +1,40 @@
+
+> ielts-peer-assessment@0.1.0 dev
+> next dev -p 3012
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3012
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3s
+ ○ Compiling /teacher/messages ...
+ ✓ Compiled /teacher/messages in 15.2s (853 modules)
+ GET /teacher/messages 200 in 16494ms
+ ✓ Compiled in 1330ms (288 modules)
+ ✓ Compiled in 1265ms (288 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 932ms (833 modules)
+ GET /_next/static/webpack/2aa70e12666f3f1c.webpack.hot-update.json 404 in 1321ms
+ GET /_next/static/css/app/layout.css?v=1772881969723 404 in 43ms
+ GET /teacher/messages 200 in 440ms
+ GET /_next/static/css/app/layout.css?v=1772881971188 404 in 34ms
+ GET /_next/static/chunks/main-app.js?v=1772881971188 404 in 81ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 79ms
+ GET /_next/static/chunks/app/teacher/messages/page.js 404 in 75ms
+ ✓ Compiled in 737ms (290 modules)
+ ✓ Compiled in 1272ms (288 modules)
+ ✓ Compiled in 1925ms (288 modules)
+ ✓ Compiled in 515ms (288 modules)
+ ✓ Compiled in 506ms (288 modules)
+ ✓ Compiled in 834ms (288 modules)
+ ✓ Compiled in 593ms (288 modules)
+ ✓ Compiled in 602ms (288 modules)
+ ✓ Compiled in 490ms (288 modules)
+ ✓ Compiled in 605ms (288 modules)
+ ✓ Compiled in 3.7s (288 modules)
+ ✓ Compiled in 440ms (288 modules)
+ ✓ Compiled in 549ms (288 modules)
+ ✓ Compiled in 446ms (288 modules)
+ ✓ Compiled in 598ms (288 modules)
+ ✓ Compiled in 683ms (288 modules)

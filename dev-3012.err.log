@@ -1,0 +1,10 @@
+ ⚠ Invalid next.config.js options detected: 
+ ⚠     Unrecognized key(s) in object: 'ignoreDuringBuilds' at "typescript"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+
+[1m[33mwarn[39m[22m - The `darkMode` option in your Tailwind CSS configuration is set to `false`, which now behaves the same as `media`.
+[1m[33mwarn[39m[22m - Change `darkMode` to `media` or remove it entirely.
+[1m[33mwarn[39m[22m - https://tailwindcss.com/docs/upgrade-guide#remove-dark-mode-configuration
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'D:\Coding\Antigravity folder\MyDigitalTwin\.next\cache\webpack\client-development\0.pack.gz_' -> 'D:\Coding\Antigravity folder\MyDigitalTwin\.next\cache\webpack\client-development\0.pack.gz'
+^C^C
