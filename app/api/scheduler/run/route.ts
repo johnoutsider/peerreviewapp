@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase-admin'
 import { sendTelegramBroadcast } from '@/lib/telegram'
-import { FieldValue } from 'firebase-admin/firestore'
+import { FieldPath } from 'firebase-admin/firestore'
 import OpenAI from 'openai'
 
 export const maxDuration = 60
@@ -199,7 +199,7 @@ async function runBulkApprove(task: ScheduledTask) {
     // Telegram notifications
     const studentIds: string[] = essaysSnap.docs.map(d => (d.data() as any).studentId)
     const usersSnap = await adminDb.collection('users')
-        .where(FieldValue.documentId() as any, 'in', studentIds.slice(0, 10)).get()
+        .where(FieldPath.documentId() as any, 'in', studentIds.slice(0, 10)).get()
     const chatIds = usersSnap.docs.filter(d => d.data().telegramChatId).map(d => d.data().telegramChatId as string)
 
     if (chatIds.length > 0) {
