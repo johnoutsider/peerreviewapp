@@ -276,12 +276,13 @@ function ReviewCard({
 
 // ─── Essay Detail View ────────────────────────────────────────────────────────
 function EssayDetail({
-    essay, onBack, onSaveReview, onDeleteClick,
+    essay, onBack, onSaveReview, onDeleteClick, canView,
 }: {
     essay: EssayData
     onBack: () => void
     onSaveReview: (essayId: string, reviewId: string, updates: any) => Promise<void>
     onDeleteClick: (essayId: string) => void
+    canView: boolean
 }) {
     const allScores = essay.reviews.map(r => totalScore(r.scores))
     const avgScore = avg(allScores)
@@ -316,7 +317,9 @@ function EssayDetail({
                             <span>💬 {reviewCount} review{reviewCount !== 1 ? 's' : ''}</span>
                         </div>
                     </div>
-                    {reviewCount > 0 && (
+
+                    {/* Avg score block — only when unlocked */}
+                    {canView && reviewCount > 0 && (
                         <div className="text-center bg-slate-50  border border-slate-200  rounded-xl px-5 py-3 shrink-0">
                             <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-1">Avg Score</p>
                             <p className={`text-4xl font-black leading-none ${scoreColor(avgPct)}`}>{avgScore}</p>
@@ -329,8 +332,27 @@ function EssayDetail({
                     )}
                 </div>
 
-                {/* Aspect averages */}
-                {reviewCount > 0 && (
+                {/* Locked view: shown below the title row, full width */}
+                {!canView && reviewCount > 0 && (
+                    <div className="mt-4 rounded-xl overflow-hidden border-2 border-amber-300 shadow-sm">
+                        <div className="bg-amber-400 px-5 py-2 flex items-center gap-2">
+                            <span className="text-lg">🔒</span>
+                            <span className="text-amber-900 font-bold text-sm tracking-wide uppercase">Scores &amp; Feedback Locked</span>
+                        </div>
+                        <div className="bg-amber-50 px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+                            <p className="text-slate-700 text-sm">
+                                Review <span className="font-bold text-amber-700">2 classmates' essays on this topic</span> to unlock your scores and peer feedback.
+                            </p>
+                            <a href="/review" className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors shadow-sm shrink-0">
+                                👥 Go Review Peers
+                            </a>
+                        </div>
+                    </div>
+                )}
+
+
+                {/* Aspect averages — only when unlocked */}
+                {canView && reviewCount > 0 && (
                     <div className="mt-4 pt-4 border-t border-slate-100 ">
                         <p className="text-xs font-bold text-slate-400  uppercase tracking-widest mb-3">Average Scores by Aspect</p>
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -374,12 +396,12 @@ function EssayDetail({
                     <p className="text-sm font-bold mb-1">Essay Rejected</p>
                     <p className="text-xs max-w-sm mx-auto">This essay was rejected by your teacher. Please check your messages for details.</p>
                 </div>
-            ) : reviewCount === 0 ? (
+            ) : canView && reviewCount === 0 ? (
                 <div className="text-center py-10 text-slate-400 ">
                     <p className="text-4xl mb-3">⏳</p>
                     <p className="text-sm">No peer reviews yet. Check back soon!</p>
                 </div>
-            ) : (
+            ) : canView ? (
                 <>
                     <p className="text-sm font-bold text-slate-700  mb-3">{reviewCount} Peer Review{reviewCount !== 1 ? 's' : ''} Received</p>
                     {essay.reviews.map((review, idx) => (
@@ -390,7 +412,7 @@ function EssayDetail({
                         />
                     ))}
                 </>
-            )}
+            ) : null}
         </div>
     )
 }
@@ -427,7 +449,7 @@ function SummaryBar({ essays }: { essays: EssayData[] }) {
 }
 
 // ─── Essay List Card ──────────────────────────────────────────────────────────
-function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => void }) {
+function EssayListCard({ essay, onClick, canView }: { essay: EssayData; onClick: () => void; canView: boolean }) {
     const allScores = essay.reviews.map(r => totalScore(r.scores))
     const avgScore = avg(allScores)
     const avgPct = pct(avgScore)
@@ -459,7 +481,11 @@ function EssayListCard({ essay, onClick }: { essay: EssayData; onClick: () => vo
                             <span className="text-xs font-bold px-2.5 py-1 rounded-full text-red-600 bg-red-50   border border-red-200 ">
                                 ❌ Rejected
                             </span>
-                        ) : reviewCount > 0 ? (
+                        ) : !canView && reviewCount > 0 ? (
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-full text-amber-600 bg-amber-50 border border-amber-200 flex items-center gap-1">
+                                🔒 Review 2 peers to unlock
+                            </span>
+                        ) : reviewCount > 0 && canView ? (
                             <>
                                 <div className="flex items-baseline gap-0.5">
                                     <span className={`text-2xl font-black ${scoreColor(avgPct)}`}>{avgScore}</span>
@@ -514,6 +540,7 @@ export default function MyEssaysPage() {
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
     const [deleting, setDeleting] = useState(false)
     const [currentPage, setCurrentPage] = useState(1)
+    const [reviewCountByTopic, setReviewCountByTopic] = useState<Record<string, number>>({})
     const ITEMS_PER_PAGE = 25
 
 
@@ -562,6 +589,17 @@ export default function MyEssaysPage() {
                     })
                 )
                 setEssays(essaysWithReviews)
+
+                // Fetch review counts per topic so we can gate score visibility
+                const { getStudentCompletedReviewCount } = await import('@/lib/peer-assignment')
+                const uniqueTopicIds = [...new Set(essaysWithReviews.map(e => e.topicId).filter(Boolean))] as string[]
+                const counts: Record<string, number> = {}
+                await Promise.all(
+                    uniqueTopicIds.map(async (tid) => {
+                        counts[tid] = await getStudentCompletedReviewCount(auth.currentUser!.uid, tid)
+                    })
+                )
+                setReviewCountByTopic(counts)
             } catch (err) {
                 console.error('Error loading essays:', err)
             } finally {
@@ -638,6 +676,7 @@ export default function MyEssaysPage() {
                                 onBack={() => setSelectedId(null)}
                                 onSaveReview={handleSaveReview}
                                 onDeleteClick={setConfirmDeleteId}
+                                canView={(reviewCountByTopic[selectedEssay.topicId ?? ''] ?? 0) >= 2}
                             />
                         ) : (
                             <main className="max-w-3xl mx-auto px-4 py-8">
@@ -672,6 +711,7 @@ export default function MyEssaysPage() {
                                                 key={essay.id}
                                                 essay={essay}
                                                 onClick={() => setSelectedId(essay.id)}
+                                                canView={(reviewCountByTopic[essay.topicId ?? ''] ?? 0) >= 2}
                                             />
                                         ))}
                                     </div>

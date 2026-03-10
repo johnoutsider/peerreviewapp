@@ -322,12 +322,12 @@ async function runProgressReports(task: ScheduledTask) {
     const jsonlContent = lines.join('\n')
 
     // 4. Upload .jsonl file to OpenAI
-    const { Readable } = await import('stream')
-    const readable = Readable.from([jsonlContent])
-    ;(readable as any).name = `progress_reports_${task.id}.jsonl`
+    // Use File (Web API) — works on Vercel serverless, unlike Node Readable streams
+    const fileName = `progress_reports_${task.id}.jsonl`
+    const fileBlob = new File([jsonlContent], fileName, { type: 'application/jsonl' })
 
-    const uploadedFile = await (openai.files.create as any)({
-        file: readable,
+    const uploadedFile = await openai.files.create({
+        file: fileBlob,
         purpose: 'batch',
     })
 

@@ -29,7 +29,10 @@ service cloud.firestore {
         (request.resource.data.reviewerRole == 'ai' || 
          request.resource.data.reviewerId == request.auth.uid ||
          request.resource.data.reviewerRole == 'teacher');
-      allow update: if request.auth != null && resource.data.reviewerId == request.auth.uid;
+      allow update: if request.auth != null && (
+        resource.data.reviewerId == request.auth.uid ||
+        get(/databases/$(database)/documents/essays/$(resource.data.essayId)).data.studentId == request.auth.uid
+      );
       allow delete: if request.auth != null; // reviewer OR teacher cascade
     }
 

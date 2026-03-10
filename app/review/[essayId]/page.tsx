@@ -64,20 +64,34 @@ function getHighest(range: string | null): number {
 
 // ─── AspectCard ───────────────────────────────────────────────────────────────
 function AspectCard({
-    aspect, index, selected, onSelect,
+    aspect, index, selected, onSelect, missing,
 }: {
     aspect: typeof ASPECTS[0]
     index: number
     selected: string | null
     onSelect: (range: string | null) => void
+    missing?: boolean
 }) {
     return (
-        <div className="border border-slate-200  rounded-xl mb-3 bg-white  overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 ">
-                <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                    {index}
+        <div className={`rounded-xl mb-3 bg-white overflow-hidden border transition-all ${missing ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-200'
+            }`}>
+            <div className={`flex items-center gap-3 px-4 py-3 border-b ${missing ? 'border-red-100 bg-red-50' : 'border-slate-100'
+                }`}>
+                <span className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold shrink-0 ${selected ? 'bg-blue-600' : missing ? 'bg-red-500' : 'bg-slate-400'
+                    }`}>
+                    {selected ? '✓' : index}
                 </span>
-                <span className="text-sm font-bold text-slate-900 ">{aspect.title}</span>
+                <span className="text-sm font-bold text-slate-900 flex-1">{aspect.title}</span>
+                {missing && (
+                    <span className="text-xs font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">
+                        Required
+                    </span>
+                )}
+                {selected && !missing && (
+                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                        ✓ Scored
+                    </span>
+                )}
             </div>
             <div className="p-3 space-y-1.5">
                 {aspect.levels.map((lv, i) => {
@@ -88,19 +102,19 @@ function AspectCard({
                             className={`flex items-stretch rounded-lg overflow-hidden border transition-all ${isSelected
                                 ? 'border-blue-500'
                                 : 'border-transparent'
-                                } ${i % 2 === 0 ? 'bg-slate-50 ' : 'bg-white '}`}
+                                } ${i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}`}
                         >
                             <button
                                 type="button"
                                 onClick={() => onSelect(isSelected ? null : lv.range)}
                                 className={`px-3 py-2 text-xs font-bold whitespace-nowrap shrink-0 border-r transition-all ${isSelected
                                     ? 'bg-blue-600 text-white border-blue-500'
-                                    : 'bg-slate-100  text-slate-600  border-slate-200  hover:bg-blue-50 :bg-blue-900/20'
+                                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-blue-50'
                                     }`}
                             >
                                 {lv.range}
                             </button>
-                            <span className="px-3 py-2 text-xs text-slate-600  leading-relaxed">
+                            <span className="px-3 py-2 text-xs text-slate-600 leading-relaxed">
                                 {lv.desc}
                             </span>
                         </div>
@@ -161,6 +175,7 @@ export default function ReviewEssay() {
     const [notFound, setNotFound] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
+    const [submitAttempted, setSubmitAttempted] = useState(false)
 
     const [scores, setScores] = useState<Record<string, string | null>>({
         content: null, organization: null, vocabulary: null, languageUse: null, mechanics: null,
@@ -209,6 +224,7 @@ export default function ReviewEssay() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
+        setSubmitAttempted(true)
         if (!auth.currentUser || !essay) return
         if (!allScored) { setError('Please select a score for all 5 rubric categories.'); return }
         if (!feedbackValid) { setError('Please write at least 20 words of feedback.'); return }
@@ -287,9 +303,17 @@ export default function ReviewEssay() {
 
     const rubricPanelJSX = (
         <div className="p-4 bg-slate-50  space-y-0">
-            <div className="mb-4">
-                <p className="text-base font-bold text-slate-900  mb-0.5">Writing Development Rubric</p>
-                <p className="text-xs text-slate-500 ">Click a score range to select it for each category.</p>
+            <div className="mb-4 flex items-center justify-between">
+                <div>
+                    <p className="text-base font-bold text-slate-900  mb-0.5">Writing Development Rubric</p>
+                    <p className="text-xs text-slate-500 ">Click a score range to select it for each category.</p>
+                </div>
+                <div className={`text-sm font-bold px-3 py-1 rounded-full border ${allScored
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}>
+                    {ASPECTS.filter(a => scores[a.id]).length}/{ASPECTS.length} scored
+                </div>
             </div>
 
             {error && (
@@ -311,6 +335,7 @@ export default function ReviewEssay() {
                         index={i + 1}
                         selected={scores[aspect.id]}
                         onSelect={(range) => setScores(prev => ({ ...prev, [aspect.id]: range }))}
+                        missing={submitAttempted && !scores[aspect.id]}
                     />
                 ))}
 
@@ -402,9 +427,17 @@ export default function ReviewEssay() {
                 <div className="flex-1 overflow-auto">
                     {activeTab === 'essay' ? <EssayPanel essay={essay} /> : (
                         <div className="p-4 bg-slate-50  space-y-0">
-                            <div className="mb-4">
-                                <p className="text-base font-bold text-slate-900  mb-0.5">Writing Development Rubric</p>
-                                <p className="text-xs text-slate-500 ">Click a score range to select it for each category.</p>
+                            <div className="mb-4 flex items-center justify-between">
+                                <div>
+                                    <p className="text-base font-bold text-slate-900  mb-0.5">Writing Development Rubric</p>
+                                    <p className="text-xs text-slate-500 ">Click a score range to select it for each category.</p>
+                                </div>
+                                <div className={`text-sm font-bold px-3 py-1 rounded-full border ${allScored
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                                    }`}>
+                                    {ASPECTS.filter(a => scores[a.id]).length}/{ASPECTS.length} scored
+                                </div>
                             </div>
 
                             {error && (
@@ -426,6 +459,7 @@ export default function ReviewEssay() {
                                         index={i + 1}
                                         selected={scores[aspect.id]}
                                         onSelect={(range) => setScores(prev => ({ ...prev, [aspect.id]: range }))}
+                                        missing={submitAttempted && !scores[aspect.id]}
                                     />
                                 ))}
 

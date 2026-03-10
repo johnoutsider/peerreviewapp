@@ -43,6 +43,14 @@ export default function Feedback() {
         saved: boolean
     }>>({})
 
+    const RATING_LABELS: Record<number, string> = {
+        1: 'Not Helpful',
+        2: 'Slightly Helpful',
+        3: 'Somewhat Helpful',
+        4: 'Very Helpful',
+        5: 'Extremely Helpful',
+    }
+
     // AI assessment is performed at submission time. No on-demand AI button is needed.
 
     useEffect(() => {
@@ -288,22 +296,35 @@ export default function Feedback() {
 
                 {/* AI assessments are created during submission; on-demand AI buttons removed. */}
 
-                {/* Unlock banner for students who haven't yet completed enough reviews */}
+                {/* ―― Locked state: student hasn't completed enough peer reviews ―― */}
                 {!isTeacher && essay.studentId === auth.currentUser?.uid && !canViewScores && !unlockLoading && (
-                    <div className="mb-6 bg-amber-50  border border-amber-200  rounded-xl p-4">
-                        <h2 className="text-sm font-semibold text-amber-700  mb-1">
-                            Complete peer reviews to unlock your score
-                        </h2>
-                        <p className="text-xs text-amber-700 ">
-                            Review at least <span className="font-semibold">2 classmates&apos; essays in this topic</span> to see your final scores.
-                            You have completed <span className="font-semibold">{completedReviewCount}</span> so far.
-                        </p>
-                        <Link
-                            href="/review"
-                            className="inline-block mt-3 text-xs font-semibold text-amber-800 underline"
-                        >
-                            Go to Peer Review
-                        </Link>
+                    <div className="mb-6 rounded-2xl overflow-hidden border-2 border-amber-300 shadow-md">
+                        {/* Top accent bar */}
+                        <div className="bg-amber-400 px-6 py-2 flex items-center gap-2">
+                            <span className="text-xl">🔒</span>
+                            <span className="text-amber-900 font-bold text-sm tracking-wide uppercase">Scores &amp; Feedback Locked</span>
+                        </div>
+                        <div className="bg-amber-50 px-6 py-5">
+                            <p className="text-slate-700 font-medium mb-1">
+                                You must review <span className="font-bold text-amber-700">2 classmates&apos; essays on this same topic</span> before you can see your scores and peer feedback.
+                            </p>
+                            <p className="text-slate-500 text-sm mb-4">
+                                Progress: <span className="font-bold text-amber-600">{completedReviewCount} / 2</span> reviews completed for this topic.
+                            </p>
+                            {/* Progress bar */}
+                            <div className="w-full bg-amber-200 rounded-full h-2.5 mb-4">
+                                <div
+                                    className="bg-amber-500 h-2.5 rounded-full transition-all"
+                                    style={{ width: `${Math.min(completedReviewCount / 2 * 100, 100)}%` }}
+                                />
+                            </div>
+                            <Link
+                                href="/review"
+                                className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors shadow-sm"
+                            >
+                                👥 Go Review Peers
+                            </Link>
+                        </div>
                     </div>
                 )}
 
@@ -320,55 +341,55 @@ export default function Feedback() {
                         <h2 className="text-2xl font-semibold text-slate-900  mb-4">Score Breakdown</h2>
 
                         {usingNewRubric ? (
-                        /* New rubric: show 5 aspects with max scores and per-review columns */
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b border-slate-200 ">
-                                        <th className="py-3 px-4 text-slate-600 ">Aspect</th>
-                                        <th className="py-3 px-4 text-center text-slate-500  text-xs">Max</th>
-                                        {peerReviews.map((r, i) => (
-                                            <th key={i} className="py-3 px-4 text-center text-slate-600 ">Reviewer {i + 1}</th>
-                                        ))}
-                                        {peerReviews.length > 1 && <th className="py-3 px-4 text-center text-slate-600  font-bold">Avg</th>}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {newRubricAspects.map(({ key, label, max }) => {
-                                        const vals = peerReviews.map(r => {
-                                            const raw = r.scores?.[key]
-                                            if (typeof raw === 'number') return raw
-                                            const nums = String(raw ?? '').split('\u2013').map((n: string) => parseInt(n.trim(), 10)).filter((n: number) => !isNaN(n))
-                                            return nums.length ? Math.max(...nums) : 0
-                                        })
-                                        const avgVal = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
-                                        return (
-                                            <tr key={key} className="border-b border-slate-100 ">
-                                                <td className="py-3 px-4 text-slate-900  font-medium">{label}</td>
-                                                <td className="py-3 px-4 text-center text-slate-400 text-sm">/{max}</td>
-                                                {vals.map((v, i) => (
-                                                    <td key={i} className="py-3 px-4 text-center font-bold text-slate-900 ">{v}</td>
-                                                ))}
-                                                {peerReviews.length > 1 && (
-                                                    <td className="py-3 px-4 text-center font-bold text-blue-600 ">{avgVal}</td>
-                                                )}
-                                            </tr>
-                                        )
-                                    })}
-                                    {/* Total row */}
-                                    <tr className="border-t-2 border-slate-200  bg-slate-50 ">
-                                        <td className="py-3 px-4 font-bold text-slate-900 ">Total</td>
-                                        <td className="py-3 px-4 text-center text-slate-400 text-sm">/100</td>
-                                        {peerReviews.map((r, i) => (
-                                            <td key={i} className="py-3 px-4 text-center font-extrabold text-slate-900 ">{getScore100(r.scores ?? {})}</td>
-                                        ))}
-                                        {peerReviews.length > 1 && (
-                                            <td className={`py-3 px-4 text-center font-extrabold text-xl ${getScore100Color(avgScore100)}`}>{avgScore100}</td>
-                                        )}
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                            /* New rubric: show 5 aspects with max scores and per-review columns */
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-200 ">
+                                            <th className="py-3 px-4 text-slate-600 ">Aspect</th>
+                                            <th className="py-3 px-4 text-center text-slate-500  text-xs">Max</th>
+                                            {peerReviews.map((r, i) => (
+                                                <th key={i} className="py-3 px-4 text-center text-slate-600 ">Reviewer {i + 1}</th>
+                                            ))}
+                                            {peerReviews.length > 1 && <th className="py-3 px-4 text-center text-slate-600  font-bold">Avg</th>}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {newRubricAspects.map(({ key, label, max }) => {
+                                            const vals = peerReviews.map(r => {
+                                                const raw = r.scores?.[key]
+                                                if (typeof raw === 'number') return raw
+                                                const nums = String(raw ?? '').split('\u2013').map((n: string) => parseInt(n.trim(), 10)).filter((n: number) => !isNaN(n))
+                                                return nums.length ? Math.max(...nums) : 0
+                                            })
+                                            const avgVal = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
+                                            return (
+                                                <tr key={key} className="border-b border-slate-100 ">
+                                                    <td className="py-3 px-4 text-slate-900  font-medium">{label}</td>
+                                                    <td className="py-3 px-4 text-center text-slate-400 text-sm">/{max}</td>
+                                                    {vals.map((v, i) => (
+                                                        <td key={i} className="py-3 px-4 text-center font-bold text-slate-900 ">{v}</td>
+                                                    ))}
+                                                    {peerReviews.length > 1 && (
+                                                        <td className="py-3 px-4 text-center font-bold text-blue-600 ">{avgVal}</td>
+                                                    )}
+                                                </tr>
+                                            )
+                                        })}
+                                        {/* Total row */}
+                                        <tr className="border-t-2 border-slate-200  bg-slate-50 ">
+                                            <td className="py-3 px-4 font-bold text-slate-900 ">Total</td>
+                                            <td className="py-3 px-4 text-center text-slate-400 text-sm">/100</td>
+                                            {peerReviews.map((r, i) => (
+                                                <td key={i} className="py-3 px-4 text-center font-extrabold text-slate-900 ">{getScore100(r.scores ?? {})}</td>
+                                            ))}
+                                            {peerReviews.length > 1 && (
+                                                <td className={`py-3 px-4 text-center font-extrabold text-xl ${getScore100Color(avgScore100)}`}>{avgScore100}</td>
+                                            )}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         ) : (
                             /* Legacy IELTS rubric: original table */
                             <div className="overflow-x-auto">
@@ -409,8 +430,8 @@ export default function Feedback() {
 
 
 
-                {/* Peer Reviews - Always visible if they exist */}
-                {reviews.length > 0 && (
+                {/* Peer Reviews — gated for essay owner until they complete 2 reviews */}
+                {reviews.length > 0 && (canViewScores || isTeacher || essay.studentId !== auth.currentUser?.uid) && (
                     <div className="space-y-6">
                         <h2 className="text-2xl font-semibold text-slate-900 ">Peer Reviews</h2>
                         {reviews.map((review, idx) => {
@@ -561,24 +582,30 @@ export default function Feedback() {
                                         <div className="mt-4 border-t border-slate-200  pt-4 space-y-4">
                                             {/* Rating */}
                                             <div>
-                                                <p className="text-sm font-semibold text-slate-700  mb-1">
-                                                    Is this reviewer&apos;s feedback helpful?
+                                                <p className="text-sm font-semibold text-slate-700  mb-2">
+                                                    RATE THIS REVIEW
                                                 </p>
-                                                <p className="text-xs text-slate-500  mb-2">1 = very unhelpful; 5 = very helpful</p>
-                                                <div className="flex gap-2">
+                                                <p className="text-xs text-slate-500  mb-3">How helpful was this peer review to you?</p>
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     {[1, 2, 3, 4, 5].map(n => (
                                                         <button
                                                             key={n}
                                                             type="button"
                                                             onClick={() => setStudentResponses(prev => ({ ...prev, [review.id]: { ...prev[review.id], rating: n, saved: false } }))}
-                                                            className={`w-9 h-9 rounded-lg border text-sm font-bold transition-all ${studentResponses[review.id].rating === n
-                                                                ? 'bg-blue-500 border-blue-500 text-white'
-                                                                : 'bg-white  border-slate-300  text-slate-700  hover:border-blue-400'
+                                                            className={`text-2xl transition-all focus:outline-none ${studentResponses[review.id].rating !== null && n <= (studentResponses[review.id].rating ?? 0)
+                                                                ? 'text-yellow-400 scale-110'
+                                                                : 'text-slate-300 hover:text-yellow-300'
                                                                 }`}
+                                                            title={RATING_LABELS[n]}
                                                         >
-                                                            {n}
+                                                            ★
                                                         </button>
                                                     ))}
+                                                    {studentResponses[review.id].rating && (
+                                                        <span className="text-sm font-medium text-slate-600 ml-1">
+                                                            {RATING_LABELS[studentResponses[review.id].rating!]}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -627,15 +654,17 @@ export default function Feedback() {
                                                         {[1, 2, 3, 4, 5].map(n => (
                                                             <span
                                                                 key={n}
-                                                                className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold border ${n <= review.studentRating
-                                                                    ? 'bg-blue-500 border-blue-500 text-white'
-                                                                    : 'bg-slate-100  border-slate-200  text-slate-400'
+                                                                className={`text-xl ${n <= review.studentRating
+                                                                    ? 'text-yellow-400'
+                                                                    : 'text-slate-200'
                                                                     }`}
                                                             >
-                                                                {n}
+                                                                ★
                                                             </span>
                                                         ))}
-                                                        <span className="text-xs text-slate-500  ml-1">{review.studentRating}/5</span>
+                                                        <span className="text-sm font-medium text-slate-600 ml-1">
+                                                            {RATING_LABELS[review.studentRating as number] ?? `${review.studentRating}/5`}
+                                                        </span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-sm text-slate-400 italic">Not rated yet</span>
