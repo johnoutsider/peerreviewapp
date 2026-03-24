@@ -80,6 +80,12 @@ service cloud.firestore {
       // Client reads and deletes after linking (the random code acts as the capability token)
       allow read, delete: if true;
     }
+    // Batch jobs — created/read by teachers via the scheduler
+    match /batchJobs/{jobId} {
+      allow read, create, update, delete: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
     // Scheduled tasks and exports - teachers manage automation entries from the app
     match /scheduledTasks/{taskId} {
       allow read, create, update, delete: if request.auth != null &&

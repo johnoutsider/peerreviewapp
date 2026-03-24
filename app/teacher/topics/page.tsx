@@ -26,6 +26,7 @@ interface Topic {
     order?: number
     essayDeadline?: Timestamp | null
     reviewDeadline?: Timestamp | null
+    lateSubmissionDays?: number
 }
 
 // Format a Firestore Timestamp (or null) to "YYYY-MM-DDTHH:MM" for <input type="datetime-local">
@@ -47,7 +48,7 @@ export default function ManageTopics() {
     const [reordering, setReordering] = useState(false)
 
     // Per-topic deadline editing state
-    const [editing, setEditing] = useState<Record<string, { essayDeadline: string; reviewDeadline: string; saving: boolean }>>({})
+    const [editing, setEditing] = useState<Record<string, { essayDeadline: string; reviewDeadline: string; lateSubmissionDays: string; saving: boolean }>>({})
 
     // Per-topic name renaming state
     const [renaming, setRenaming] = useState<Record<string, { value: string; active: boolean; saving: boolean }>>({})
@@ -74,6 +75,7 @@ export default function ManageTopics() {
                         next[t.id] = {
                             essayDeadline: tsToDateStr(t.essayDeadline),
                             reviewDeadline: tsToDateStr(t.reviewDeadline),
+                            lateSubmissionDays: String(t.lateSubmissionDays ?? 0),
                             saving: false,
                         }
                     }
@@ -131,6 +133,7 @@ export default function ManageTopics() {
                 order: topics.length,
                 essayDeadline: null,
                 reviewDeadline: null,
+                lateSubmissionDays: 0,
             })
             setNewTopic('')
             setSuccess(`Topic "${name}" added successfully!`)
@@ -164,6 +167,7 @@ export default function ManageTopics() {
             await updateDoc(doc(db, 'topics', topicId), {
                 essayDeadline: toTimestamp(state.essayDeadline),
                 reviewDeadline: toTimestamp(state.reviewDeadline),
+                lateSubmissionDays: Math.max(0, parseInt(state.lateSubmissionDays || '0', 10) || 0),
             })
             setSuccess('Deadlines saved!')
             setTimeout(() => setSuccess(null), 2500)
@@ -175,7 +179,7 @@ export default function ManageTopics() {
         }
     }
 
-    const setField = (topicId: string, field: 'essayDeadline' | 'reviewDeadline', value: string) => {
+    const setField = (topicId: string, field: 'essayDeadline' | 'reviewDeadline' | 'lateSubmissionDays', value: string) => {
         setEditing(prev => ({ ...prev, [topicId]: { ...prev[topicId], [field]: value } }))
     }
 
@@ -270,7 +274,7 @@ export default function ManageTopics() {
                     ) : (
                         <ul className="divide-y divide-slate-50">
                             {topics.map((topic, index) => {
-                                const ed = editing[topic.id] || { essayDeadline: '', reviewDeadline: '', saving: false }
+                                const ed = editing[topic.id] || { essayDeadline: '', reviewDeadline: '', lateSubmissionDays: '0', saving: false }
                                 const essayD = ed.essayDeadline ? new Date(ed.essayDeadline) : null
                                 const reviewD = ed.reviewDeadline ? new Date(ed.reviewDeadline) : null
                                 const now = Date.now()
@@ -372,6 +376,19 @@ export default function ManageTopics() {
                                                     onChange={e => setField(topic.id, 'essayDeadline', e.target.value)}
                                                     className="mt-2 w-full bg-white text-slate-700 border border-slate-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-teal-500"
                                                 />
+                                                {/* Late submission days */}
+                                                <div className="mt-3 flex items-center gap-2">
+                                                    <label className="text-xs text-slate-400 font-semibold whitespace-nowrap">⏰ Late window:</label>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={30}
+                                                        value={ed.lateSubmissionDays ?? '0'}
+                                                        onChange={e => setField(topic.id, 'lateSubmissionDays', e.target.value)}
+                                                        className="w-16 bg-white text-slate-700 border border-slate-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-amber-500 text-center"
+                                                    />
+                                                    <span className="text-xs text-slate-400">days after deadline</span>
+                                                </div>
                                             </div>
                                             <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                                                 <label className="block text-xs text-slate-400 mb-1.5 font-semibold uppercase tracking-wide">

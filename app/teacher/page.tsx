@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs, orderBy, onSnapshot, limit } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
-import { calculateFinalScores } from '@/lib/score-calculator'
+import { getAverageScore100 } from '@/lib/score-calculator'
 
 interface StudentData {
     uid: string
@@ -19,7 +19,7 @@ interface StudentData {
     filteredCount: number        // essays matching the selected topic filter
     reviewsGiven: number
     requiredReviews: number
-    avgBand: number | null
+    avgScore: number | null
 }
 
 interface Topic {
@@ -61,27 +61,26 @@ export default function TeacherDashboard() {
                 const studentsSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'student'), limit(500)))
                 const studentIds = studentsSnap.docs.map(d => d.id)
 
-                const essaysSnapDocs: any[] = []
-                for (let i = 0; i < studentIds.length; i += 10) {
-                    const chunk = studentIds.slice(i, i + 10)
-                    const snap = await getDocs(query(collection(db, 'essays'), where('studentId', 'in', chunk)))
-                    essaysSnapDocs.push(...snap.docs)
-                }
+                const studentChunks = Array.from({ length: Math.ceil(studentIds.length / 10) }, (_, i) => studentIds.slice(i * 10, i * 10 + 10))
 
-                const reviewsSnapDocs: any[] = []
-                // Fetch reviews written by them
-                for (let i = 0; i < studentIds.length; i += 10) {
-                    const chunk = studentIds.slice(i, i + 10)
-                    const snap = await getDocs(query(collection(db, 'reviews'), where('reviewerId', 'in', chunk)))
-                    reviewsSnapDocs.push(...snap.docs)
-                }
+                // Fetch essays and reviewer-reviews in parallel
+                const [essayResults, reviewerResults] = await Promise.all([
+                    Promise.all(studentChunks.map(chunk => getDocs(query(collection(db, 'essays'), where('studentId', 'in', chunk))))),
+                    Promise.all(studentChunks.map(chunk => getDocs(query(collection(db, 'reviews'), where('reviewerId', 'in', chunk)))))
+                ])
+                const essaysSnapDocs: any[] = essayResults.flatMap(s => s.docs)
+                const reviewsSnapDocsRaw: any[] = reviewerResults.flatMap(s => s.docs)
+
                 // Fetch reviews received on their essays
                 const essayIds = essaysSnapDocs.map(e => e.id)
-                for (let i = 0; i < essayIds.length; i += 10) {
-                    const chunk = essayIds.slice(i, i + 10)
-                    const snap = await getDocs(query(collection(db, 'reviews'), where('essayId', 'in', chunk)))
-                    reviewsSnapDocs.push(...snap.docs)
-                }
+                const essayChunks = Array.from({ length: Math.ceil(essayIds.length / 10) }, (_, i) => essayIds.slice(i * 10, i * 10 + 10))
+                const essayReviewResults = await Promise.all(essayChunks.map(chunk => getDocs(query(collection(db, 'reviews'), where('essayId', 'in', chunk)))))
+                reviewsSnapDocsRaw.push(...essayReviewResults.flatMap(s => s.docs))
+
+                // Deduplicate reviews by ID
+                const reviewsById = new Map<string, any>()
+                reviewsSnapDocsRaw.forEach(r => reviewsById.set(r.id, r))
+                const reviewsSnapDocs = Array.from(reviewsById.values())
 
                 // Polyfill for the previous map/filter code which expected QueryDocumentSnapshot arrays
                 const essaysSnap = { docs: essaysSnapDocs }
@@ -96,29 +95,12 @@ export default function TeacherDashboard() {
                         r.data().reviewerId === uid && r.data().reviewerRole !== 'ai'
                     )
 
-                    // Average band from reviews received on their essays
-                    let avgBand: number | null = null
-                    const essayIds = myEssays.map(e => e.id)
-                    const receivedReviewsRaw = reviewsSnap.docs.filter(r => essayIds.includes(r.data().essayId))
-
-                    if (receivedReviewsRaw.length > 0) {
-                        const receivedReviews = receivedReviewsRaw.map(r => ({ id: r.id, ...r.data() } as any))
-                        let totalBand = 0
-                        let essaysWithReviews = 0
-
-                        for (const essayId of essayIds) {
-                            const reviewsForEssay = receivedReviews.filter(r => r.essayId === essayId)
-                            if (reviewsForEssay.length > 0) {
-                                const { overallBand } = calculateFinalScores(reviewsForEssay)
-                                totalBand += overallBand
-                                essaysWithReviews++
-                            }
-                        }
-
-                        if (essaysWithReviews > 0) {
-                            avgBand = +(totalBand / essaysWithReviews).toFixed(1)
-                        }
-                    }
+                    // Average score /100 from reviews received on their essays
+                    const myEssayIds = myEssays.map(e => e.id)
+                    const receivedReviews = reviewsSnap.docs
+                        .filter(r => myEssayIds.includes(r.data().essayId))
+                        .map(r => r.data() as any)
+                    const avgScore = getAverageScore100(receivedReviews)
 
                     return {
                         uid,
@@ -131,7 +113,7 @@ export default function TeacherDashboard() {
                         filteredCount: myEssays.length, // placeholder, computed below
                         reviewsGiven: myReviews.length,
                         requiredReviews: myEssays.length * 3 || 3,
-                        avgBand,
+                        avgScore,
                         // carry essays for filtering
                         _essays: myEssays,
                     } as StudentData & { _essays: typeof myEssays }
@@ -295,7 +277,7 @@ export default function TeacherDashboard() {
                                     <th className="py-3 px-5 text-slate-400 font-semibold text-xs uppercase tracking-wide">Email</th>
                                     <th className="py-3 px-5 text-center text-slate-400 font-semibold text-xs uppercase tracking-wide">Essays</th>
                                     <th className="py-3 px-5 text-center text-slate-400 font-semibold text-xs uppercase tracking-wide">Reviews</th>
-                                    <th className="py-3 px-5 text-center text-slate-400 font-semibold text-xs uppercase tracking-wide">Avg Band</th>
+                                    <th className="py-3 px-5 text-center text-slate-400 font-semibold text-xs uppercase tracking-wide">Avg Score</th>
                                     <th className="py-3 px-5 text-right text-slate-400 font-semibold text-xs uppercase tracking-wide">Actions</th>
                                 </tr>
                             </thead>
@@ -339,11 +321,11 @@ export default function TeacherDashboard() {
                                             </span>
                                         </td>
                                         <td className="py-3.5 px-5 text-center">
-                                            {student.avgBand != null ? (
-                                                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${student.avgBand >= 7 ? 'bg-green-50 text-green-600'
-                                                    : student.avgBand >= 5.5 ? 'bg-amber-50 text-amber-600'
+                                            {student.avgScore != null ? (
+                                                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${student.avgScore >= 80 ? 'bg-green-50 text-green-600'
+                                                    : student.avgScore >= 60 ? 'bg-amber-50 text-amber-600'
                                                         : 'bg-red-50 text-red-500'
-                                                    }`}>{student.avgBand}</span>
+                                                    }`}>{student.avgScore}/100</span>
                                             ) : <span className="text-slate-300">—</span>}
                                         </td>
                                         <td className="py-3.5 px-5 text-right">

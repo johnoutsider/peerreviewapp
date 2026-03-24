@@ -305,7 +305,7 @@ export default function Progress() {
                                     <div className="flex-1 w-full min-h-0">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <LineChart
-                                                data={progressData.map(p => ({ ...p, displayScore: p.isNew ? p.score100 : p.overallBand }))}
+                                                data={progressData.map(p => ({ ...p, displayScore: p.isNew ? p.score100 : Math.round((p.overallBand! / 9) * 100) }))}
                                                 margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
                                             >
                                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
@@ -330,7 +330,7 @@ export default function Progress() {
                                                         return item ? `Topic: ${item.topicName}` : ''
                                                     }}
                                                     formatter={(value: any, _name: any, props: any) => [
-                                                        props.payload.isNew ? `${value}/100` : `Band ${value}`,
+                                                        `${value}/100`,
                                                         'Score'
                                                     ]}
                                                 />

@@ -20,6 +20,7 @@ interface Topic {
     name: string
     essayDeadline?: Timestamp | null
     reviewDeadline?: Timestamp | null
+    lateSubmissionDays?: number
 }
 
 export default function SubmitEssay() {
@@ -54,6 +55,7 @@ export default function SubmitEssay() {
                     name: (d.data() as any).name,
                     essayDeadline: (d.data() as any).essayDeadline ?? null,
                     reviewDeadline: (d.data() as any).reviewDeadline ?? null,
+                    lateSubmissionDays: (d.data() as any).lateSubmissionDays ?? 0,
                 })) as Topic[]
                 setTopics(data)
             } catch (err) {
@@ -301,13 +303,24 @@ export default function SubmitEssay() {
                                         const t = topics.find(x => x.id === topicId)
                                         const essayD = t?.essayDeadline ? t.essayDeadline.toDate() : null
                                         const reviewD = t?.reviewDeadline ? t.reviewDeadline.toDate() : null
+                                        const latedays = t?.lateSubmissionDays ?? 0
+                                        const now = Date.now()
+                                        const pastDeadline = essayD && essayD.getTime() < now
+                                        const lateWindowMs = latedays * 24 * 60 * 60 * 1000
+                                        const inLateWindow = pastDeadline && latedays > 0 && now < essayD!.getTime() + lateWindowMs
+                                        const isSubmissionClosed = pastDeadline && !inLateWindow
                                         return (
                                             <div className="space-y-2">
-                                                <DeadlineBanner label="Essay Submission" deadline={essayD} emoji="📝" />
+                                                <DeadlineBanner label="Essay Submission" deadline={essayD} lateSubmissionDays={latedays} emoji="📝" />
                                                 <DeadlineBanner label="Peer Review" deadline={reviewD} emoji="👥" />
-                                                {essayD && essayD.getTime() < Date.now() && (
-                                                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 text-red-400 text-sm font-medium">
-                                                        ⚠️ The essay submission deadline for this topic has passed. You may still submit, but contact your teacher.
+                                                {inLateWindow && (
+                                                    <div className="bg-amber-50 border border-amber-300 rounded-lg px-4 py-2.5 text-amber-800 text-sm font-medium">
+                                                        ⏰ <strong>Late submission</strong> — the deadline has passed but you are within the grace window. Your essay will be marked as submitted late.
+                                                    </div>
+                                                )}
+                                                {isSubmissionClosed && (
+                                                    <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-2.5 text-red-700 text-sm font-medium">
+                                                        🚫 <strong>Submissions closed</strong> — the deadline and late window for this topic have both passed.
                                                     </div>
                                                 )}
                                             </div>
@@ -352,20 +365,36 @@ export default function SubmitEssay() {
                         </div>
 
                         <div className="pt-4 pb-4">
-                            <button
-                                type="submit"
-                                disabled={loading || !topicId}
-                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-xl py-5 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-blue-500/20"
-                            >
-                                {loading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                                        Submitting &amp; Analyzing...
-                                    </>
-                                ) : (
-                                    'Submit Essay'
-                                )}
-                            </button>
+                            {(() => {
+                                const t = topics.find(x => x.id === topicId)
+                                const essayD = t?.essayDeadline ? t.essayDeadline.toDate() : null
+                                const latedays = t?.lateSubmissionDays ?? 0
+                                const now = Date.now()
+                                const pastDeadline = essayD && essayD.getTime() < now
+                                const lateWindowMs = latedays * 24 * 60 * 60 * 1000
+                                const inLateWindow = pastDeadline && latedays > 0 && now < essayD!.getTime() + lateWindowMs
+                                const isSubmissionClosed = pastDeadline && !inLateWindow
+                                return (
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !topicId || !!isSubmissionClosed}
+                                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-xl py-5 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-blue-500/20"
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                                Submitting &amp; Analyzing...
+                                            </>
+                                        ) : isSubmissionClosed ? (
+                                            '🚫 Submissions Closed'
+                                        ) : inLateWindow ? (
+                                            '⏰ Submit Late'
+                                        ) : (
+                                            'Submit Essay'
+                                        )}
+                                    </button>
+                                )
+                            })()}
                         </div>
                     </form>
                 </div>

@@ -359,11 +359,11 @@ export default function TeacherReviewActivity() {
                                                 <td className="py-3.5 px-5">
                                                     <div className="flex items-center gap-2">
                                                         <Link
-                                                            href={`/feedback/${row.essayId}`}
+                                                            href={`/teacher/essays/${row.essayId}`}
                                                             onClick={e => e.stopPropagation()}
                                                             className="text-xs bg-violet-50 text-violet-700 border border-violet-100 px-2.5 py-1 rounded-full hover:bg-violet-100 transition-colors inline-block"
                                                         >
-                                                            View Essay →
+                                                            Give Feedback →
                                                         </Link>
                                                         <span className={`text-slate-400 text-sm transition-transform inline-block ${isExpanded ? 'rotate-180' : ''}`}>▾</span>
                                                         {hasStudentResponse && !isExpanded && (

@@ -83,6 +83,26 @@ export function getScore100(scores: Record<string, any>): number {
     }, 0)
 }
 
+/** Returns a /100 score for either rubric format.
+ *  New rubric: sums the 5 category scores (already /100).
+ *  Old IELTS:  averages the 4 band scores (0-9) then maps to 0-100. */
+export function getUniversalScore100(scores: Record<string, any>): number {
+    if (!scores) return 0
+    if (isNewRubric(scores)) return getScore100(scores)
+    const keys = ['taskAchievement', 'coherenceCohesion', 'lexicalResource', 'grammaticalRange'] as const
+    const values = keys.map(k => (typeof scores[k] === 'number' ? scores[k] : 0))
+    const avg = values.reduce((a, b) => a + b, 0) / keys.length
+    return Math.round((avg / 9) * 100)
+}
+
+/** Averages getUniversalScore100 across multiple reviews. Returns null if no reviews have scores. */
+export function getAverageScore100(reviews: Array<{ scores?: Record<string, any> }>): number | null {
+    const valid = reviews.filter(r => r.scores != null)
+    if (valid.length === 0) return null
+    const total = valid.reduce((sum, r) => sum + getUniversalScore100(r.scores!), 0)
+    return Math.round(total / valid.length)
+}
+
 export function getScore100Color(score: number): string {
     if (score >= 80) return 'text-green-500'
     if (score >= 65) return 'text-yellow-500'
