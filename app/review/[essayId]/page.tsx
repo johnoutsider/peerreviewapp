@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
+import EvaFeedbackChat from '@/components/EvaFeedbackChat'
 
 // ─── Rubric Definition ────────────────────────────────────────────────────────
 const ASPECTS = [
@@ -183,6 +184,7 @@ export default function ReviewEssay() {
     const [feedback, setFeedback] = useState('')
     const [activeTab, setActiveTab] = useState<'essay' | 'rubric'>('essay')
     const [isMobile, setIsMobile] = useState(false)
+    const [evaAllowed, setEvaAllowed] = useState(false)
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 768)
@@ -206,6 +208,19 @@ export default function ReviewEssay() {
                 if (!(await getDocs(reviewsQ)).empty) setAlreadyReviewed(true)
 
                 setEssay({ id: essayDoc.id, ...essayDoc.data() })
+
+                // Check if student's group has EVA access
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', auth.currentUser!.uid))
+                    const evaDoc = await getDoc(doc(db, 'settings', 'eva'))
+                    if (userDoc.exists() && evaDoc.exists()) {
+                        const groupName = userDoc.data().groupName || ''
+                        const allowedGroups: string[] = evaDoc.data().allowedGroups || []
+                        if (groupName && allowedGroups.includes(groupName)) {
+                            setEvaAllowed(true)
+                        }
+                    }
+                } catch { }
             } catch (err) {
                 console.error('Error fetching essay:', err)
             } finally {
@@ -377,6 +392,7 @@ export default function ReviewEssay() {
                             {wordCount} word{wordCount !== 1 ? 's' : ''}
                             {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
                         </p>
+                        {evaAllowed && <EvaFeedbackChat feedback={feedback} />}
                     </div>
                 </div>
 
@@ -501,6 +517,7 @@ export default function ReviewEssay() {
                                             {wordCount} word{wordCount !== 1 ? 's' : ''}
                                             {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
                                         </p>
+                                        {evaAllowed && <EvaFeedbackChat feedback={feedback} />}
                                     </div>
                                 </div>
 
@@ -597,6 +614,7 @@ export default function ReviewEssay() {
                                             {wordCount} word{wordCount !== 1 ? 's' : ''}
                                             {!feedbackValid && wordCount > 0 && ` · ${20 - wordCount} more needed`}
                                         </p>
+                                        {evaAllowed && <EvaFeedbackChat feedback={feedback} />}
                                     </div>
                                 </div>
 
