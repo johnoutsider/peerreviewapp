@@ -22,6 +22,7 @@ export default function Feedback() {
     const [notFound, setNotFound] = useState(false)
     const [accessDenied, setAccessDenied] = useState(false)
     const [isTeacher, setIsTeacher] = useState(false)
+    const [isReviewer, setIsReviewer] = useState(false)
     const [canViewScores, setCanViewScores] = useState(true)
     const [completedReviewCount, setCompletedReviewCount] = useState(0)
 
@@ -77,11 +78,21 @@ export default function Feedback() {
 
                 const essayData = { id: essayDoc.id, ...essayDoc.data() } as any
 
-                // Verify access: Student (owner) or Teacher
+                // Verify access: Student (owner), Teacher, or Reviewer
                 if (essayData.studentId !== auth.currentUser.uid && !isTeacherRole) {
-                    setAccessDenied(true)
-                    setLoading(false)
-                    return
+                    // Check if the current user has reviewed this essay
+                    const reviewerCheckQuery = query(
+                        collection(db, 'reviews'),
+                        where('essayId', '==', essayId),
+                        where('reviewerId', '==', auth.currentUser.uid)
+                    )
+                    const reviewerCheckSnap = await getDocs(reviewerCheckQuery)
+                    if (reviewerCheckSnap.empty) {
+                        setAccessDenied(true)
+                        setLoading(false)
+                        return
+                    }
+                    setIsReviewer(true)
                 }
 
                 // Get peer reviews received for this essay
@@ -293,6 +304,20 @@ export default function Feedback() {
                         </Link>
                     )}
                 </div>
+
+                {/* Reviewer anonymity banner */}
+                {isReviewer && (
+                    <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-4">
+                        <span className="text-blue-500 mt-0.5 shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+                                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </span>
+                        <p className="text-blue-700 text-sm leading-relaxed">
+                            <span className="font-semibold">You are viewing this as a reviewer.</span> The essay author&apos;s identity is kept anonymous.
+                        </p>
+                    </div>
+                )}
 
                 {/* AI assessments are created during submission; on-demand AI buttons removed. */}
 

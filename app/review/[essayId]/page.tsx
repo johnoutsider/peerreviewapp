@@ -270,7 +270,7 @@ export default function ReviewEssay() {
             } catch { }
 
             setSuccess('Review submitted! Redirecting...')
-            setTimeout(() => router.push('/review'), 1500)
+            setTimeout(() => router.push(`/discussion/${essayId}`), 1500)
         } catch (err) {
             setError('Failed to submit review. Please try again.')
         } finally {
