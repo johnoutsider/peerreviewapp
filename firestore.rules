@@ -44,6 +44,77 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.studentId == request.auth.uid;
       allow update: if request.auth != null;
       allow delete: if request.auth != null; // owner OR teacher (role enforced in app)
+
+      match /discussion/{commentId} {
+        allow read: if signedIn() && (
+          isEssayOwner(essayId) ||
+          isAssignedReviewer(essayId) ||
+          isTeacher()
+        );
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /reviewDiscussionThreads/{threadId} {
+      allow read: if signedIn() && (
+        isEssayOwner(resource.data.essayId) ||
+        isAssignedReviewer(resource.data.essayId) ||
+        isTeacher()
+      );
+
+      allow create: if signedIn() &&
+        request.resource.data.keys().hasOnly([
+          'essayId',
+          'reviewerId',
+          'createdAt',
+          'lastCommentAt',
+          'commentCount'
+        ]) &&
+        (
+          isEssayOwner(request.resource.data.essayId) ||
+          isAssignedReviewer(request.resource.data.essayId) ||
+          isTeacher()
+        );
+
+      allow update: if signedIn() &&
+        request.resource.data.essayId == resource.data.essayId &&
+        request.resource.data.reviewerId == resource.data.reviewerId &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'lastCommentAt',
+          'commentCount'
+        ]) &&
+        (
+          isEssayOwner(resource.data.essayId) ||
+          isAssignedReviewer(resource.data.essayId) ||
+          isTeacher()
+        );
+
+      allow delete: if false;
+
+      match /comments/{commentId} {
+        allow read: if signedIn() && (
+          isEssayOwner(resource.data.essayId) ||
+          isAssignedReviewer(resource.data.essayId) ||
+          isTeacher()
+        );
+
+        allow create: if signedIn() &&
+          request.resource.data.authorId == request.auth.uid &&
+          request.resource.data.keys().hasOnly([
+            'essayId',
+            'reviewerId',
+            'authorId',
+            'text',
+            'createdAt'
+          ]) &&
+          (
+            isEssayOwner(request.resource.data.essayId) ||
+            isAssignedReviewer(request.resource.data.essayId) ||
+            isTeacher()
+          );
+
+        allow update, delete: if false;
+      }
     }
 
     match /essayAnnotations/{annotationId} {
