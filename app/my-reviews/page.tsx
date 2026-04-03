@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
+import AnnotationSummary from '@/components/review/AnnotationSummary'
+import { ReviewAnnotation } from '@/lib/review-types'
 
 const RATING_LABELS: Record<number, string> = {
     1: 'Not Helpful',
@@ -18,6 +20,8 @@ interface MyReview {
     id: string
     essayId: string
     feedback: string
+    annotations: ReviewAnnotation[]
+    annotationsCount: number
     totalScore: number | null
     scores: Record<string, any>
     completedAt: any
@@ -57,6 +61,8 @@ export default function MyReviewsPage() {
                     id: d.id,
                     essayId: d.data().essayId ?? '',
                     feedback: d.data().feedback ?? '',
+                    annotations: d.data().annotations ?? [],
+                    annotationsCount: d.data().annotationsCount ?? ((d.data().annotations ?? []).length || 0),
                     totalScore: d.data().totalScore ?? null,
                     scores: d.data().scores ?? {},
                     completedAt: d.data().completedAt,
@@ -161,6 +167,11 @@ export default function MyReviewsPage() {
                                                     Score: {review.totalScore}/100
                                                 </span>
                                             )}
+                                            {review.annotationsCount > 0 && (
+                                                <span className="text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">
+                                                    {review.annotationsCount} note{review.annotationsCount !== 1 ? 's' : ''}
+                                                </span>
+                                            )}
                                             {submittedAt && (
                                                 <span className="text-xs text-slate-400">{submittedAt}</span>
                                             )}
@@ -198,6 +209,15 @@ export default function MyReviewsPage() {
                                                 </p>
                                             </div>
                                         </div>
+                                        {review.annotations.length > 0 && (
+                                            <AnnotationSummary
+                                                content={review.essayContent || ''}
+                                                annotations={review.annotations}
+                                                tone="student"
+                                                title="Your Highlighted Notes"
+                                                emptyText="No highlighted notes were attached to this review."
+                                            />
+                                        )}
 
                                         {/* ── Author's anonymous reaction ── */}
                                         <div>

@@ -7,6 +7,8 @@ import { auth, db } from '@/lib/firebase'
 import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
 import { isNewRubric, getScore100 } from '@/lib/score-calculator'
+import AnnotationSummary from '@/components/review/AnnotationSummary'
+import { ReviewAnnotation } from '@/lib/review-types'
 
 interface ReviewRow {
     reviewId: string
@@ -28,6 +30,9 @@ interface ReviewRow {
     // student's reaction to the review
     studentRating: number | null
     studentResponse: string
+    annotations: ReviewAnnotation[]
+    annotationsCount: number
+    essayContent: string
     // score format
     isNewRubric: boolean
     score100: number | null
@@ -117,6 +122,9 @@ export default function TeacherReviewActivity() {
                             feedback: r.feedback || '',
                             studentRating: r.studentRating ?? null,
                             studentResponse: r.studentResponse ?? '',
+                            annotations: r.annotations ?? [],
+                            annotationsCount: r.annotationsCount ?? ((r.annotations ?? []).length || 0),
+                            essayContent: essay?.content || '',
                             isNewRubric: isNewRubric(r.scores ?? {}),
                             score100: isNewRubric(r.scores ?? {}) ? getScore100(r.scores ?? {}) : null,
                         } as ReviewRow
@@ -390,6 +398,17 @@ export default function TeacherReviewActivity() {
                                                                     </p>
                                                                 ) : (
                                                                     <p className="text-sm text-slate-400 italic">No written comment.</p>
+                                                                )}
+                                                                {row.annotationsCount > 0 && (
+                                                                    <div className="mt-4">
+                                                                        <AnnotationSummary
+                                                                            content={row.essayContent}
+                                                                            annotations={row.annotations}
+                                                                            tone={row.reviewerRole === 'teacher' ? 'teacher' : 'student'}
+                                                                            title="Highlighted Notes"
+                                                                            emptyText="No highlighted notes were added to this review."
+                                                                        />
+                                                                    </div>
                                                                 )}
                                                             </div>
 

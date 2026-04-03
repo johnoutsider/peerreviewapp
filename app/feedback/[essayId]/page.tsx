@@ -8,6 +8,9 @@ import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'fireb
 import StudentLayout from '@/components/StudentLayout'
 import ScoreChart from '@/components/ScoreChart'
 import { calculateFinalScores, getScoreColor, getScoreLabel, isNewRubric, getScore100, getScore100Label, getScore100Color } from '@/lib/score-calculator'
+import AnnotationSummary from '@/components/review/AnnotationSummary'
+import EssayAnnotator from '@/components/review/EssayAnnotator'
+import { subscribeToEssayAnnotations } from '@/lib/essay-annotations'
 
 export default function Feedback() {
     const router = useRouter()
@@ -35,6 +38,7 @@ export default function Feedback() {
         grammaticalRange: 5,
     })
     const [submittingTeacherReview, setSubmittingTeacherReview] = useState(false)
+    const [essayAnnotations, setEssayAnnotations] = useState<any[]>([])
 
     // Per-review student response state: { [reviewId]: { rating, response, saving, saved } }
     const [studentResponses, setStudentResponses] = useState<Record<string, {
@@ -138,6 +142,14 @@ export default function Feedback() {
 
         fetchFeedback()
     }, [essayId, router])
+
+    useEffect(() => {
+        if (!auth.currentUser) return
+
+        setEssayAnnotations([])
+        const unsubscribe = subscribeToEssayAnnotations(essayId, setEssayAnnotations)
+        return () => unsubscribe()
+    }, [essayId])
 
     // Gate score visibility: students must complete at least 2 reviews in this topic
     useEffect(() => {
@@ -316,6 +328,20 @@ export default function Feedback() {
                         <p className="text-blue-700 text-sm leading-relaxed">
                             <span className="font-semibold">You are viewing this as a reviewer.</span> The essay author&apos;s identity is kept anonymous.
                         </p>
+                    </div>
+                )}
+
+                {essayAnnotations.length > 0 && (canViewScores || isTeacher || essay.studentId !== auth.currentUser?.uid) && (
+                    <div className="mb-8">
+                        <EssayAnnotator
+                            content={essay.content || ''}
+                            annotations={essayAnnotations}
+                            tone={isTeacher ? 'teacher' : 'student'}
+                            title="Shared Highlighted Notes"
+                            subtitle="Click any highlight to open the saved note. Shared notes stay visible to everyone working on this essay."
+                            emptyText="No shared highlights have been added yet."
+                            showAnnotationList={false}
+                        />
                     </div>
                 )}
 
@@ -601,6 +627,18 @@ export default function Feedback() {
                                         <div className="text-sm text-slate-500  mb-2">Feedback:</div>
                                         <p className="text-slate-600  whitespace-pre-wrap">{review.feedback}</p>
                                     </div>
+
+                                    {review.annotations?.length > 0 && (
+                                        <div className="mt-4">
+                                            <AnnotationSummary
+                                                content={essay?.content || ''}
+                                                annotations={review.annotations}
+                                                tone={isTeacherReview ? 'teacher' : 'student'}
+                                                title={isTeacherReview ? 'Teacher Highlighted Notes' : 'Highlighted Notes'}
+                                                emptyText="No highlighted notes were added to this review."
+                                            />
+                                        </div>
+                                    )}
 
                                     {/* ── Helpfulness rating + student response ── */}
                                     {!isTeacher && !isAI && !isTeacherReview && studentResponses[review.id] && (

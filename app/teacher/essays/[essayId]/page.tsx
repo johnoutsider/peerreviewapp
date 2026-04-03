@@ -9,6 +9,15 @@ import {
     addDoc, updateDoc, serverTimestamp,
 } from 'firebase/firestore'
 import TeacherLayout from '@/components/TeacherLayout'
+import EssayAnnotator from '@/components/review/EssayAnnotator'
+import { normalizeReviewAnnotations } from '@/lib/review-annotations'
+import { ReviewAnnotation } from '@/lib/review-types'
+import {
+    createEssayAnnotation,
+    deleteEssayAnnotation,
+    subscribeToEssayAnnotations,
+    updateEssayAnnotation,
+} from '@/lib/essay-annotations'
 
 // ─── Rubric (identical to student review page) ────────────────────────────────
 const ASPECTS = [
@@ -116,7 +125,21 @@ function AspectCard({
 }
 
 // ─── Essay Panel (left column) ────────────────────────────────────────────────
-function EssayPanel({ essay }: { essay: any }) {
+function EssayPanel({
+    essay,
+    annotations,
+    canEditAnnotation,
+    onCreateAnnotation,
+    onUpdateAnnotation,
+    onDeleteAnnotation,
+}: {
+    essay: any
+    annotations: ReviewAnnotation[]
+    canEditAnnotation: (annotation: ReviewAnnotation) => boolean
+    onCreateAnnotation: (draft: any, note: string) => Promise<void>
+    onUpdateAnnotation: (annotation: ReviewAnnotation, note: string) => Promise<void>
+    onDeleteAnnotation: (annotation: ReviewAnnotation) => Promise<void>
+}) {
     const wordCount = essay?.content?.trim().split(/\s+/).filter(Boolean).length ?? 0
     return (
         <div className="p-4 space-y-4">
@@ -131,7 +154,19 @@ function EssayPanel({ essay }: { essay: any }) {
                 {essay?.title && (
                     <p className="text-sm font-bold text-slate-900 mb-3 pb-3 border-b border-slate-100">{essay.title}</p>
                 )}
-                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{essay?.content}</p>
+                <EssayAnnotator
+                    content={essay?.content || ''}
+                    annotations={annotations}
+                    editable
+                    onCreateAnnotation={onCreateAnnotation}
+                    onUpdateAnnotation={onUpdateAnnotation}
+                    onDeleteAnnotation={onDeleteAnnotation}
+                    canEditAnnotation={canEditAnnotation}
+                    tone="teacher"
+                    title="Teacher Annotation"
+                    subtitle="Highlight a passage to save a shared teacher note visible to every reviewer and the student."
+                    emptyText="No highlighted teacher notes yet."
+                />
                 <div className="mt-4 pt-3 border-t border-slate-100">
                     <span className="text-xs font-medium text-teal-600 bg-teal-50 border border-teal-100 px-3 py-1 rounded-full">
                         📝 {wordCount} words
@@ -162,6 +197,7 @@ export default function TeacherEssayReview() {
         content: null, organization: null, vocabulary: null, languageUse: null, mechanics: null,
     })
     const [feedback, setFeedback] = useState('')
+    const [annotations, setAnnotations] = useState<ReviewAnnotation[]>([])
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 768)
@@ -174,6 +210,16 @@ export default function TeacherEssayReview() {
         const load = async () => {
             if (!auth.currentUser) { router.push('/'); return }
             try {
+                setExistingReviewId(null)
+                setFeedback('')
+                setAnnotations([])
+                setScores({
+                    content: null,
+                    organization: null,
+                    vocabulary: null,
+                    languageUse: null,
+                    mechanics: null,
+                })
                 const { getUserProfile } = await import('@/lib/auth')
                 const myProfile = await getUserProfile(auth.currentUser.uid)
                 if (myProfile?.role !== 'teacher') { router.push('/dashboard'); return }
@@ -206,6 +252,7 @@ export default function TeacherEssayReview() {
                     setExistingReviewId(r.id)
                     const d = r.data() as any
                     setFeedback(d.feedback || '')
+                    setAnnotations(normalizeReviewAnnotations(essayData.content || '', d.annotations || []))
                     const loadedScores: Record<string, string | null> = {}
                     ASPECTS.forEach(a => { loadedScores[a.id] = d.scores?.[a.id] ?? null })
                     setScores(loadedScores)
@@ -219,6 +266,14 @@ export default function TeacherEssayReview() {
         load()
     }, [essayId, router])
 
+    useEffect(() => {
+        if (!auth.currentUser) return
+
+        setAnnotations([])
+        const unsubscribe = subscribeToEssayAnnotations(essayId, setAnnotations)
+        return () => unsubscribe()
+    }, [essayId])
+
     const allScored = ASPECTS.every(a => scores[a.id] !== null)
     const totalScore = ASPECTS.reduce((sum, a) => sum + getHighest(scores[a.id]), 0)
     const wordCount = feedback.trim() === '' ? 0 : feedback.trim().split(/\s+/).length
@@ -230,20 +285,28 @@ export default function TeacherEssayReview() {
         setError(null)
         setSubmitAttempted(true)
         if (!auth.currentUser || !essay) return
+        const currentUser = auth.currentUser
         if (!allScored) { setError('Please select a score for all 5 rubric categories.'); return }
         if (!feedbackValid) { setError('Please write at least 10 words of feedback.'); return }
 
         setSubmitting(true)
         try {
+            const safeAnnotations = normalizeReviewAnnotations(
+                essay.content || '',
+                annotations.filter(annotation => annotation.authorId === currentUser.uid)
+            )
             const payload = {
                 essayId,
-                reviewerId: auth.currentUser.uid,
+                reviewerId: currentUser.uid,
                 reviewerRole: 'teacher',
                 reviewerName: 'Teacher',
                 scores,
                 totalScore,
                 overallBand: totalScore,
                 feedback,
+                annotations: safeAnnotations,
+                annotationsCount: safeAnnotations.length,
+                annotationSchemaVersion: 1,
                 updatedAt: serverTimestamp(),
             }
             if (existingReviewId) {
@@ -400,12 +463,48 @@ export default function TeacherEssayReview() {
             {/* Body */}
             {isMobile ? (
                 <div className="flex-1 overflow-auto">
-                    {activeTab === 'essay' ? <EssayPanel essay={essay} /> : rubricPanel}
+                    {activeTab === 'essay' ? (
+                        <EssayPanel
+                            essay={essay}
+                            annotations={annotations}
+                            canEditAnnotation={(annotation) => annotation.authorId === auth.currentUser?.uid}
+                            onCreateAnnotation={async (draft, note) => {
+                                if (!auth.currentUser) return
+                                await createEssayAnnotation({
+                                    essayId,
+                                    authorId: auth.currentUser.uid,
+                                    authorName: auth.currentUser.displayName || 'Teacher',
+                                    authorRole: 'teacher',
+                                    draft,
+                                    note,
+                                })
+                            }}
+                            onUpdateAnnotation={(annotation, note) => updateEssayAnnotation(annotation.id, note)}
+                            onDeleteAnnotation={(annotation) => deleteEssayAnnotation(annotation.id)}
+                        />
+                    ) : rubricPanel}
                 </div>
             ) : (
                 <div className="grid grid-cols-2 h-full overflow-hidden">
                     <div className="overflow-auto border-r border-slate-200">
-                        <EssayPanel essay={essay} />
+                        <EssayPanel
+                            essay={essay}
+                            annotations={annotations}
+                            canEditAnnotation={(annotation) => annotation.authorId === auth.currentUser?.uid}
+                            onCreateAnnotation={async (draft, note) => {
+                                if (!auth.currentUser) return
+                                await createEssayAnnotation({
+                                    essayId,
+                                    authorId: auth.currentUser.uid,
+                                    authorName: auth.currentUser.displayName || 'Teacher',
+                                    authorRole: 'teacher',
+                                    draft,
+                                    note,
+                                })
+                            }}
+                            onUpdateAnnotation={(annotation, note) => updateEssayAnnotation(annotation.id, note)}
+                            onDeleteAnnotation={(annotation) => deleteEssayAnnotation(annotation.id)}
+                        />
                     </div>
                     <div className="overflow-auto">
                         {rubricPanel}

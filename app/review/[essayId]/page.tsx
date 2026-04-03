@@ -1,12 +1,21 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
 import EvaFeedbackChat from '@/components/EvaFeedbackChat'
+import EssayAnnotator from '@/components/review/EssayAnnotator'
+import { normalizeReviewAnnotations } from '@/lib/review-annotations'
+import { ReviewAnnotation } from '@/lib/review-types'
+import {
+    createEssayAnnotation,
+    deleteEssayAnnotation,
+    subscribeToEssayAnnotations,
+    updateEssayAnnotation,
+} from '@/lib/essay-annotations'
 
 // ─── Rubric Definition ────────────────────────────────────────────────────────
 const ASPECTS = [
@@ -127,7 +136,21 @@ function AspectCard({
 }
 
 // ─── Essay Panel (left) ───────────────────────────────────────────────────────
-function EssayPanel({ essay }: { essay: any }) {
+function EssayPanel({
+    essay,
+    annotations,
+    canEditAnnotation,
+    onCreateAnnotation,
+    onUpdateAnnotation,
+    onDeleteAnnotation,
+}: {
+    essay: any
+    annotations: ReviewAnnotation[]
+    canEditAnnotation: (annotation: ReviewAnnotation) => boolean
+    onCreateAnnotation: (draft: any, note: string) => Promise<void>
+    onUpdateAnnotation: (annotation: ReviewAnnotation, note: string) => Promise<void>
+    onDeleteAnnotation: (annotation: ReviewAnnotation) => Promise<void>
+}) {
     const wordCount = essay?.content?.trim().split(/\s+/).filter(Boolean).length ?? 0
     return (
         <div className="p-4 space-y-4">
@@ -150,9 +173,19 @@ function EssayPanel({ essay }: { essay: any }) {
                         {essay.title}
                     </p>
                 )}
-                <p className="text-sm text-slate-700  leading-relaxed whitespace-pre-wrap">
-                    {essay?.content}
-                </p>
+                <EssayAnnotator
+                    content={essay?.content || ''}
+                    annotations={annotations}
+                    editable
+                    onCreateAnnotation={onCreateAnnotation}
+                    onUpdateAnnotation={onUpdateAnnotation}
+                    onDeleteAnnotation={onDeleteAnnotation}
+                    canEditAnnotation={canEditAnnotation}
+                    tone="student"
+                    title="Essay Annotation"
+                    subtitle="Highlight a passage to save a shared anonymous note. Everyone reviewing this essay will see it."
+                    emptyText="No highlighted notes yet. Select part of the essay to add the first one."
+                />
                 <div className="mt-4 pt-3 border-t border-slate-100 ">
                     <span className="text-xs font-medium text-blue-600  bg-blue-50  border border-blue-100  px-3 py-1 rounded-full">
                         📝 {wordCount} words
@@ -182,6 +215,7 @@ export default function ReviewEssay() {
         content: null, organization: null, vocabulary: null, languageUse: null, mechanics: null,
     })
     const [feedback, setFeedback] = useState('')
+    const [annotations, setAnnotations] = useState<ReviewAnnotation[]>([])
     const [activeTab, setActiveTab] = useState<'essay' | 'rubric'>('essay')
     const [isMobile, setIsMobile] = useState(false)
     const [evaAllowed, setEvaAllowed] = useState(false)
@@ -230,6 +264,14 @@ export default function ReviewEssay() {
         fetchEssay()
     }, [essayId, router])
 
+    useEffect(() => {
+        if (!auth.currentUser) return
+
+        setAnnotations([])
+        const unsubscribe = subscribeToEssayAnnotations(essayId, setAnnotations)
+        return () => unsubscribe()
+    }, [essayId])
+
     const allScored = ASPECTS.every(a => scores[a.id] !== null)
     const totalScore = ASPECTS.reduce((sum, a) => sum + getHighest(scores[a.id]), 0)
     const wordCount = feedback.trim() === '' ? 0 : feedback.trim().split(/\s+/).length
@@ -241,18 +283,27 @@ export default function ReviewEssay() {
         setError(null)
         setSubmitAttempted(true)
         if (!auth.currentUser || !essay) return
+        const currentUser = auth.currentUser
         if (!allScored) { setError('Please select a score for all 5 rubric categories.'); return }
         if (!feedbackValid) { setError('Please write at least 20 words of feedback.'); return }
 
         setSubmitting(true)
         try {
+            const safeAnnotations = normalizeReviewAnnotations(
+                essay.content || '',
+                annotations.filter(annotation => annotation.authorId === currentUser.uid)
+            )
             await addDoc(collection(db, 'reviews'), {
                 essayId,
-                reviewerId: auth.currentUser.uid,
-                reviewerName: auth.currentUser.displayName || 'Anonymous',
+                reviewerId: currentUser.uid,
+                reviewerName: currentUser.displayName || 'Anonymous',
+                reviewerRole: 'student',
                 scores,
                 totalScore,
                 feedback,
+                annotations: safeAnnotations,
+                annotationsCount: safeAnnotations.length,
+                annotationSchemaVersion: 1,
                 completedAt: serverTimestamp(),
             })
 
@@ -441,7 +492,26 @@ export default function ReviewEssay() {
             {/* Body */}
             {isMobile ? (
                 <div className="flex-1 overflow-auto">
-                    {activeTab === 'essay' ? <EssayPanel essay={essay} /> : (
+                    {activeTab === 'essay' ? (
+                        <EssayPanel
+                            essay={essay}
+                            annotations={annotations}
+                            canEditAnnotation={(annotation) => annotation.authorId === auth.currentUser?.uid}
+                            onCreateAnnotation={async (draft, note) => {
+                                if (!auth.currentUser) return
+                                await createEssayAnnotation({
+                                    essayId,
+                                    authorId: auth.currentUser.uid,
+                                    authorName: auth.currentUser.displayName || 'Anonymous',
+                                    authorRole: 'student',
+                                    draft,
+                                    note,
+                                })
+                            }}
+                            onUpdateAnnotation={(annotation, note) => updateEssayAnnotation(annotation.id, note)}
+                            onDeleteAnnotation={(annotation) => deleteEssayAnnotation(annotation.id)}
+                        />
+                    ) : (
                         <div className="p-4 bg-slate-50  space-y-0">
                             <div className="mb-4 flex items-center justify-between">
                                 <div>
@@ -545,7 +615,24 @@ export default function ReviewEssay() {
             ) : (
                 <div className="grid grid-cols-2 h-full overflow-hidden">
                     <div className="overflow-auto border-r border-slate-200 ">
-                        <EssayPanel essay={essay} />
+                        <EssayPanel
+                            essay={essay}
+                            annotations={annotations}
+                            canEditAnnotation={(annotation) => annotation.authorId === auth.currentUser?.uid}
+                            onCreateAnnotation={async (draft, note) => {
+                                if (!auth.currentUser) return
+                                await createEssayAnnotation({
+                                    essayId,
+                                    authorId: auth.currentUser.uid,
+                                    authorName: auth.currentUser.displayName || 'Anonymous',
+                                    authorRole: 'student',
+                                    draft,
+                                    note,
+                                })
+                            }}
+                            onUpdateAnnotation={(annotation, note) => updateEssayAnnotation(annotation.id, note)}
+                            onDeleteAnnotation={(annotation) => deleteEssayAnnotation(annotation.id)}
+                        />
                     </div>
                     <div className="overflow-auto">
                         <div className="p-4 bg-slate-50  space-y-0">
