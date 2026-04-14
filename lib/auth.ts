@@ -3,6 +3,9 @@ import {
     signInWithPopup,
     GoogleAuthProvider,
     signOut as firebaseSignOut,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile,
     User
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
@@ -68,6 +71,45 @@ export async function signInWithGoogle(): Promise<UserProfile | null> {
         }
 
         return null
+    }
+}
+
+export async function signInWithEmailPassword(email: string, password: string): Promise<UserProfile | null> {
+    try {
+        const result = await signInWithEmailAndPassword(auth, email, password)
+        const user = result.user
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+            return userDoc.data() as UserProfile
+        }
+        return null
+    } catch (error: any) {
+        console.error('Email sign in error:', error)
+        throw error
+    }
+}
+
+export async function registerWithEmailPassword(email: string, password: string, name: string): Promise<UserProfile | null> {
+    try {
+        const result = await createUserWithEmailAndPassword(auth, email, password)
+        const user = result.user
+
+        await updateProfile(user, { displayName: name })
+
+        const newProfile: UserProfile = {
+            uid: user.uid,
+            email: user.email || '',
+            name,
+            role: 'student',
+            classId: 'default-class',
+            createdAt: new Date(),
+        }
+
+        await setDoc(doc(db, 'users', user.uid), newProfile)
+        return newProfile
+    } catch (error: any) {
+        console.error('Registration error:', error)
+        throw error
     }
 }
 

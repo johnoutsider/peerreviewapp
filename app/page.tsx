@@ -1,165 +1,53 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth, isFirebaseConfigured } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 
 export default function Home() {
     const router = useRouter()
-    const [loading, setLoading] = useState(true)
-    const [showConfigWarning, setShowConfigWarning] = useState(false)
 
     useEffect(() => {
         let active = true
-        let authReady = false
-        let timeoutId: ReturnType<typeof setTimeout> | null = null
 
-        // Check if Firebase is configured
         if (!isFirebaseConfigured()) {
-            setShowConfigWarning(true)
-            setLoading(false)
+            router.replace('/auth/signin')
             return
         }
 
-        // Prevent a stalled auth/profile check from blocking first paint forever.
-        timeoutId = setTimeout(() => {
-            if (active && !authReady) {
-                setLoading(false)
-            }
-        }, 2500)
-
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            authReady = true
-            if (timeoutId) {
-                clearTimeout(timeoutId)
-            }
-
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!active) return
 
             if (!user) {
-                setLoading(false)
+                router.replace('/auth/signin')
                 return
             }
 
-            ; (async () => {
-                try {
-                    const { getUserProfile } = await import('@/lib/auth')
-
-                    const profilePromise = getUserProfile(user.uid)
-                    const role = await Promise.race([
-                        profilePromise.then(profile => profile?.role ?? 'student'),
-                        new Promise<'student'>(resolve => setTimeout(() => resolve('student'), 1200)),
-                    ])
-
-                    if (!active) return
-
-                    if (role === 'teacher') {
-                        router.replace('/teacher')
-                    } else {
-                        router.replace('/dashboard')
-                    }
-                } catch {
-                    if (!active) return
+            try {
+                const { getUserProfile } = await import('@/lib/auth')
+                const profile = await getUserProfile(user.uid)
+                if (!active) return
+                if (profile?.role === 'teacher') {
+                    router.replace('/teacher')
+                } else {
                     router.replace('/dashboard')
                 }
-            })()
+            } catch {
+                if (!active) return
+                router.replace('/dashboard')
+            }
         })
 
         return () => {
             active = false
-            if (timeoutId) {
-                clearTimeout(timeoutId)
-            }
             unsubscribe()
         }
     }, [router])
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            </div>
-        )
-    }
-
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <div className="container mx-auto px-4 py-16">
-                <div className="max-w-4xl mx-auto">
-                    {/* Configuration Warning */}
-                    {showConfigWarning && (
-                        <div className="bg-yellow-500/20 border-2 border-yellow-500 rounded-xl p-6 mb-8">
-                            <h3 className="text-xl font-bold text-yellow-400 mb-2">Configuration Required</h3>
-                            <p className="text-yellow-200 mb-4">
-                                Firebase is not configured yet. Please set up your environment variables to enable authentication and database features.
-                            </p>
-                            <div className="bg-slate-100 dark:bg-slate-900/50 rounded-lg p-4 mb-4">
-                                <p className="text-sm text-slate-600 dark:text-gray-300 mb-2">Follow these steps:</p>
-                                <ol className="text-sm text-slate-500 dark:text-gray-400 list-decimal list-inside space-y-1">
-                                    <li>Create a Firebase project at console.firebase.google.com</li>
-                                    <li>Enable Google Authentication</li>
-                                    <li>Create a Firestore database</li>
-                                    <li>Get your Gemini API key from ai.google.dev</li>
-                                    <li>Update the .env.local file with your keys</li>
-                                </ol>
-                            </div>
-                            <p className="text-xs text-yellow-300">
-                                See <code className="bg-slate-100 dark:bg-slate-900/50 px-2 py-1 rounded">SETUP.md</code> for detailed instructions
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Hero Section */}
-                    <div className="text-center mb-12">
-                        <h1 className="text-6xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
-                            <span className="block mt-2">Peer Feedback App</span>
-                        </h1>
-                        <p className="text-xl text-slate-600 dark:text-gray-300 mb-8">
-                            Collaborative essay grading powered by AI and peer review
-                        </p>
-                    </div>
-
-                    {/* Features */}
-                    <div className="grid md:grid-cols-3 gap-6 mb-12">
-                        <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm relative z-10">
-                            <div className="text-4xl mb-4">{'\u270D\uFE0F'}</div>
-                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Submit Essays</h3>
-                            <p className="text-slate-600 dark:text-gray-300">Upload your essays and receive comprehensive feedback</p>
-                        </div>
-                        <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm relative z-10">
-                            <div className="text-4xl mb-4">{'\uD83E\uDD1D'}</div>
-                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Peer Review</h3>
-                            <p className="text-slate-600 dark:text-gray-300">Review classmates&apos; essays using standardized criteria</p>
-                        </div>
-                        <div className="bg-white dark:bg-slate-800/10 backdrop-blur-lg rounded-xl p-6 border border-slate-300 dark:border-white/20">
-                            <div className="text-4xl mb-4">{'\uD83E\uDD16'}</div>
-                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">AI Feedback</h3>
-                            <p className="text-slate-600 dark:text-gray-300">Get instant AI-powered analysis and suggestions</p>
-                        </div>
-                    </div>
-
-                    {/* CTA */}
-                    <div className="text-center">
-                        {showConfigWarning ? (
-                            <button
-                                disabled
-                                className="inline-block bg-gray-600 text-slate-500 dark:text-gray-400 font-semibold px-8 py-4 rounded-lg text-lg cursor-not-allowed shadow-lg"
-                            >
-                                Configure Firebase First
-                            </button>
-                        ) : (
-                            <a
-                                href="/auth/signin"
-                                className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold px-8 py-4 rounded-lg text-lg hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
-                            >
-                                Sign In with Google
-                            </a>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </main>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="h-8 w-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+        </div>
     )
 }
-

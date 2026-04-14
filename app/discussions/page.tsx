@@ -6,8 +6,7 @@ import Link from 'next/link'
 import { auth, db } from '@/lib/firebase'
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
 import StudentLayout from '@/components/StudentLayout'
-import { getStudentCompletedReviewCount } from '@/lib/peer-assignment'
-import { PeerReviewThreadSummary, buildPeerReviewAliases } from '@/lib/review-discussions'
+import { buildPeerReviewAliases } from '@/lib/review-discussions'
 
 interface DiscussionRow {
     essayId: string
@@ -15,7 +14,7 @@ interface DiscussionRow {
     essayTopic: string | null
     role: 'Author' | 'Reviewer' | 'Author + Reviewer'
     peerReviewCount: number
-    lastActivityAt: any
+    latestReviewAt: any
     sortTime: number
 }
 
@@ -28,7 +27,7 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 function formatActivityDate(value: any): string {
-    if (!value?.toDate) return 'No discussion yet'
+    if (!value?.toDate) return '—'
     return value.toDate().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -79,26 +78,7 @@ export default function DiscussionsPage() {
                     ...essayDoc.data(),
                 } as any))
 
-                const unlockCountByTopic = new Map<string, number>()
-                const accessibleOwnEssayIds = new Set<string>()
-
-                for (const essay of ownEssayDocs) {
-                    if (!essay.topicId) {
-                        accessibleOwnEssayIds.add(essay.id)
-                        continue
-                    }
-
-                    if (!unlockCountByTopic.has(essay.topicId)) {
-                        unlockCountByTopic.set(
-                            essay.topicId,
-                            await getStudentCompletedReviewCount(currentUser.uid, essay.topicId)
-                        )
-                    }
-
-                    if ((unlockCountByTopic.get(essay.topicId) ?? 0) >= 2) {
-                        accessibleOwnEssayIds.add(essay.id)
-                    }
-                }
+                const accessibleOwnEssayIds = new Set<string>(ownEssayDocs.map((essay) => essay.id))
 
                 const allEssayIds = [...new Set([...reviewedEssayIds, ...accessibleOwnEssayIds])]
                 if (allEssayIds.length === 0) {
@@ -131,20 +111,6 @@ export default function DiscussionsPage() {
                     })
                 }
 
-                const threadsByEssay = new Map<string, PeerReviewThreadSummary[]>()
-                for (const essayIdChunk of chunk(allEssayIds, 10)) {
-                    const threadSnap = await getDocs(query(
-                        collection(db, 'reviewDiscussionThreads'),
-                        where('essayId', 'in', essayIdChunk)
-                    ))
-                    threadSnap.docs.forEach((threadDoc) => {
-                        const thread = { id: threadDoc.id, ...threadDoc.data() } as PeerReviewThreadSummary
-                        const existingThreads = threadsByEssay.get(thread.essayId) ?? []
-                        existingThreads.push(thread)
-                        threadsByEssay.set(thread.essayId, existingThreads)
-                    })
-                }
-
                 const nextRows = allEssayIds.flatMap((essayId) => {
                     const essay = essayMap.get(essayId)
                     if (!essay) return []
@@ -160,17 +126,12 @@ export default function DiscussionsPage() {
                             ? 'Author'
                             : 'Reviewer'
 
-                    const essayThreads = threadsByEssay.get(essayId) ?? []
-                    const lastActivityAt = essayThreads.reduce<any>((latest, thread) => {
-                        if (!latest) return thread.lastCommentAt
-                        const latestMillis = latest?.toMillis?.() ?? 0
-                        const threadMillis = thread.lastCommentAt?.toMillis?.() ?? 0
-                        return threadMillis > latestMillis ? thread.lastCommentAt : latest
+                    const latestReviewAt = peerReviews.reduce<any>((latest, review) => {
+                        if (!latest) return review.submittedAt
+                        const latestMs = latest?.toMillis?.() ?? 0
+                        const reviewMs = review.submittedAt?.toMillis?.() ?? 0
+                        return reviewMs > latestMs ? review.submittedAt : latest
                     }, null)
-                    const fallbackSortTime = Math.max(
-                        ...peerReviews.map((review) => review.submittedAt?.toMillis?.() ?? 0),
-                        0
-                    )
 
                     return [{
                         essayId,
@@ -178,8 +139,8 @@ export default function DiscussionsPage() {
                         essayTopic: essay.topicName ?? null,
                         role,
                         peerReviewCount: peerReviews.length,
-                        lastActivityAt,
-                        sortTime: lastActivityAt?.toMillis?.() ?? fallbackSortTime,
+                        latestReviewAt,
+                        sortTime: latestReviewAt?.toMillis?.() ?? 0,
                     }]
                 })
 
@@ -222,7 +183,7 @@ export default function DiscussionsPage() {
                         </svg>
                     </span>
                     <p className="text-blue-700 text-sm leading-relaxed">
-                        <span className="font-semibold">Anonymity is maintained.</span> Reviewers are shown only as Reviewer 1, Reviewer 2, and so on by submission order.
+                        <span className="font-semibold">Anonymity is maintained.</span> Peer feedback is shown anonymously — reviewers appear only as Reviewer 1, Reviewer 2, and so on.
                     </p>
                 </div>
 
@@ -231,7 +192,7 @@ export default function DiscussionsPage() {
                         <div className="text-6xl mb-4">...</div>
                         <h3 className="text-xl font-semibold text-slate-900 mb-2">No Discussions Available Yet</h3>
                         <p className="text-slate-500 text-sm">
-                            Discussions appear after peer reviews are submitted and unlocked for the essay owner.
+                            Discussions appear after peer reviews are submitted for your essays.
                         </p>
                         <Link
                             href="/review"
@@ -252,7 +213,7 @@ export default function DiscussionsPage() {
                                         <th className="py-3 px-4 text-xs font-semibold uppercase tracking-widest text-slate-500">Topic</th>
                                         <th className="py-3 px-4 text-xs font-semibold uppercase tracking-widest text-slate-500">Essay Title</th>
                                         <th className="py-3 px-4 text-xs font-semibold uppercase tracking-widest text-slate-500 text-center">Peer Reviews</th>
-                                        <th className="py-3 px-4 text-xs font-semibold uppercase tracking-widest text-slate-500">Last Activity</th>
+                                        <th className="py-3 px-4 text-xs font-semibold uppercase tracking-widest text-slate-500">Latest Review</th>
                                         <th className="py-3 px-4 text-xs font-semibold uppercase tracking-widest text-slate-500"></th>
                                     </tr>
                                 </thead>
@@ -289,7 +250,7 @@ export default function DiscussionsPage() {
                                                 </span>
                                             </td>
                                             <td className="py-4 px-4">
-                                                <span className="text-slate-500 text-sm">{formatActivityDate(row.lastActivityAt)}</span>
+                                                <span className="text-slate-500 text-sm">{formatActivityDate(row.latestReviewAt)}</span>
                                             </td>
                                             <td className="py-4 px-4">
                                                 <Link
